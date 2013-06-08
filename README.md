@@ -21,4 +21,4 @@ Une aide à l'installation sur Linux est disponible sur le dépot.
 
 Le logiciel et le matériel ont été intégralement développé par Nathanaël Jourdane.
 Ce projet évoluera en fonction des retours des utilisateurs. N'hésitez pas à poser des questions, demander d'avantage d'information pour le montage et éventuellement proposer des évoluions.
-Pour toute question vous pouvez me contacter par mail à roipoussiere[at]gmail[dot]com .
+Pour toute question vous pouvez me contacter par mail à nathaATjourdaneDOTnet .
