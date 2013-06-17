@@ -3,6 +3,8 @@ Drawbot
 
 Drawbot est un projet de robot qui dessine sur les murs.
 
+This work is licensed under the Creative Commons Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions 3.0 France License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/fr/.
+
 Ce robot utilise une carte Arduino et nécessite par conséquent le logiciel Arduino pour fonctionner.
 Je vous invite à vous documenter sur internet pour l'installation de celui-ci, vous y trouverez beaucoup d'information et d'aide.
 
@@ -21,4 +23,6 @@ Une aide à l'installation sur Linux est disponible sur le dépot.
 
 Le logiciel et le matériel ont été intégralement développé par Nathanaël Jourdane.
 Ce projet évoluera en fonction des retours des utilisateurs. N'hésitez pas à poser des questions, demander d'avantage d'information pour le montage et éventuellement proposer des évoluions.
-Pour toute question vous pouvez me contacter par mail à nathaATjourdaneDOTnet .
+Pour toute question vous pouvez me contacter par mail à nathaATjourdaneDOTnet.
+
+Pour voir une démonstration de ce robot, rendez-vous sur : http://www.youtube.com/watch?v=ewhZ9wcrR2s
