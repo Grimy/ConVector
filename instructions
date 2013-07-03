@@ -5,4 +5,11 @@ Creez un lien du dossier libraries/drawbot vers le dossier libraires de Arduino 
 Facultatif : Vous pouvez aussi faire cela pour les dossiers arduino/drawbot et processing/drawbot, pour les placer dans le sketchbook.
 
 Pour utiliser le simulateur, ouvrez d'abord le programme Processing, puis téléversez le sketch Arduino. Une fois le téléversement terminé, lancez le programme processing avant que le robot ne démarre.
-Si vous rencontrez des problèmes pour cette étape, débranchez/rebranchez le cable usb.
+
+Vous devez fermer la fenêtre du simululateur avant de recompiler le programme.
+
+Si vous rencontrez des problèmes pour utiliser le simulateur, essayez succesivement ces solutions :
+
+- Vérifier que l'interupteur du robot n'est pas en position reset, puis lancer le simulateur.
+- Débrancher/rebrancher le cable usb, puis lancer le simulateur.
+- Fermer Processing, débrancher/rebrancher le cable usb, relancer processing, puis lancer le simulateur.
