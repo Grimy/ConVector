@@ -8,8 +8,9 @@ Pour utiliser le simulateur, ouvrez d'abord le programme Processing, puis télé
 
 Vous devez fermer la fenêtre du simululateur avant de recompiler le programme.
 
-Si vous rencontrez des problèmes pour utiliser le simulateur, essayez succesivement ces solutions :
+Si vous rencontrez des problèmes pour utiliser le simulateur, essayez succesivement ces solutions avant de relancer le simulateur :
 
-- Vérifier que l'interupteur du robot n'est pas en position reset, puis lancer le simulateur.
-- Débrancher/rebrancher le cable usb, puis lancer le simulateur.
-- Fermer Processing, débrancher/rebrancher le cable usb, relancer processing, puis lancer le simulateur.
+- Vérifier que l'interupteur du robot n'est pas en position reset.
+- Appuyer sur le bouton Reset.
+- Débrancher/rebrancher le cable usb.
+- Fermer Processing, débrancher/rebrancher le cable usb, relancer processing.
