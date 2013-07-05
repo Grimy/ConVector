@@ -1,5 +1,2 @@
 HEAD
-config
-description
-hooks
-info
+.gitignore
