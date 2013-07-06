@@ -1,28 +1,31 @@
 Drawall
 =======
 
-Drawall est un projet de robot qui dessine sur les murs.
+Drawall est un projet libre de robot autonomme qui dessine sur les murs. Son code source est disponible sur GitHub (voir lien en bas de page).
 
-Ce travail est sous licence Creative Commons Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions 3.0 France License. Pour voir voir une copie de cette licence, ouvrez le fichier LIENCE.txt ou connectez-vous sur http://creativecommons.org/licenses/by-nc-sa/3.0/fr/.
+Ce travail est sous licence Creative Commons Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions 3.0 France License. Pour voir voir une copie de cette licence, ouvrez le fichier LIENCE.txt du dépot GitHub, ou connectez-vous sur http://creativecommons.org/licenses/by-nc-sa/3.0/fr/.
 
-Ce robot utilise une carte Arduino et nécessite par conséquent le logiciel Arduino pour fonctionner.
-Je vous invite à vous documenter sur internet pour l'installation de celui-ci, vous y trouverez beaucoup d'information et d'aide.
+Ce robot utilise une carte Arduino et nécessite donc le logiciel Arduino pour fonctionner. Vous trouverez de l'aide pour son installation et utilisation sur le site officiel http://arduino.cc/fr/.
 
-La partie logicielle se compose en un programme principal (le fichier .ino) et une librairie (les fichiers drawall.cpp et drawall.h).
-La librairie contient tous les calculs a executer pour faire fonctionner le robot.
-Le fichier .ino ne sert qu'à initialiser le robot et appeler la librairie.
-Le programme principal est paramétré pour que le robot déssine sur une feuille au format 65*50cm en mode paysage.
-Lors de l'installation, il vous faut aussi respecter des distances précises : un petit schéma d'instalation est présent sur le dépot.
-Toutefois vous pouvez facilement l'éditer pour modifier les paramètres que vous voulez.
+La partie logicielle est une librairie Arduino. Elle est composée d'un fichier principal drawall.cpp, d'un fichier header drawall.h et d'un fichier de paramètres params.h. Ce dernier permet de spécifier tous les paramètres concernant le robot. Vous dervrez l'éditer avant d'utiliser la librairie.
+La librairie est utilisée par l'intermédiaire d'un "sketch" Arduino, (fichier .ino), dont vous trouverez des exemples dans le répertoire de la librairie.
+La librairie contient tous les calculs nécessaire à l'execution du robot, les sketchs ne servent qu'à le commander, ils sont très courts et simples à utiliser.
 
-Le projet comporte également un simulateur, qui permet de simuler le fonctionnement du robot sans le brancher.
-Attention toutefois, le simulateur lis directement les impulsions électriques envoyées aux moteurs.
-Il vous faut donc connecter à vote ordinateur une carte arduino munie d'un port sd, avec une carte contenant une image svg dessus pour faire fonctionner ce simulateur.
-Ce simulteur utilise l'environnement de développement Processing, il vous faut donc l'installer.
+Il est possible de commander le robot par des fonctions simples (lignes, courbes, ...), ou par l'intermédiaire d'un fichier svg qu'il va interpréter.
+Les fonctions svg ne sont pas encore toutes interprétées, certains dessins ne seront don pas correctement reproduits. Vous pouvez vous référer au fichier d'exemple drawbot.svg dans le dossier examples.
+
+Le projet comporte également un simulateur, qui permet de simuler le fonctionnement du robot sans le brancher. En augmentant la vitesse de traçé, une estimation du dessin est rapidement visualisable.
+Ce simulateur interprette directement les impulsions envoyées aux moteurs, il vous faut donc un minimum de matériel pour lancer une simulation : une carte arduino munie d'un port sd, avec une carte contenant une image svg.
+Ce simulteur utilise l'environnement de développement Processing, qu'il vous faudra aussi installer : https://www.processing.org/download/.
+
 Une aide à l'installation sur Linux est disponible sur le dépot.
 
-Le logiciel et le matériel ont été intégralement développé par Nathanaël Jourdane.
-Ce projet évoluera en fonction des retours des utilisateurs. N'hésitez pas à poser des questions, demander d'avantage d'information pour le montage et éventuellement proposer des évoluions.
-Pour toute question vous pouvez me contacter par mail à nathaATjourdaneDOTnet.
+Ce projet est libre et évoluera en fonction des retours des utilisateurs. Questions, demande d'informations, et suggestions sont donc les bienvenues.
 
-Pour voir une démonstration de ce robot, rendez-vous sur : http://www.youtube.com/watch?v=ewhZ9wcrR2s
+Le logiciel et le matériel ont été intégralement développé par Nathanaël Jourdane.
+
+Adresse de contact : nathanael[AT]jourdane[DOT]net.
+Lien vers dépôt GitHub : https://github.com/roipoussiere/Drawall
+Site web du projet : http://drawall.cc/
+Une vidéo de démonstration du robot : http://www.youtube.com/watch?v=ewhZ9wcrR2s
+ */
