@@ -3,7 +3,7 @@ Drawall
 
 Drawall est un projet de robot qui dessine sur les murs.
 
-This work is licensed under the Creative Commons Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions 3.0 France License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/fr/.
+Ce travail est sous licence Creative Commons Attribution - Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions 3.0 France License. Pour voir voir une copie de cette licence, ouvrez le fichier LIENCE.txt ou connectez-vous sur http://creativecommons.org/licenses/by-nc-sa/3.0/fr/.
 
 Ce robot utilise une carte Arduino et nécessite par conséquent le logiciel Arduino pour fonctionner.
 Je vous invite à vous documenter sur internet pour l'installation de celui-ci, vous y trouverez beaucoup d'information et d'aide.
