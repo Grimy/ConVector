@@ -18,11 +18,29 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+Ce programme est un simulateur pour le robot Drawall, permetant de tester le bon
+fonctionnement d'un programe de dessin avant de le reproduire et faciliter le développement
+du projet.
+Il nécessite l'environnement de développement Processing : http://www.processing.org/
+
+Ce simulateur reproduit le dessin que réalise le robot, en interpretant en temps réel
+les impulsions envoyées aux moteurs. Pour le faire fonctionner il vous faut donc
+connecter à votre ordinateur au minimum une carte arduino munie d'un lecteur SD
+et y insérer une carte contenant une image svg valide.
+Toutes les fonctions svg ne sont pas encore interprétées. Pour plus d'informations
+sur la conformité du fichier svg, référez-vous au document documentation/valid_svg.txt
+du dépot GitHub. Une aide à l'installation sur Linux est également disponible sur le dépot.
+
+Si les moteurs ne sont pas branchés, vous pouvez augmenter la vitesse de traçé pour
+accélérer la simulation.
+*/
+
 import processing.serial.*;
 
 Serial arduino; // le port série
 
-color colEcrire = 0;
+color colEcrire = #000000;
 color colPasEcrire = #3969ec;
 color colLim = #EEEEEE;
 color colBarreAlim = #CCFFAF;
@@ -30,6 +48,7 @@ color colBarreDesalim = #FFAFAF;
 color colBarreFin = #8aeda2;
 color colFond = #AAAAAA;
 color colCurseur = #FC2E31;
+color colRectArea = #C7CC10;
 
 float mDistanceBetweenMotors;
 float mSheetPositionX, mSheetPositionY;
@@ -102,7 +121,7 @@ void setup()
   println("Position de la feuille : " + mSheetPositionX + " , " + mSheetPositionY);
   println("Taille de la feuille : " + mSheetWidth + " * " + mSheetHeight);
   println("Longueur des câbles : gauche = " + mLeftLength + " , droit = " + mRightLength);
-  println("1 pas = " + mStepLength + "mm");
+  println("1 pas = " + mStepLength + "µm");
 
   majPos();
   println("Position : " + posX + " , " + posY);
@@ -115,7 +134,7 @@ void setup()
 
   // *** creation fenêtre ***
   background(colFond);
-
+  
   size (800, 600);
   frame.setResizable(true);
 }
@@ -139,6 +158,8 @@ void draw() // Appelé tout le temps
   
   float areaX = (width - mDistanceBetweenMotors * mScale) / 2;
   float areaY = (height - barreH - (mSheetPositionY + mSheetHeight) * mScale) / 2;
+  
+  int numErr;
   
   rectOut(mSheetPositionX, mSheetPositionY,
         mSheetWidth, mSheetHeight,
@@ -228,7 +249,15 @@ _ = Message arduino
       
       // Si on a envoyé une erreur
       case 'E':
-        int numErr = int("" + arduino.readChar() + arduino.readChar());
+        numErr = int("" + arduino.readChar() + arduino.readChar());
+        // Appelle la fonction erreur()
+        // qui va afficher l'erreur en print et sur l'interface.
+        erreur(numErr);
+      break;
+
+      // Si on a envoyé un warning
+      case 'W':
+        numErr = int("" + arduino.readChar() + arduino.readChar());
         // Appelle la fonction erreur()
         // qui va afficher l'erreur en print et sur l'interface.
         erreur(numErr);
@@ -239,7 +268,7 @@ _ = Message arduino
         print(mvt);
       break;
     }
-    
+
     majPos();
     point(posX*mScale + areaX, posY*mScale + areaY);
     
@@ -249,21 +278,25 @@ _ = Message arduino
 
 void majPos()
 {
-  posX = (pow(float(mLeftLength) * mStepLength, 2) - pow(float(mRightLength) * mStepLength, 2)
+  posX = (pow(float(mLeftLength) * mStepLength/1000, 2) - pow(float(mRightLength) * mStepLength/1000, 2)
       + pow(mDistanceBetweenMotors, 2) ) / (2*mDistanceBetweenMotors);
-  posY = sqrt( pow(float(mLeftLength) * mStepLength, 2) - pow(posX, 2) );
+  posY = sqrt( pow(float(mLeftLength) * mStepLength/1000, 2) - pow(posX, 2) );
 }
 
 void erreur(int code)
 {
-        print("\n*** Erreur ");
-        print(code);
-        print(" ***\n");
+        println("*************************");
+        
+        if (code < 50) {
+          println("Error " + code + " :");
+        } else {
+          print("Warning " + code + " :");          
+        }
         
         switch (code)
         {
           case 00 :
-            msgBarre = "Un caractère non-attendu a été reçu:";
+            msgBarre = "Un caractère non-attendu a été reçu.";
           break;
           
           case 01 :
@@ -271,7 +304,7 @@ void erreur(int code)
           break;
 
           case 02 :
-            msgBarre = "Erreur d'ouverture du fichier.";
+            msgBarre = "Le fichier ne peut pas être ouvert.";
           break;
 
           case 11 :
@@ -290,14 +323,31 @@ void erreur(int code)
             msgBarre = "La distance entre les 2 moteurs est inférieure à la largeur de la feuille + position.";
           break;
           
+          case 50 :
+            msgBarre = "Le crayon a ateint la limite gauche.";
+          break;
+
+          case 51 :
+            msgBarre = "Le crayon a ateint la limite droite.";
+          break;
+
+          case 52 :
+            msgBarre = "Le crayon a ateint la limite haute.";
+          break;
+
+          case 53 :
+            msgBarre = "Le crayon a ateint la limite basse.";
+          break;
+
           default :
-            msgBarre = "Erreur inconnue : " + code;
+            msgBarre = "Erreur non répertoriée." + code;
           break;
           
         }
         
         // On imprime le descriptif de l'erreur
-        print(msgBarre);
+        println(msgBarre);
+        println("*************************");
         barre();
 }
 
@@ -321,7 +371,7 @@ void barre()
   String msg = "surface: " + round(mSheetWidth) + "x" + round(mSheetHeight) +
     " | X: " + round(posX) + " Y:" + round(posY) +
     " | motG: " + mLeftLength + " motD: " + mRightLength +
-    " | ratio: " + mStepLength +
+    " | 1 pas = " + mStepLength + "µm" +
     " | " + msgBarre;
   
   text(msg, 4, height - 3); // écriture du texte
@@ -342,7 +392,7 @@ void rectOut( float x, float y, float w, float h, float limL, float limH, color 
   float debX = (width-limL)/2;
   float debY = (height - barreH - limH)/2;
   
-  fill( fillCol );
+  fill(fillCol);
   rect(debX + 1, debY - 1, x - 1, limH); // gauche
   rect(debX + 1, debY - 1, limL - 1, y); // haut
   rect(x + w + debX, debY - 1, limL - x - w, limH); //  droite
