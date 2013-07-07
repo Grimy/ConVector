@@ -1,8 +1,21 @@
 /*
-This work is licensed under the Creative Commons Attribution
-- Pas d’Utilisation Commerciale - Partage dans les Mêmes Conditions
-3.0 France License. To view a copy of this license, visit
-http://creativecommons.org/licenses/by-nc-sa/3.0/fr/.
+This file is part of Drawall, a project for a robot which draws on walls.
+See http://drawall.cc/ and https://github.com/roipoussiere/Drawall/.
+
+Copyright (c) 2012-2013 Nathanaël Jourdane
+
+Drawall is free software : you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 import processing.serial.*;
@@ -22,7 +35,7 @@ float mDistanceBetweenMotors;
 float mSheetPositionX, mSheetPositionY;
 float mSheetWidth, mSheetHeight;
 int mLeftLength, mRightLength;
-float mScaleX;
+float mStepLength;
 
 float mScale;
 float posX, posY; // position du stylo
@@ -32,6 +45,7 @@ float posX, posY; // position du stylo
 // 1 : fin
 int etat = -1;
 
+boolean mDrawMoves = true;
 int barreH = 15;
 String msgBarre = "";
 
@@ -82,13 +96,13 @@ void setup()
   mSheetHeight = tabInit[4];
   mLeftLength = int(tabInit[5]);
   mRightLength = int(tabInit[6]);
-  mScaleX = tabInit[7];
+  mStepLength = tabInit[7];
   
   println("Distance inter-moteurs : " + mDistanceBetweenMotors);
   println("Position de la feuille : " + mSheetPositionX + " , " + mSheetPositionY);
   println("Taille de la feuille : " + mSheetWidth + " * " + mSheetHeight);
   println("Longueur des câbles : gauche = " + mLeftLength + " , droit = " + mRightLength);
-  println("Échelle : X = " + mScaleX);
+  println("1 pas = " + mStepLength + "mm");
 
   majPos();
   println("Position : " + posX + " , " + posY);
@@ -179,8 +193,11 @@ _ = Message arduino
 
       case 'x':
         msgBarre = "Déplacement en cours...";
-        stroke(colPasEcrire);
-        // noStroke();
+        if (mDrawMoves) {
+          stroke(colPasEcrire);
+        } else {
+          noStroke();
+        }
       break;
         
       case 'a':
@@ -232,9 +249,9 @@ _ = Message arduino
 
 void majPos()
 {
-  posX = (pow(float(mLeftLength)/mScaleX, 2) - pow(float(mRightLength)/mScaleX, 2)
+  posX = (pow(float(mLeftLength) * mStepLength, 2) - pow(float(mRightLength) * mStepLength, 2)
       + pow(mDistanceBetweenMotors, 2) ) / (2*mDistanceBetweenMotors);
-  posY = sqrt( pow(float(mLeftLength)/mScaleX, 2) - pow(posX, 2) );
+  posY = sqrt( pow(float(mLeftLength) * mStepLength, 2) - pow(posX, 2) );
 }
 
 void erreur(int code)
@@ -304,7 +321,7 @@ void barre()
   String msg = "surface: " + round(mSheetWidth) + "x" + round(mSheetHeight) +
     " | X: " + round(posX) + " Y:" + round(posY) +
     " | motG: " + mLeftLength + " motD: " + mRightLength +
-    " | ratio: " + mScaleX +
+    " | ratio: " + mStepLength +
     " | " + msgBarre;
   
   text(msg, 4, height - 3); // écriture du texte
