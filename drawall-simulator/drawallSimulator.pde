@@ -163,7 +163,7 @@ void draw() // Appelé tout le temps
   
   rectOut(mSheetPositionX, mSheetPositionY,
         mSheetWidth, mSheetHeight,
-        mDistanceBetweenMotors, mSheetHeight + mSheetPositionY + 10, colLim);
+        mDistanceBetweenMotors, mSheetHeight + mSheetPositionY, colLim);
 
   echelle(areaX + 6, areaY + 4, round(mSheetWidth/10));
   barre();
