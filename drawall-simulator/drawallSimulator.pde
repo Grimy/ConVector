@@ -67,6 +67,8 @@ int etat = -1;
 boolean mDrawMoves = true;
 int barreH = 15;
 String msgBarre = "";
+long mStart;
+int mBaudRate = 57600;
 
 void setup()
 {
@@ -75,7 +77,7 @@ void setup()
   println(Serial.list()); // listing des ports dispos
 
   // init la communication avec l'arduino
-  arduino = new Serial(this, Serial.list()[0], 9600);
+  arduino = new Serial(this, Serial.list()[0], mBaudRate);
   
   // tableau récupéré sur la liason série qui contiendra les variables d'initialisation
   float tabInit[] = new float[8];
@@ -86,13 +88,8 @@ void setup()
   while (msg == null)
   {
     // récupère tout jusqu'au caractère de début d'init.
-    msg = arduino.readStringUntil('\t');
+    msg = arduino.readStringUntil('\n');
   }
-
-  // on imprime les messages envoyés sur le port série
-  // ils sont à titre informatifs et ne sont pas nécessaires au fonctionnement.
-  println("\n*** informations pré-traitement ***");
-  print(msg);
 
   println("\n*** données d'initialisation ***");
   
@@ -118,8 +115,8 @@ void setup()
   mStepLength = tabInit[7];
   
   println("Distance inter-moteurs : " + mDistanceBetweenMotors);
-  println("Position de la feuille : " + mSheetPositionX + " , " + mSheetPositionY);
-  println("Taille de la feuille : " + mSheetWidth + " * " + mSheetHeight);
+  println("Position de la zone de dessin : " + mSheetPositionX + " , " + mSheetPositionY);
+  println("Taille de la zone de dessin : " + mSheetWidth + " * " + mSheetHeight);
   println("Longueur des câbles : gauche = " + mLeftLength + " , droit = " + mRightLength);
   println("1 pas = " + mStepLength + "µm");
 
@@ -137,6 +134,10 @@ void setup()
   
   size (800, 600);
   frame.setResizable(true);
+  
+  println("Heure de début : " + hour() + "h" + minute() + ":" + second());
+  
+  mStart = millis();
 }
 
 void initScale()
@@ -159,7 +160,7 @@ void draw() // Appelé tout le temps
   float areaX = (width - mDistanceBetweenMotors * mScale) / 2;
   float areaY = (height - barreH - (mSheetPositionY + mSheetHeight) * mScale) / 2;
   
-  int numErr;
+  char numErr;
   
   rectOut(mSheetPositionX, mSheetPositionY,
         mSheetWidth, mSheetHeight,
@@ -249,23 +250,25 @@ _ = Message arduino
       
       // Si on a envoyé une erreur
       case 'E':
-        numErr = int("" + arduino.readChar() + arduino.readChar());
+        numErr = arduino.readChar();
         // Appelle la fonction erreur()
         // qui va afficher l'erreur en print et sur l'interface.
         erreur(numErr);
+        println();
       break;
 
       // Si on a envoyé un warning
       case 'W':
-        numErr = int("" + arduino.readChar() + arduino.readChar());
+        numErr = arduino.readChar();
         // Appelle la fonction erreur()
         // qui va afficher l'erreur en print et sur l'interface.
         erreur(numErr);
+        println();
       break;
 
       default:
-        erreur(0);
-        print(mvt);
+        erreur(char(0));
+        println(mvt + "'.");
       break;
     }
 
@@ -283,27 +286,27 @@ void majPos()
   posY = sqrt( pow(float(mLeftLength) * mStepLength/1000, 2) - pow(posX, 2) );
 }
 
-void erreur(int code)
+void erreur(char code)
 {
-        println("*************************");
+        println("\n\n*************************");
         
         if (code < 50) {
-          println("Error " + code + " :");
+          println("Error " + int(code) + " : ");
         } else {
-          print("Warning " + code + " :");          
+          print("Warning " + int(code) + " : ");          
         }
         
         switch (code)
         {
-          case 00 :
-            msgBarre = "Un caractère non-attendu a été reçu.";
+          case 0 :
+            msgBarre = "Un caractère non-attendu a été reçu : '";
           break;
           
-          case 01 :
-            msgBarre = "Carte absente ou non reconnue.";
+          case 1 :
+            msgBarre = "Carte absente ou non reconnue";
           break;
 
-          case 02 :
+          case 2 :
             msgBarre = "Le fichier ne peut pas être ouvert.";
           break;
 
@@ -319,7 +322,7 @@ void erreur(int code)
             msgBarre = "Le fichier svg n'inclut aucune donnée de dessin.";
           break;
 
-          case 20 :
+          case 30 :
             msgBarre = "La distance entre les 2 moteurs est inférieure à la largeur de la feuille + position.";
           break;
           
@@ -339,15 +342,18 @@ void erreur(int code)
             msgBarre = "Le crayon a ateint la limite basse.";
           break;
 
+          case 60 :
+            msgBarre = "Fonction SVG non reconnue : ";
+          break;
+
           default :
-            msgBarre = "Erreur non répertoriée." + code;
+            msgBarre = "Non répertorié.";
           break;
           
         }
         
         // On imprime le descriptif de l'erreur
-        println(msgBarre);
-        println("*************************");
+        print(msgBarre);
         barre();
 }
 
