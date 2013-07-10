@@ -235,6 +235,11 @@ _ = Message arduino
       case 'n':
         etat = 1;
         msgBarre = "Le dessin a été reproduit avec succès.";
+        println("Heure de fin : " + hour() + "h" + minute() + ":" + second());
+        int s = int((millis() - mStart) / 1000);
+        int m = s / 60;
+        int h = m / 60;
+        println("Durée totale : " + h + "h" + floor(m%60) + "m" + floor(s%3600) + "s.");
         barre();
       break;
       
