@@ -69,7 +69,7 @@ int barreH = 15;
 String msgBarre = "";
 long mStart;
 int mBaudRate = 57600;
-
+  
 void setup()
 {
   // *** acquisition des données d'init ***
@@ -159,8 +159,6 @@ void draw() // Appelé tout le temps
   
   float areaX = (width - mDistanceBetweenMotors * mScale) / 2;
   float areaY = (height - barreH - (mSheetPositionY + mSheetHeight) * mScale) / 2;
-  
-  char numErr;
   
   rectOut(mSheetPositionX, mSheetPositionY,
         mSheetWidth, mSheetHeight,
@@ -253,26 +251,18 @@ _ = Message arduino
         print(msg);
       break;
       
-      // Si on a envoyé une erreur
+      // Si on a envoyé une erreur ou un warning
       case 'E':
-        numErr = arduino.readChar();
-        // Appelle la fonction erreur()
-        // qui va afficher l'erreur en print et sur l'interface.
-        erreur(numErr);
-        println();
-      break;
-
-      // Si on a envoyé un warning
       case 'W':
-        numErr = arduino.readChar();
+        int numErr = arduino.readChar();
         // Appelle la fonction erreur()
         // qui va afficher l'erreur en print et sur l'interface.
-        erreur(numErr);
+        error(numErr);
         println();
       break;
 
       default:
-        erreur(char(0));
+        error(102); // UNKNOWN_CHAR
         println(mvt + "'.");
       break;
     }
@@ -291,70 +281,62 @@ void majPos()
   posY = sqrt( pow(float(mLeftLength) * mStepLength/1000, 2) - pow(posX, 2) );
 }
 
-void erreur(char code)
+void error(int code)
 {
-        println("\n\n*************************");
-        
-        if (code < 50) {
-          println("Error " + int(code) + " : ");
-        } else {
-          print("Warning " + int(code) + " : ");          
-        }
-        
+  if (code < 100) {
+    println("\n\n*************************");        
+    println("Error " + int(code) + " : ");
+  } else {
+    println("\n\n *** Warning " + int(code) + " : ");
+  }
+        // En java on ne peut pas convertir des struct en int, donc les codes sont des int -_-
         switch (code)
         {
-          case 0 :
-            msgBarre = "Un caractère non-attendu a été reçu : '";
+          case 0 : // CARD_NOT_FOUND
+            msgBarre = "La carte SD est absente ou illisible.";
+          break;
+
+          case 1 : // FILE_NOT_FOUND
+            msgBarre = "Le fichier n'existe pas.";
           break;
           
-          case 1 :
-            msgBarre = "Carte absente ou non reconnue";
+          case 2 : //FILE_NOT_READABLE
+            msgBarre = "Impossible d'ouvrir le fichier. Un nom de moins de 8 caractères peut corriger le problème.";
           break;
 
-          case 2 :
-            msgBarre = "Le fichier ne peut pas être ouvert.";
+          case 3 : // TOO_LONG_SPAN
+            msgBarre = "La distance entre les 2 moteurs est inférieure à la largeur de la feuille et sa position horizontale.";
           break;
 
-          case 11 :
+          case 4 : // INCOMPLETE_SVG
             msgBarre = "Le fichier svg est incomplet.";
           break;
 
-          case 12 :
+          case 5 : // NOT_SVG_FILE
             msgBarre = "Le fichier n'est pas un fichier svg.";
           break;
 
-          case 13 :
+          case 6 : // NOT_SVG_PATH
             msgBarre = "Le fichier svg n'inclut aucune donnée de dessin.";
           break;
 
-          case 30 :
-            msgBarre = "La distance entre les 2 moteurs est inférieure à la largeur de la feuille + position.";
-          break;
-          
-          case 50 :
-            msgBarre = "Le crayon a ateint la limite gauche.";
+          // *** Warnings ***
+
+          case 100 : // WRONG_LINE
+            msgBarre = "Une ligne est mal formée dans le fichier de configuration.";
           break;
 
-          case 51 :
-            msgBarre = "Le crayon a ateint la limite droite.";
+          case 101 : // TOO_LONG_LINE
+            msgBarre = "Une ligne est trop longue dans le fichier de configuration.";
           break;
 
-          case 52 :
-            msgBarre = "Le crayon a ateint la limite haute.";
-          break;
-
-          case 53 :
-            msgBarre = "Le crayon a ateint la limite basse.";
-          break;
-
-          case 60 :
-            msgBarre = "Fonction SVG non reconnue : ";
+          case 102 : // UNKNOWN_CHAR
+            msgBarre = "Un caractère inconnu a été envoyé sur le port série.";
           break;
 
           default :
-            msgBarre = "Non répertorié.";
+            msgBarre = "Code d'erreur non répertorié.";
           break;
-          
         }
         
         // On imprime le descriptif de l'erreur
