@@ -34,6 +34,11 @@ du dépot GitHub. Une aide à l'installation sur Linux est également disponible
 
 Si les moteurs ne sont pas branchés, vous pouvez augmenter la vitesse de traçé pour
 accélérer la simulation.
+
+Si Processing affiche l'erreur ArrayIndexOutOfBoundsException, c'est qu'il n'a pas recu
+les données n'initialisation de la carte. Il y a probablement une
+erreur de communication Arduino <-> PC.
+
 */
 
 import processing.serial.*;
@@ -84,26 +89,23 @@ void setup()
 
   String msg = null;
   
-  // attends la réception
+  // Attends la réception
   while (msg == null)
   {
-    // récupère tout jusqu'au caractère de début d'init.
-    msg = arduino.readStringUntil('\n');
+    // Récupère tout jusqu'au caractère de début d'init.
+    msg = arduino.readStringUntil(0); // BEGIN_INSTRUCTIONS
   }
 
-  println("\n*** données d'initialisation ***");
-  
-  //récupère tout jusqu'au retour à la ligne
+  println("\n*** données d'initialisation ***");  
   msg = null;
-  
   while (msg == null)
   {
-    // récupère tout jusqu'au caractère de fin d'init.
-    msg = arduino.readStringUntil('\n');
+    // Récupère tout jusqu'au caractère de fin d'init.
+    msg = arduino.readStringUntil(1); // END_INSTRUCTIONS
   }
   
-  // retire les espaces, separe et stoque les param. dans un tableau
-  tabInit = float( split( trim(msg) , ',') );
+  // Retire les espaces, separe et stoque les paramètres dans un tableau.
+  tabInit = float( split( trim(msg) , '\n') );
   
   mDistanceBetweenMotors = tabInit[0];
   mSheetPositionX = tabInit[1];
@@ -169,49 +171,34 @@ void draw() // Appelé tout le temps
   
   while (arduino.available() > 0)
   {
-    char mvt = arduino.readChar();
-    
-/************************
-Les caractères envoyés sur le port série
-correspondent aux différentes actions
-à effectuer par le simulateur:
+    int mvt = arduino.readChar();
 
-f = mLeftLength--
-h = mLeftLength++
-c = mRightLength--
-e = mRightLength++
-a = alimenter
-b = désalimenter
-w = ecrire
-x = pas ecrire
-E = erreur (suivi du code d'erreur)
-_ = Message arduino
-************************/
+	// En java on ne peut pas convertir des int en struct (lorsque on lit sur le port série), part ailleurs on ne peut pas mettre de variable dans les cases, donc tous les codes sont écrits en dur -_- ... Du coup c'est vraiment très moche, vivement que je passe en C++ ou en python.
 
     switch(mvt)
     {
-      case 'l':
-        mLeftLength--;
-      break;
-
-      case 'L':
+      case 8 : // PUSH_LEFT
         mLeftLength++;
       break;
 
-      case 'r':
-        mRightLength--;
+      case 9 : // PULL_LEFT
+        mLeftLength--;
       break;
 
-      case 'R':
+      case 10 : // PUSH_RIGHT
         mRightLength++;
       break;
 
-      case 'w':
+      case 11 : // PULL_RIGHT
+        mRightLength--;
+      break;
+
+      case 6 : // WRITE
         msgBarre = "Dessin en cours...";
         stroke(colEcrire);
       break;
 
-      case 'x':
+      case 7 : // MOVE
         msgBarre = "Déplacement en cours...";
         if (mDrawMoves) {
           stroke(colPasEcrire);
@@ -219,18 +206,18 @@ _ = Message arduino
           noStroke();
         }
       break;
-        
-      case 'a':
+      
+      case 4 : // ENABLE_MOTORS
         etat = 0;
         barre();
       break;
       
-      case 'b':
+      case 5 : // DISABLE_MOTORS
         etat = -1;
         barre();
       break;
 
-      case 'n':
+      case 14 : // END
         etat = 1;
         msgBarre = "Le dessin a été reproduit avec succès.";
         println("Heure de fin : " + hour() + "h" + minute() + ":" + second());
@@ -241,19 +228,18 @@ _ = Message arduino
         barre();
       break;
       
-      case '_':
+      case 2 : // BEGIN_MESSAGE
         String msg = null;
   
         while (msg == null)
         {
-          msg = arduino.readStringUntil('\n');
+          msg = arduino.readStringUntil(3); // END_MESSAGE
         }
         print(msg);
       break;
       
-      // Si on a envoyé une erreur ou un warning
-      case 'E':
-      case 'W':
+      case 12 : // ERROR
+      case 13 : // WARNING
         int numErr = arduino.readChar();
         // Appelle la fonction erreur()
         // qui va afficher l'erreur en print et sur l'interface.
@@ -262,7 +248,7 @@ _ = Message arduino
       break;
 
       default:
-        error(102); // UNKNOWN_CHAR
+        error(103); // UNKNOWN_SERIAL_CODE
         println(mvt + "'.");
       break;
     }
@@ -289,7 +275,7 @@ void error(int code)
   } else {
     println("\n\n *** Warning " + int(code) + " : ");
   }
-        // En java on ne peut pas convertir des struct en int, donc les codes sont des int -_-
+
         switch (code)
         {
           case 0 : // CARD_NOT_FOUND
@@ -300,7 +286,7 @@ void error(int code)
             msgBarre = "Le fichier n'existe pas.";
           break;
           
-          case 2 : //FILE_NOT_READABLE
+          case 2 : // FILE_NOT_READABLE
             msgBarre = "Impossible d'ouvrir le fichier. Un nom de moins de 8 caractères peut corriger le problème.";
           break;
 
@@ -316,7 +302,7 @@ void error(int code)
             msgBarre = "Le fichier n'est pas un fichier svg.";
           break;
 
-          case 6 : // NOT_SVG_PATH
+          case 6 : // SVG_PATH_NOT_FOUND
             msgBarre = "Le fichier svg n'inclut aucune donnée de dessin.";
           break;
 
@@ -330,8 +316,24 @@ void error(int code)
             msgBarre = "Une ligne est trop longue dans le fichier de configuration.";
           break;
 
-          case 102 : // UNKNOWN_CHAR
-            msgBarre = "Un caractère inconnu a été envoyé sur le port série.";
+          case 102 : // UNKNOWN_SVG_FUNCTION
+            msgBarre = "Fonction svg non reconnue.";
+          break;
+
+          case 104 : // LEFT_LIMIT
+            msgBarre = "Le crayon a atteint la limite gauche.";
+          break;
+
+          case 105 : // RIGHT_LIMIT
+            msgBarre = "Le crayon a atteint la limite droite.";
+          break;
+
+          case 106 : // UPPER_LIMIT
+            msgBarre = "Le crayon a atteint la limite haute.";
+          break;
+
+          case 107 : // LOWER_LIMIT
+            msgBarre = "Le crayon a atteint la limite basse.";
           break;
 
           default :
