@@ -1,22 +1,8 @@
 /*
-This file is part of Drawall, a project for a robot which draws on walls.
-See http://drawall.cc/ and https://github.com/roipoussiere/Drawall/.
-
-Copyright (c) 2012-2013 Nathanaël Jourdane
-
-Drawall is free software : you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of Drawall, a vertical tracer (aka drawbot) - see http://drawall.fr/
+ * Drawall is free software and licenced under GNU GPL v3 : http://www.gnu.org/licenses/
+ * Copyright (c) 2012-2014 Nathanaël Jourdane
+ */
 
 /*
 Ce programme est un simulateur pour le robot Drawall, permetant de tester le bon
@@ -35,9 +21,9 @@ du dépot GitHub. Une aide à l'installation sur Linux est également disponible
 Si les moteurs ne sont pas branchés, vous pouvez augmenter la vitesse de traçé pour
 accélérer la simulation.
 
-Si Processing affiche l'erreur ArrayIndexOutOfBoundsException, c'est qu'il n'a pas recu
-les données n'initialisation de la carte. Il y a probablement une
-erreur de communication Arduino <-> PC.
+Si Processing affiche l'erreur ArrayIndexOutOfBoundsException, c'est qu'il n'a pas reçu
+les données n'initialisation de la carte. Initialisez la carte Arduino et resayez.
+Si rien ne change, il y a probablement une erreur de communication Arduino <-> PC.
 
 */
 
@@ -74,38 +60,49 @@ int barreH = 15;
 String msgBarre = "";
 long mStart;
 int mBaudRate = 57600;
-  
+
 void setup()
 {
-  // *** acquisition des données d'init ***
-  print("*** ports détectés (le 1er sera le port utilisé) ***\n");
-  println(Serial.list()); // listing des ports dispos
-
-  // init la communication avec l'arduino
-  arduino = new Serial(this, Serial.list()[0], mBaudRate);
-  
-  // tableau récupéré sur la liason série qui contiendra les variables d'initialisation
+  String port = Serial.list()[0];
   float tabInit[] = new float[8];
-
   String msg = null;
   
-  // Attends la réception
+  println("*** Wait for Arduino feedback on " + port + " at " + mBaudRate + " bauds... ***");
+  arduino = new Serial(this, port, mBaudRate);
+
+  // attends le car. de début d'init
   while (msg == null)
   {
-    // Récupère tout jusqu'au caractère de début d'init.
-    msg = arduino.readStringUntil(0); // BEGIN_INSTRUCTIONS
+    msg = arduino.readStringUntil(101);
   }
 
-  println("\n*** données d'initialisation ***");  
+  println("\n*** données d'initialisation ***");
+  
+  //récupère tout jusqu'au car de fin d'init
   msg = null;
   while (msg == null)
   {
-    // Récupère tout jusqu'au caractère de fin d'init.
-    msg = arduino.readStringUntil(1); // END_INSTRUCTIONS
+    // récupère tout jusqu'au caractère de fin d'init.
+    msg = arduino.readStringUntil(102);
   }
+
+
+  // waitUntil("READY");
+  // println("Arduino is ready.");
+  // arduino.write('d');
+  
+  /*arduino.readStringUntil(101); // START_INSTRUCTIONS
+
+  println("\n*** Données d'initialisation ***");
+  
+  while (msg == null)
+  {
+    // Récupère tout jusqu'au caractère de fin d'init.
+    msg = arduino.readStringUntil(102); // END_INSTRUCTIONS
+  }*/
   
   // Retire les espaces, separe et stoque les paramètres dans un tableau.
-  tabInit = float( split( trim(msg) , '\n') );
+  tabInit = float(split(trim(msg), '\n'));
   
   mDistanceBetweenMotors = tabInit[0];
   mSheetPositionX = tabInit[1];
@@ -122,10 +119,18 @@ void setup()
   println("Longueur des câbles : gauche = " + mLeftLength + " , droit = " + mRightLength);
   println("1 pas = " + mStepLength + "µm");
 
+/*
+  for (float param : tabInit) {
+    if (param == null)
+      println("Error: all initialization datas have not been recieved.");
+      while(true) {};
+  }
+*/
   majPos();
+
   println("Position : " + posX + " , " + posY);
   
-  println("\n*** lancement de l'interface ***");
+  println("\n*** Lancement de l'interface ***");
 
   // *** texte ***
   PFont maTypo = loadFont("Garuda-12.vlw"); // choix de la typo
@@ -140,6 +145,18 @@ void setup()
   println("Heure de début : " + hour() + "h" + minute() + ":" + second());
   
   mStart = millis();
+}
+
+void waitUntil(String text)
+{
+  String msg = "";
+  char c;
+
+  while(!msg.contains(text)) {
+    while (arduino.available() <= 0);
+    c = (char)arduino.read(); // Lit l'octet
+    msg += c;
+  }
 }
 
 void initScale()
@@ -171,34 +188,34 @@ void draw() // Appelé tout le temps
   
   while (arduino.available() > 0)
   {
-    int mvt = arduino.readChar();
+    int data = arduino.readChar();
 
 	// En java on ne peut pas convertir des int en struct (lorsque on lit sur le port série), part ailleurs on ne peut pas mettre de variable dans les cases, donc tous les codes sont écrits en dur -_- ... Du coup c'est vraiment très moche, vivement que je passe en C++ ou en python.
 
-    switch(mvt)
+    switch(data)
     {
-      case 8 : // PUSH_LEFT
+      case 0 : // PUSH_LEFT
         mLeftLength++;
       break;
 
-      case 9 : // PULL_LEFT
+      case 1 : // PULL_LEFT
         mLeftLength--;
       break;
 
-      case 10 : // PUSH_RIGHT
+      case 2 : // PUSH_RIGHT
         mRightLength++;
       break;
 
-      case 11 : // PULL_RIGHT
+      case 3 : // PULL_RIGHT
         mRightLength--;
       break;
 
-      case 6 : // WRITE
+      case 4 : // WRITING
         msgBarre = "Dessin en cours...";
         stroke(colEcrire);
       break;
 
-      case 7 : // MOVE
+      case 5 : // MOVING
         msgBarre = "Déplacement en cours...";
         if (mDrawMoves) {
           stroke(colPasEcrire);
@@ -207,17 +224,29 @@ void draw() // Appelé tout le temps
         }
       break;
       
-      case 4 : // ENABLE_MOTORS
+      case 6 : // START_MESSAGE
+        println(arduino.readStringUntil(7)); // until END_MESSAGE
+      break;
+
+      case 8 : // ENABLE_MOTORS
         etat = 0;
         barre();
       break;
       
-      case 5 : // DISABLE_MOTORS
+      case 9 : // DISABLE_MOTORS
         etat = -1;
         barre();
       break;
 
-      case 14 : // END
+      case 10 : // SLEEP
+        println("Pause.");
+      break;
+
+      case 11 : // CHANGE_TOOL
+        println("Changez le stylo.");
+      break;
+
+      case 12 : // END_DRAWING
         etat = 1;
         msgBarre = "Le dessin a été reproduit avec succès.";
         println("Heure de fin : " + hour() + "h" + minute() + ":" + second());
@@ -227,29 +256,18 @@ void draw() // Appelé tout le temps
         println("Durée totale : " + h + "h" + floor(m%60) + "m" + floor(s%3600) + "s.");
         barre();
       break;
-      
-      case 2 : // BEGIN_MESSAGE
-        String msg = null;
-  
-        while (msg == null)
-        {
-          msg = arduino.readStringUntil(3); // END_MESSAGE
-        }
-        print(msg);
-      break;
-      
-      case 12 : // ERROR
-      case 13 : // WARNING
-        int numErr = arduino.readChar();
-        // Appelle la fonction erreur()
-        // qui va afficher l'erreur en print et sur l'interface.
-        error(numErr);
-        println();
+
+      case 13 : //WARNING
+        println("Warning: " + arduino.readStringUntil(14)); // until END_WARNING
+        //error(arduino.readChar(), arduino.readChar(), arduino.readChar());
       break;
 
+      case 15 : // ERROR
+        println("Error: " + arduino.readStringUntil(16)); // until END_ERROR
+      break;
+           
       default:
-        error(103); // UNKNOWN_SERIAL_CODE
-        println(mvt + "'.");
+        error(100, data, 0); // UNKNOWN_SERIAL_CODE
       break;
     }
 
@@ -267,13 +285,13 @@ void majPos()
   posY = sqrt( pow(float(mLeftLength) * mStepLength/1000, 2) - pow(posX, 2) );
 }
 
-void error(int code)
+void error(int code, int p1, int p2)
 {
   if (code < 100) {
-    println("\n\n*************************");        
-    println("Error " + int(code) + " : ");
+    println("\n*************************");        
+    print("Error " + int(code) + " : ");
   } else {
-    println("\n\n *** Warning " + int(code) + " : ");
+    print("\nWarning : ");
   }
 
         switch (code)
@@ -290,50 +308,71 @@ void error(int code)
             msgBarre = "Impossible d'ouvrir le fichier. Un nom de moins de 8 caractères peut corriger le problème.";
           break;
 
-          case 3 : // TOO_LONG_SPAN
+          case 3 : // TOO_SHORT_SPAN
             msgBarre = "La distance entre les 2 moteurs est inférieure à la largeur de la feuille et sa position horizontale.";
           break;
 
-          case 4 : // INCOMPLETE_SVG
-            msgBarre = "Le fichier svg est incomplet.";
-          break;
-
-          case 5 : // NOT_SVG_FILE
-            msgBarre = "Le fichier n'est pas un fichier svg.";
-          break;
-
-          case 6 : // SVG_PATH_NOT_FOUND
-            msgBarre = "Le fichier svg n'inclut aucune donnée de dessin.";
-          break;
-
           // *** Warnings ***
-
-          case 100 : // WRONG_LINE
-            msgBarre = "Une ligne est mal formée dans le fichier de configuration.";
+          
+          case 100 : // UNKNOWN_SERIAL_CODE
+            msgBarre = "Le code ";
+            msgBarre += p1;
+            msgBarre += " ('";
+            msgBarre += (char) p1;
+            msgBarre += "') recu par la liason serie n'est pas reconnu.";
+          break;
+          
+          case 101 : // WRONG_CONFIG_LINE
+            msgBarre = "Erreur dans le fichier de configuration à la ligne ";
+            msgBarre += p1;
           break;
 
-          case 101 : // TOO_LONG_LINE
-            msgBarre = "Une ligne est trop longue dans le fichier de configuration.";
+          case 102 : // TOO_LONG_CONFIG_LINE
+            msgBarre = "Une ligne est trop longue dans le fichier de configuration à la ligne ";
+            msgBarre += p1;
+            msgBarre += ".";
           break;
 
-          case 102 : // UNKNOWN_SVG_FUNCTION
-            msgBarre = "Fonction svg non reconnue.";
+          case 103 : // UNKNOWN_FUNCTION
+            msgBarre = "Fonction '";
+            msgBarre += (char)p1;
+            msgBarre += "' inconnue.";
           break;
 
-          case 104 : // LEFT_LIMIT
+          case 104 : // UNKNOWN_GCODE_FUNCTION
+            msgBarre = "Fonction Gcode G";
+            msgBarre += p1;
+            msgBarre += " non prise en charge.";
+          break;
+
+          case 105 : // UNKNOWN_MCODE_FUNCTION
+            msgBarre = "Fonction Mcode M";
+            msgBarre += p1;
+            msgBarre += " non prise en charge.";
+          break;
+
+          case 106 : // LEFT_LIMIT
             msgBarre = "Le crayon a atteint la limite gauche.";
           break;
 
-          case 105 : // RIGHT_LIMIT
+          case 107 : // RIGHT_LIMIT
             msgBarre = "Le crayon a atteint la limite droite.";
           break;
 
-          case 106 : // UPPER_LIMIT
+          case 108 : // UPPER_LIMIT
             msgBarre = "Le crayon a atteint la limite haute.";
           break;
 
-          case 107 : // LOWER_LIMIT
+          case 109 : // LOWER_LIMIT
             msgBarre = "Le crayon a atteint la limite basse.";
+          break;
+
+          case 110 : // FORWARD_LIMIT
+            msgBarre = "Le crayon est sorti au maximum.";
+          break;
+
+          case 111 : // REARWARD_LIMIT
+            msgBarre = "Le crayon est rentré au maximum.";
           break;
 
           default :
@@ -342,7 +381,7 @@ void error(int code)
         }
         
         // On imprime le descriptif de l'erreur
-        print(msgBarre);
+        println(msgBarre);
         barre();
 }
 
@@ -364,7 +403,7 @@ void barre()
   
   fill(0); // couleur du texte
   String msg = "surface: " + round(mSheetWidth) + "x" + round(mSheetHeight) +
-    " | X: " + round(posX) + " Y:" + round(posY) +
+    " | X: " + round(posX - mSheetPositionX) + " Y:" + round(posY - mSheetPositionY) +
     " | motG: " + mLeftLength + " motD: " + mRightLength +
     " | 1 pas = " + mStepLength + "µm" +
     " | " + msgBarre;
