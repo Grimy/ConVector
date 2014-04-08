@@ -3,11 +3,24 @@ Drawall
 
 Drawall est un projet libre de robot autonomme qui dessine sur les murs.
 
-Ce projet est libre : vous pouvez le redistribuer ou le modifier suivant les termes de la GNU GPL. L'ensemble du projet est publié sous cette licence, ce qui inclut l'intégralité du code-source, les schémas électroniques, les schémas du matériel et toute la documentation. Pour plus de détails, consultez la GNU General Public License, dont vous trouverez une copie sur le fichier COPYING.txt dans le dépot GitHub. La documentation détaillée du code source est disponible sur http://drawall.cc/. 
+Pour obtenir de l'aide à la réalisation d'un protype de traceur, reportez-vous au dossier [documentation](documentation).
 
-Ce robot utilise une carte Arduino et nécessite donc le logiciel Arduino pour fonctionner. Vous trouverez de l'aide pour son installation et utilisation sur le site officiel http://arduino.cc/fr/.
+Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d'instruction](instructions.md).
 
-La partie logicielle est une librairie Arduino. Elle est composée d'un fichier principal drawall.cpp, d'un fichier header drawall.h et d'un fichier de paramètres params.h. Ce dernier permet de spécifier tous les paramètres concernant le robot. Vous devrez l'éditer avant d'utiliser la librairie.
+Description des dossiers et fichiers
+------------------------------------
+
+- [documentation](documentation) : Dossier contenant de la documentation relative à la réalisation d'un prototype du robot.
+- [library](library) : Dossier de la librairie, contenant les fichiers à charger sur la carte Arduino.
+- [simulator](simulator) : Dossier du programme simulateur du robot à lancer via le logiciel Processing.
+- [computer](computer) : Dossier du programme à executer sur le PC, permetant notament de générer, à partir d'une image, le fichier GCode qui sera analysé par le robot.
+- [instructions.md](instructions.md) : Instructions d'installation et d'utilisation du robot, concernant la partie logiciell.
+- [COPYING.txt](COPYING.txt) : Texte de licence GPL v3, sous laquelle est publié ce projet.
+
+Contenu de la librairie
+-----------------------
+
+La librairie est composée d'un fichier principal drawall.cpp, d'un fichier header drawall.h et d'un fichier de paramètres params.h. Ce dernier permet de spécifier tous les paramètres concernant le robot. Vous devrez l'éditer avant d'utiliser la librairie.
 La librairie est utilisée par l'intermédiaire d'un "sketch" Arduino, (fichier .ino), dont vous trouverez des exemples dans le répertoire de la librairie.
 
 La librairie contient tous les calculs nécessaire à l'execution du robot, les sketchs ne servent qu'à le commander, ils sont très courts et simples à utiliser.
@@ -23,7 +36,15 @@ Pour le faire fonctionner il vous faut donc connecter à votre ordinateur au min
 
 Ce projet est libre et évoluera grâce aux retours des utilisateurs. Questions, demande d'informations et suggestions sont donc les bienvenues.
 
+Licence
+-------
+
+Ce projet est libre : vous pouvez le redistribuer ou le modifier suivant les termes de la GNU GPL v3. L'ensemble du projet est publié sous cette licence, ce qui inclut les schémas électroniques, les schémas des pièces matérielles, la documentation utilisateur et développeur, ainsi que l'intégralité du code-source (incluant le programme chargé dans la puce, le simulateur et le logiciel PC). Pour plus de détails, consultez la GNU General Public License, dont vous trouverez une copie sur le fichier COPYING.txt dans le dépot GitHub.
+
 Copyright (c) 2012-2013 Nathanaël Jourdane
+
+Contact
+-------
 
 Adresse de contact : nathanael[AT]jourdane[DOT]net.
 Lien vers dépôt GitHub : https://github.com/roipoussiere/Drawall
