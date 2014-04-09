@@ -7,7 +7,7 @@ Drawall est un traceur vertical. L'objectif principal du projet est de mettre sa
 
 **Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d'instruction](instructions.md).**
 
-La librairie contient tous les calculs nécessaire à l'execution du robot, le sketch ne sert qu'à le commander, il est donc très court et simple à utiliser (reportez-vous au [fichier d'instruction](instructions.md) pour plus de détails).
+La librairie contient tous les calculs nécessaire à l'execution du robot, le sketch ne sert qu'à le commander, il est donc très court et simple à utiliser (reportez-vous au fichier d'instruction pour plus de détails).
 
 Ce projet comporte un simulateur qui affiche les déplacements du robot en temps réel sur une interface graphique. Il permet ainsi de tester la bonne prise en charge d'un dessin avant de lancer sa reproduction et facilite également le développement du projet.
 
