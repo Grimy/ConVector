@@ -5,7 +5,7 @@ Drawall est un traceur vertical. L'objectif principal du projet est de mettre sa
 
 **Pour obtenir de l'aide à la réalisation d'un prototype de traceur, reportez-vous au dossier [documentation][doc]**.
 
-**Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d'instruction][ins].**
+**Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d’instruction][ins].**
 
 La librairie contient tous les calculs nécessaire à l’exécution du robot, le sketch ne sert qu'à le commander, il est donc très court et simple à utiliser (reportez-vous au fichier d'instruction pour plus de détails).
 
@@ -34,7 +34,7 @@ Liens et contact
 ----------------
 
 - [Dépôt GitHub](https://github.com/roipoussiere/Drawall)
-- [Suivi de bugs et d'améliorations](https://github.com/roipoussiere/Drawall/issues)
+- [Suivi de bugs et des améliorations](https://github.com/roipoussiere/Drawall/issues)
 - [Documentation développeurs](https://doc.drawbot.cc)
 - [Une vidéo du premier prototype](http://www.youtube.com/watch?v=ewhZ9wcrR2s)
 - Contacter Nathanaël Jourdane : nathanael[AT]jourdane[DOT]net.
