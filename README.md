@@ -20,7 +20,7 @@ Description des dossiers et fichiers du dépôt
 - [library][lib] : Dossier de la librairie, contenant les fichiers à charger sur la carte Arduino.
 - [simulator][sim] : Dossier du programme simulateur du robot à lancer via le logiciel Processing.
 - [computer][com] : Dossier du programme à exécuter sur le PC, permettant notamment de générer, à partir d'une image, le fichier GCode qui sera analysé par le robot.
-- [instructions.md][ins] : Instructions d'installation et d'utilisation du robot, concernant la partie logiciell.
+- [instructions.md][ins] : Instructions d'installation et d'utilisation du robot, concernant la partie logicielle.
 - [COPYING.txt][cop] : Texte de licence GPL v3, sous laquelle est publié ce projet.
 
 Licence
@@ -40,7 +40,7 @@ Liens et contact
 - Contacter Nathanaël Jourdane : nathanael[AT]jourdane[DOT]net.
 
 [doc]: https://github.com/roipoussiere/Drawall/tree/master/documentation
-[ins]: https://github.com/roipoussiere/Drawall/blob/master/instructions
+[ins]: https://github.com/roipoussiere/Drawall/blob/master/instructions.md
 [sim]: https://github.com/roipoussiere/Drawall/tree/master/simulator
 [lib]: https://github.com/roipoussiere/Drawall/tree/master/library
 [com]: https://github.com/roipoussiere/Drawall/tree/master/computer
