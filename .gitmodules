@@ -1,0 +1,3 @@
+[submodule "computer/pycam"]
+	path = computer/pycam
+	url = https://github.com/pib/pycam.git
