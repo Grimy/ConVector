@@ -5,7 +5,11 @@ Drawall est un traceur vertical. L'objectif principal du projet est de mettre sa
 
 **Pour obtenir de l'aide à la réalisation d'un prototype de traceur, reportez-vous au dossier [documentation][doc]**.
 
+<<<<<<< HEAD
+**Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d’instruction][ins].**
+=======
 **Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d'instuctions][ins]**.
+>>>>>>> 7f52df97a10e9f18ecf4b211ced03fbb6803c370
 
 La librairie contient tous les calculs nécessaire à l’exécution du robot, le sketch ne sert qu'à le commander, il est donc très court et simple à utiliser (reportez-vous au fichier d'instruction pour plus de détails).
 
@@ -20,7 +24,11 @@ Description des dossiers et fichiers du dépôt
 - [library][lib] : Dossier de la librairie, contenant les fichiers à charger sur la carte Arduino.
 - [simulator][sim] : Dossier du programme simulateur du robot à lancer via le logiciel Processing.
 - [computer][com] : Dossier du programme à exécuter sur le PC, permettant notamment de générer, à partir d'une image, le fichier GCode qui sera analysé par le robot.
+<<<<<<< HEAD
+- [instructions.md][ins] : Instructions d'installation et d'utilisation du robot, concernant la partie logiciell.
+=======
 - [instructions.md][ins] : Instructions d'installation et d'utilisation du robot, concernant la partie logicielle.
+>>>>>>> 7f52df97a10e9f18ecf4b211ced03fbb6803c370
 - [COPYING.txt][cop] : Texte de licence GPL v3, sous laquelle est publié ce projet.
 
 Licence
@@ -37,10 +45,17 @@ Liens et contact
 - [Suivi de bugs et des améliorations](https://github.com/roipoussiere/Drawall/issues)
 - [Documentation développeurs](https://doc.drawbot.cc)
 - [Une vidéo du premier prototype](http://www.youtube.com/watch?v=ewhZ9wcrR2s)
+<<<<<<< HEAD
+- Contacter Nathanaël Jourdane : nathanael[AT]jourdane[DOT]net.
+
+[doc]: https://github.com/roipoussiere/Drawall/tree/master/documentation
+[ins]: https://github.com/roipoussiere/Drawall/blob/master/instructions.md
+=======
 - Contacter Nathanaël Jourdane : contact@drawbot.cc.
 
 [doc]: https://github.com/roipoussiere/Drawall/tree/master/documentation
 [ins]: http://instructions.drawbot.cc/
+>>>>>>> 7f52df97a10e9f18ecf4b211ced03fbb6803c370
 [sim]: https://github.com/roipoussiere/Drawall/tree/master/simulator
 [lib]: https://github.com/roipoussiere/Drawall/tree/master/library
 [com]: https://github.com/roipoussiere/Drawall/tree/master/computer
