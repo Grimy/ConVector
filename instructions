@@ -1,0 +1,161 @@
+Instructions d'installation
+===========================
+
+Le projet Drawall se présente sous la forme d'une librairie Arduino. Pour utiliser ce robot suffit de charger un sketch Arduino (fichier.ino) sur le traceur.
+
+Contenu de la librairie *([Drawall/library](library))*
+------------------------------------------
+
+- *[drawall.cpp](library/drawall.cpp)* et *[drawall.h](library/drawall.h)* : fichiers sources de la libraire, qui seront importés par le sketch Arduino, à modifier uniquement si vous souhaitez participer au développement du projet ;
+- *[config.h](library/config.h)* :
+fichier de configuration, sur lequel est indiqué l'affectation des pins de la carte Arduino et la vitesse de la liaison série ;
+- *[keywords.txt](library/keywords.txt)* : fichier contenant les mots-clés de la librairie, interprété par le logiciel Arduino ;
+- *[testMotors/testMotors.ino](library/testMotors/testMotors.ino)* et *[testSD/testSD.ino](library/testSD/testSD.ino)* :
+sketches Arduino permettant de vérifier le bon fonctionnement des différents composants de votre robot ;
+- *[drawall/drawall.ino](library/drawall/drawall.ino)* :
+sketch Arduino principal, à ouvrir avec le logiciel Arduino pour compiler et transférer le programme sur le traceur ;
+- *[SD_files](library/SD_files)* :
+dossier contenant les fichiers à placer sur la carte SD :
+    - *[drawall.dcf](library/SD_files/drawall.dcf)* :
+fichier de configuration du dessin à éditer régulièrement en fonction de vos besoin ;
+	- *[drawing.ngc](library/SD_files/drawall.ngc)* :
+fichier GCode de test, permettant de tester le bon fonctionnement du traceur.
+	> Note : Dans une prochaine version du programme, il sera possible d'envoyer ces fichiers sur la carte SD directement à travers la liaison série.
+
+Utilisation de la librairie
+---------------------------
+
+1. Récupérez le code source de la librairie sur le dépôt GitHub, en téléchargeant puis décompressant le fichier zip, ou via la commande `git clone https://github.com/roipoussiere/Drawall_svg.git`. Ensuite renommez le dossier téléchargé en *Drawall*, puis déposez-le dans le répertoire de votre choix.
+
+2. Si vous avez réalisé vous-même le robot, éditer le fichier *Drawall/library/config.h* afin d'affecter les bons pins sur la carte.
+
+3. Installez le programme [Arduino](http://arduino.cc/en/Main/Software).
+
+4. Dans votre dossier *sketchbook/libraries* (qui se trouve dans *~/* pour les systèmes Unix et dans *Mes documents* pour Windows), créez un lien vers le dossier *Drawall/library*, puis renommez ce lien en *Drawall*.
+
+_**Note aux utilisateurs de la version d'Arduino antérieure à la 1.0 :** le dossier Libraries se trouve dans le dossier d'Arduino et non pas dans le dossier sketchbook._
+
+5. Facultatif : Afin d'avoir accès directement au programme depuis le logicel Arduino, dans votre dossier *sketchbook*, vous pouvez créer un lien vers le dossier *Drawall/library/drawall* du dossier téléchargé, puis renommez ce lien en *Drawall*.
+
+5. Vous pouvez testez le bon fonctionnement des différentes parties de votre robot grâce aux programmes de tests fournis avec le projet, dans le dossier *Drawall/library* :
+
+- testMotors : Permet de vérifier le bon fonctionnement des moteurs.
+- testSD : Permet de vérifier le bon fonctionnement de la carte SD.
+
+Pour cela, ouvrez les fichiers .ino présents dans ces dossiers, ou à partir du logiciel Arduino si vous avez suivi le point **5.** : *Fichier / Carnet de croquis / Drawall.
+
+6. Faites une copie de sauvegarde du ficher
+- drawall : Il s'agit du programme qui lance le robot. Dans ce dossier
+
+7. Ouvrez ensuite le fichier drawall.ino en ouvrant le fichier *Drawall/src/drawall/drawall.ino*, ou à partir du logiciel Arduino si vous avez suivi le point **5.** : *Fichier / Carnet de croquis / drawall*.
+
+8. Enfin, chargez le programme sur le robot : connectez la carte Arduino du robot à votre ordinateur via un câble USB, puis cliquez sur le bouton *Téléverser* de le logiciel Arduino.
+
+Modification du sketch Arduino
+------------------------------
+
+Pour personnaliser le programme en fonction de vos besoins, vous pouvez créer un nouveau sketch en vous basant sur le fichier *library/drawall/drawall.ino* :
+
+```cpp
+// Include drawall library and his dependencies.
+#include <SD.h>
+#include <Servo.h>
+#include <drawall.h>
+
+// Initialise the library.
+Drawall d;
+
+void setup() {
+  d.begin("drawall.dcf"); // Starts the library and loads the configuration file.
+}
+
+void loop() {
+  d.draw("gnu.ngc"); // Draws the GCode file.
+  d.end(); // Go to the final position (on the floor) and stop the robot.
+}
+```
+
+Utilisation du simulateur
+-------------------------
+
+Pour faire fonctionner le simulateur il vous faut au minimum une carte Arduino munie d'un lecteur SD et y insérer une carte contenant un fichier GCode et un fichier de configuration. Il n'est pas nécessaire de connecter quoi que ce soit d'autre sur la carte.
+
+1. Téléchargez le programme *[Processing](https://www.processing.org/download/)*.
+
+2. Comme pour le programme Arduino, vous pouvez créer un lien vers le programme du simulateur sur le *sketchbook*, pointant vers le dossier *Drawall/drawallSimulator*, afin d'y avoir accès plus rapidement.
+
+3. Ouvrez ensuite le programme Processing, puis ouvrez le fichier du simulateur (via *File / Sketchbook / Drawall Simulator* si vous avez suivi le dernier point).
+
+4. Connectez la carte Arduino à votre ordinateur, puis initialisez le robot via le bouton poussoir présent sur la carte Arduino, ou en téléversant le programme à partir de le logiciel Arduino. Lancez ensuite le programme Processing avant que le robot ne démarre.
+
+
+_**Remarque 1 :** Vous devez fermer la fenêtre du simulateur avant de compiler le programme à nouveau, afin de libérer la liason série._
+
+_**Remarque 2 :** Sur certains ordinateurs il semble nécessaire de désactiver la mise en veille. En effet la reprise de mise en veille envoie un signal sur le port série, ce qui a pour effet de réinitialiser le robot (remarqué sur linux Mint 14)._
+
+En cas de dysfonctionnement
+---------------------------
+
+Si vous rencontrez des problèmes pour utiliser le simulateur, essayez successivement ces solutions :
+
+- Ressayez plusieurs fois de lancer le simulateur. En effet sur certaines cartes, il arrive parfois que les données d'initialisation ne se transfèrent pas très bien.
+- Vérifier que l’interrupteur du robot n'est pas en position reset, puis ressayez.
+- Appuyer sur le bouton Reset, puis ressayez.
+- Débrancher/rebrancher le câble USB, puis ressayez.
+- Fermer Processing, débrancher/rebrancher le câble USB, relancer Processing.
+- Vérifiez que le port série est bien identique sur la simulateur et la carte Arduino, vérifiez également que la vitesse de connexion est bien la même sur le simulateur (fichier *drawallSimulator.pde*) et le programme chargé sur la puce (fichier *config.h*). Elle est de 57600 bauds par défaut.
+
+Si malgré ces instruction vous avez encore des difficultés à exécuter le programme du robot ou le simulateur, vous pouvez contactez le développeur du projet : nathanael[AT]jourdane[DOT]net.
+
+Note aux développeurs
+---------------------
+
+Si vous avez des compétences en C++ ou Python, ou d'autres compétences que vous jugez utiles au projet, vous pouvez participer à son développement.
+
+Le code du projet est décomposé plusieurs parties  :
+
+- Coté Arduino : langage C++.
+**La documentation du code est [disponible ici](https://doc.drawbot.cc)**.
+
+- Coté ordinateur : langage Python, avec [TKinter](https://wiki.python.org/moin/TkInter) pour l'interface graphique.
+La documentation du code est [à venir](http://fr.wikipedia.org/wiki/Futur).
+
+- Coté ordinateur (simulateur) : Java (avec Processing).
+Pas de documentation.
+
+- Schémas électroniques : utilisation de [Fritzing](http://fritzing.org/home/).
+
+### Coding-style
+
+- C++ :
+
+Style d'indentation basé sur [K&R](https://fr.wikipedia.org/wiki/Style_d%27indentation#Style_K.26R). Mise en forme automatique avec [Indent](http://www.gnu.org/software/indent/) :
+
+	~/Drawall$ sudo apt-get install indent
+	~/Drawall$ indent -kr -bad -bbb -sc -ncdw -ss -bfda -blf -ts4 -ut -sob -nlp -ci12 -fc1 library/*.cpp library/*.h
+
+- Python :
+
+Style d'indentation basé sur le [PEP-8](http://legacy.python.org/dev/peps/pep-0008/). Vérification avec [Pylint](http://www.pylint.org/) :
+
+	~/Drawall$ sudo apt-get install pylint
+	~/Drawall$ pylint computer
+
+### Documentation
+
+Documentation générée avec [Doxygen](http://www.stack.nl/~dimitri/doxygen/) v. 1.8.3 ou sup. et Graphviz, pour le code C++ et Python. Le fichier de configuration Doxygen se trouve dans *documentation/doxygen/doxyfile*, la documentation sera générée dans le dossier *Drawall/documentation/doxygen/html*.
+
+	~/Drawall$ sudo apt-get install doxygen graphviz
+	~/Drawall$ doxygen -v # check if the version is 1.8.3 or latter
+	~/Drawall$ cd documentation/doxygen/
+	~/Drawall/documentation/doxygen$ doxygen doxyfile
+
+Si Doxygen v. 1.8.3 ou sup. n'est pas dans les dépots de votre distribution :
+
+	~/Drawall$ sudo apt-get install g++ flex bison
+	~/Drawall$ git clone https://github.com/doxygen/doxygen.git
+	~/Drawall$ cd doxygen
+	~/Drawall$ ./configure
+	~/Drawall$ make
+	~/Drawall$ make install
+	~/Drawall$ doxygen -v # Is it ok ?
