@@ -37,7 +37,7 @@ Liens et contact
 - [Suivi de bugs et des améliorations](https://github.com/roipoussiere/Drawall/issues)
 - [Documentation développeurs](https://doc.drawbot.cc)
 - [Une vidéo du premier prototype](http://www.youtube.com/watch?v=ewhZ9wcrR2s)
-- Contacter Nathanaël Jourdane : *contact@drawbot.cc* .
+- Contacter Nathanaël Jourdane : contact@drawbot.cc.
 
 [doc]: https://github.com/roipoussiere/Drawall/tree/master/documentation
 [ins]: http://instructions.drawbot.cc/
