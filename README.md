@@ -64,4 +64,3 @@ Copyright (c) 2012-2014 Nathanaël Jourdane
 [sd]: https://github.com/roipoussiere/Drawall/blob/master/library/SD_files
 [dcf]: library/SD_files/drawall.dcf
 [ngc]: library/SD_files/drawall.ngc
-[dat]: 
