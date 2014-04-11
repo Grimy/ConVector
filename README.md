@@ -1,20 +1,19 @@
 DraWall
 =======
 
-Drawall est un traceur vertical. Il permet de reproduire une image sur un mur ou une autre surface verticale de nimporte quelle largeur (testé de 4cm à 5m).
+DraWall est un traceur vertical. Il permet de reproduire une image sur un mur ou une autre surface verticale de n'importe quelle largeur (testé de 4cm à 5m).
 
 Les principaux objectifs de ce projet sont :
-- de faciliter sont utilisation, au moyen d'une mise en œuvre simple et rapide et via un programme facilitant les différentes étapes ;
-- de faciliter sa réalisation, grâce à une documentation détaillée et partiellement en français (pour ce fichier et le fichier d'instructions) ;
-- permettre un usage modulaire du robot, en dossociant chaque étape du processus de création, afin de laisser à l'utilisateur la libeté d'intrevenir sur chacune d'entre elles ;
-- de faire évoluer constament ce projet en renforcant l'existant et en ajoutant régulièrement de nouvelles fonctionnalités, en se basant sur les retours des utilisateurs ;
-- par ces différents critères, de développer autour de ce projet une communauté composée d'artistes, de *Makers* et toute autre personne trouvant ce projet intéressant.
+- de simplifier l'utilisation du robot, au moyen d'une mise en œuvre simple et rapide et via un programme facilitant la création du dessin : aucune connaissance en programmation n'est nécessaire ;
+- de faciliter sa réalisation, grâce à une documentation détaillée en français ;
+- de s'appuyer sur une conception modulaire, en dissociant chaque étape du processus de réalisation d'un dessin, afin de laisser à l'utilisateur la liberté d'intervenir sur chacune d'entre elles s'il le souhaite ;
+- de faire évoluer constamment ce projet en ajoutant régulièrement de nouvelles fonctionnalités et en améliorant celles déjà implémentées, en se basant sur les retours des utilisateurs ;
+- de publier tous les éléments de ce projet sous licence libre afin que chacun puisse comprendre comment il fonctionne, le copier, le redistribuer et le modifier ;
+- par ces différents critères, de développer autour de ce projet une communauté composée d'artistes, de *makers* et toute les autres personnes trouvant ce projet intéressant.
 
 **Pour obtenir de l'aide à la réalisation d'un prototype de traceur, reportez-vous au dossier [documentation][doc]**.
 
 **Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d’instruction][ins].**
-
-La librairie contient tous les calculs nécessaire à l’exécution du robot, le sketch ne sert qu'à le commander, il est donc très court et simple à utiliser (reportez-vous au fichier d'instruction pour plus de détails).
 
 Ce projet comporte un simulateur qui affiche les déplacements du robot en temps réel sur une interface graphique. Il permet ainsi de tester la bonne prise en charge d'un dessin avant de lancer sa reproduction et facilite également le développement du projet.
 
@@ -23,7 +22,7 @@ Ce projet est libre et évoluera grâce aux retours des utilisateurs. Questions,
 Principe de fonctionnement
 --------------------------
 
-Le projet est composé d'un programme qui convertit une image vectorielle ou bitmap en fichier G-code exploitable par le robot. G-code est un format de fichier utilisé dans l'industrie pour commander les machines-outil à commande numérique (plus d'information [ici](http://fr.wikipedia.org/wiki/G-code)). Une fois ce fichier généré, il est nécessaire de le copier sur une carte SD, puis d'insérer celle-ci dans le lecteur de carte du robot. Ensuite, le robot reproduit l'image en interprétant les instructions du fichier G-code.
+Le projet est composé d'un programme qui convertit une image vectorielle ou bitmap en fichier G-code exploitable par le robot. G-code est un format de fichier utilisé dans l'industrie pour commander les machines-outil à commande numérique (plus d'information [ici](http://fr.wikipedia.org/wiki/G-code)). Une fois ce fichier généré, il est nécessaire de le copier sur une carte SD, puis d'insérer celle-ci dans le lecteur de carte du robot. Ensuite, le robot reproduit l'image en interprétant les instructions du fichier G-code. Le fait de passer par un fichier intermédiaire permet une très grande liberté quand à la manière dont est dessinée l'image.
 
 Description des dossiers et fichiers du dépôt
 ---------------------------------------------
