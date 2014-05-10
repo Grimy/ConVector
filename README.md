@@ -19,11 +19,13 @@ Ce projet comporte un simulateur qui affiche les déplacements du robot en temps
 
 Ce projet est libre et évoluera grâce aux retours des utilisateurs. Questions, demande d'informations et suggestions sont donc les bienvenues.
 
-#### Principe de fonctionnement
+Principe de fonctionnement
+--------------------------
 
 Le projet est composé d'un programme qui convertit une image vectorielle ou bitmap en fichier G-code exploitable par le robot. G-code est un format de fichier utilisé dans l'industrie pour commander les machines-outil à commande numérique (plus d'information [ici](http://fr.wikipedia.org/wiki/G-code)). Une fois ce fichier généré, il est nécessaire de le copier sur une carte SD, puis d'insérer celle-ci dans le lecteur de carte du robot. Ensuite, le robot reproduit l'image en interprétant les instructions du fichier G-code. Le fait de passer par un fichier intermédiaire permet une très grande liberté quand à la manière dont est dessinée l'image.
 
-#### Description des dossiers et fichiers du dépôt
+Description des dossiers et fichiers du dépôt
+---------------------------------------------
 
 - [documentation][doc] : Dossier contenant de la documentation relative à la réalisation d'un prototype du robot.
 - [library][lib] : Dossier de la librairie, contenant les fichiers à charger sur la carte Arduino.
@@ -35,27 +37,24 @@ Le projet est composé d'un programme qui convertit une image vectorielle ou bit
 	- [drawall.dcf][dcf] : fichier de configuration du dessin à éditer régulièrement en fonction de vos besoin ;
 	- [drawing.ngc][ngc] : fichier G-code de test, permettant de tester le bon fonctionnement du traceur.
 	_**Note :** Dans une prochaine version du programme, il sera possible d'envoyer ces fichiers sur la carte SD directement à travers la liaison série._
-	
-#### Conditions d'utilisations
+
+Contact et conditions d'utilisations
+------------------------------------
+
+Contact : contact@drawbot.cc.
 
 Ce projet est libre : vous pouvez le redistribuer ou le modifier suivant les termes de la GNU GPLv3. L'ensemble du projet est publié sous cette licence, ce qui inclut les schémas électroniques, les schémas des pièces matérielles, la documentation utilisateur et développeur, ainsi que l'intégralité du code-source (incluant le programme chargé dans la puce, le simulateur et le logiciel PC). Pour plus de détails, consultez la [*GNU General Public License*][cop].
 
 Copyright (c) 2012-2014 Nathanaël Jourdane
 
-#### Liens et contact
-
-- [Dépôt GitHub](https://github.com/roipoussiere/Drawall)
-- [Suivi de bugs et des améliorations](https://github.com/roipoussiere/Drawall/issues)
-- [Documentation développeurs](https://doc.drawbot.cc)
-- [Une vidéo du premier prototype](http://www.youtube.com/watch?v=ewhZ9wcrR2s)
-- Contacter le développeur : contact@drawbot.cc.
-
-#### Remerciements
+Remerciements
+-------------
 
 - Le *[FabLab de Toulouse](http://www.artilect.fr/)*, pour m'avoir permis de partager mes expériences ;
 - L'équipe du projet *[Datacentre d'art](http://www.ordigami.net/circuit-beant.php)*, pour ma première collaboration avec une équipe tierce et pour avoir intégré mon projet à un véritable projet artistique.
 
 [doc]: https://github.com/roipoussiere/Drawall/tree/master/documentation
+[dev]: https://github.com/roipoussiere/DraWall/blob/master/instructions.md#note-aux-d%C3%A9veloppeurs
 [ins]: http://instructions.drawbot.cc/
 [sim]: https://github.com/roipoussiere/Drawall/tree/master/simulator
 [lib]: https://github.com/roipoussiere/Drawall/tree/master/library
