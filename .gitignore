@@ -1,4 +1,9 @@
+# Fichiers générés
+*.pyc
+*.class
+documentation/doxygen/html
+
+# Divers
 *~
 _*
-*.pyc
-documentation/doxygen/html
+
