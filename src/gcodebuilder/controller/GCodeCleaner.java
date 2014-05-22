@@ -1,5 +1,5 @@
 /*
- * This file is part of Drawall, a vertical tracer (aka drawbot) - see http://drawall.fr/
+ * This file is part of Drawall, a vertical tracer (aka drawbot) - see http://drawall.cc/
  * Drawall is free software and licenced under GNU GPL v3 : http://www.gnu.org/licenses/
  * Copyright (c) 2012-2014 Nathanaël Jourdane
  */
@@ -12,18 +12,18 @@ public class GCodeCleaner {
 	private static double pos_x, pos_y, pos_z, width, height;
 
 	public void clean(BufferedReader in, PrintStream out) {
-            clean(in, out, "G00|G01");
-        }
+		clean(in, out, "G00|G01");
+	}
 
-        public void clean(BufferedReader in, PrintStream out, String mask) {
-            try {
-                    while (in.ready()) {
-                            // TODO: remove empty lines
-                            out.println(clean_line(in.readLine()));
-                    }
-            } catch (IOException e) {
-                    // TODO: handle this
-            }
+	public void clean(BufferedReader in, PrintStream out, String mask) {
+		try {
+			while (in.ready()) {
+				// TODO: remove empty lines
+				out.println(clean_line(in.readLine()));
+			}
+		} catch (IOException e) {
+			// TODO: handle this
+		}
 	}
 
 	private static String clean_line(String line) {
@@ -55,9 +55,9 @@ public class GCodeCleaner {
 		}
 		if (pos) {
 			cleaned = cleaned.replaceAll("([GM][0-9][0-9]).*", "\\1"
-				+ " X" + Double.toString(pos_x)
-				+ " Y" + Double.toString(pos_y)
-				+ " Z" + Double.toString(pos_z));
+					+ " X" + Double.toString(pos_x)
+					+ " Y" + Double.toString(pos_y)
+					+ " Z" + Double.toString(pos_z));
 		}
 
 		cleaned = cleaned.replaceAll("^G0[01]$", "");

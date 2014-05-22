@@ -3,10 +3,9 @@
  * Drawall is free software and licenced under GNU GPL v3 : http://www.gnu.org/licenses/
  * Copyright (c) 2012-2014 Nathanaël Jourdane
  */
-package vue;
+package controller;
 
-public class Gui {
-	public static void main(String [] args) {
-		
-	}
+
+public class ImgToGCode {
+	
 }
