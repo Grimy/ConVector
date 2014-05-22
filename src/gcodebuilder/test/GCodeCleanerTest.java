@@ -5,19 +5,16 @@
 package test;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
-import drawall.GCodeCleaner;
-/**
- *
- * @author natha
- */
+import controller.GCodeCleaner;
+
 public class GCodeCleanerTest {
     
     @Test
     public void testWrongFunction()
     {
         String input = "G20 X10 Y20";
-        // TODO call GCodeCleaner()
         String expected = "";
+        //GCodeCleaner.clean(input, expected);
 
         assertEquals(input, expected);
     }

@@ -1,19 +1,23 @@
-package drawall;
+package controller;
 
 import java.io.*;
 
 public class GCodeCleaner {
 	private static double pos_x, pos_y, pos_z, width, height;
 
-	GCodeCleaner(BufferedReader in, PrintStream out, String mask) {
-		try {
-			while (in.ready()) {
-				// TODO: remove empty lines
-				out.println(clean_line(in.readLine()));
-			}
-		} catch (IOException e) {
-			// TODO: handle this
-		}
+	public void clean(BufferedReader in, PrintStream out) {
+            clean(in, out, "G00|G01");
+        }
+
+        public void clean(BufferedReader in, PrintStream out, String mask) {
+            try {
+                    while (in.ready()) {
+                            // TODO: remove empty lines
+                            out.println(clean_line(in.readLine()));
+                    }
+            } catch (IOException e) {
+                    // TODO: handle this
+            }
 	}
 
 	private static String clean_line(String line) {
