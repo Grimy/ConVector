@@ -4,15 +4,11 @@
  * Copyright (c) 2012-2014 Nathanaël Jourdane
  */
 
-package drawall;
+package controller;
 
 import java.io.*;
 
-/**
- *
- * @author natha
- */
-public class DraWall {
+public class Drawall {
 
 	public static void main(String... args) {
 		// TODO: parse args instead of hard-coding this
@@ -28,6 +24,6 @@ public class DraWall {
 			return;
 		}
 
-		new GCodeCleaner(in, out, "G00|G01");
+		//GCodeCleaner.clean(in, out, "G00|G01");
 	}
 }
