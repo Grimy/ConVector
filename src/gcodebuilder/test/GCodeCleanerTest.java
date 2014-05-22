@@ -1,17 +1,13 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package test;
+
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import controller.GCodeCleaner;
 
 public class GCodeCleanerTest {
-    
+
     @Test
-    public void testWrongFunction()
-    {
+    public void testWrongFunction() {
         String input = "G20 X10 Y20";
         String expected = "";
         //GCodeCleaner.clean(input, expected);
@@ -20,13 +16,11 @@ public class GCodeCleanerTest {
     }
 
     @Test
-    public void testMathExpression()
-    {
+    public void testMathExpression() {
         String input = "G01 X[(10+20)*3/9] Y[5**2]";
         // TODO call GCodeCleaner()
         String expected = "G01 X10 Y25";
 
         assertEquals(input, expected);
     }
-
 }
