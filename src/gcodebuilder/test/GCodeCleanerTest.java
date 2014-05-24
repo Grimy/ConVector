@@ -17,7 +17,8 @@ public class GCodeCleanerTest {
 		String input = "G20 X10 Y20";
 		String expected = "";
 		// FIXME
-		// GCodeCleaner.clean(new StringReader(input), new PrintStream(new ByteArrayOutputStream()));
+		GCodeCleaner cleaner = new GCodeCleaner();
+		cleaner.clean(new BufferedReader(new StringReader(input)), new PrintStream(new ByteArrayOutputStream()));
 
 		assertEquals(input, expected);
 	}
