@@ -16,8 +16,8 @@ public class GCodeCleanerTest {
 	public void testWrongFunction() {
 		String input = "G20 X10 Y20";
 		String expected = "";
-		StringWriter sw = new StringWriter();
-		//GCodeCleaner.clean(new StringReader(input), sw);
+		// FIXME
+		// GCodeCleaner.clean(new StringReader(input), new PrintStream(new ByteArrayOutputStream()));
 
 		assertEquals(input, expected);
 	}
