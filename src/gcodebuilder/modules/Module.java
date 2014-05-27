@@ -10,26 +10,22 @@
  * Copyright (c) 2012-2014 Nathanaël Jourdane.
  */
 
-package controller;
+package modules;
 
-import java.io.*;
+public abstract class Module {
+	private String input_file_name;
+	private String output_file_name;
+	private String files_types;
+	private String params;
 
-public class Drawall {
+	Module(String input_file_name, String output_file_name, String files_types) {
+		this(input_file_name, output_file_name, files_types, "");
+	}
 
-	public static void main(String... args) {
-		// TODO: parse args instead of hard-coding this
-		BufferedReader in;
-		PrintStream out;
-		try {
-			in = new BufferedReader(new FileReader("_.gcode"));
-			out = new PrintStream(new File("_.glc"));
-		} catch (Exception e) {
-			// TODO: handle system exceptions properly
-			System.err.println("Can't find file _.gcode");
-			System.exit(1);
-			return;
-		}
-
-		// GCodeCleaner.clean(in, out, "G00|G01");
+	Module(String input_file_name, String output_file_name, String files_types, String params) {
+		this.input_file_name = input_file_name;
+		this.output_file_name = output_file_name;
+		this.files_types = files_types;
+		this.params = output_file_name;
 	}
 }
