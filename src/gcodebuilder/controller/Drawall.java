@@ -24,6 +24,6 @@ public class Drawall {
 			return;
 		}
 
-		//GCodeCleaner.clean(in, out, "G00|G01");
+		// GCodeCleaner.clean(in, out, "G00|G01");
 	}
 }

@@ -54,10 +54,9 @@ public class GCodeCleaner {
 			pos = true;
 		}
 		if (pos) {
-			cleaned = cleaned.replaceAll("([GM][0-9][0-9]).*", "\\1"
-					+ " X" + Double.toString(pos_x)
-					+ " Y" + Double.toString(pos_y)
-					+ " Z" + Double.toString(pos_z));
+			cleaned = cleaned.replaceAll("([GM][0-9][0-9]).*",
+					"\\1" + " X" + Double.toString(pos_x) + " Y" + Double.toString(pos_y) + " Z"
+							+ Double.toString(pos_z));
 		}
 
 		cleaned = cleaned.replaceAll("^G0[01]$", "");
