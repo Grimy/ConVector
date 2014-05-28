@@ -17,3 +17,13 @@ public class DrawallGui {
 		
 	}
 }
+
+/* modules parameters:
+ * name, type, min, max, values
+ *
+ * int -> spinner
+ * int with min and max -> cursor
+ * int with values -> listbox
+ * String -> textbox
+ * boolean -> checkbox
+ */ 

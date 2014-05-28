@@ -25,14 +25,14 @@ public class GCodeCleaner {
 		try {
 			while (in.ready()) {
 				// TODO: remove empty lines
-				out.println(clean_line(in.readLine()));
+				out.println(cleanLine(in.readLine()));
 			}
 		} catch (IOException e) {
 			// TODO: handle this
 		}
 	}
 
-	private static String clean_line(String line) {
+	private static String cleanLine(String line) {
 		String cleaned = line;
 
 		// Remove whitespace

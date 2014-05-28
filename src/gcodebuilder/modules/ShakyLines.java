@@ -13,12 +13,24 @@
 package modules;
 
 /**
- * The *Lines* module draw a bitmap image with lines.
+ * The *Lines* module draws a bitmap image with lines.
  *
  */
-public class Lines extends Module {
-	Lines(String input_file_name, String output_file_name, String filestypes) {
-		super(input_file_name, output_file_name, filestypes);
+public class ShakyLines implements Module {
+
+	@Override
+	public void process(String inputFilePath, String outputFilePath) {
+		// TODO Implement the method using the python code below.
+	}
+
+	@Override
+	public String getParamTypes() {
+		return "[{'name':'nbLines','type':'int','min':10}]";
+	}
+
+	@Override
+	public String getSupportedFormats() {
+		return "png,bmp";
 	}
 }
 

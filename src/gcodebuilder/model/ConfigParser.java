@@ -19,15 +19,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 
-public class ConfigFile {
+public class ConfigParser {
 
+	public static String dependencies_file_name = "drawall_dependencies.properties";
 	public void writeProperties() {
 		Properties prop = new Properties();
 		OutputStream output = null;
 
 		try {
 
-			output = new FileOutputStream("config.properties");
+			output = new FileOutputStream(dependencies_file_name);
 
 			// set the properties value
 			prop.setProperty("database", "localhost");
@@ -58,7 +59,7 @@ public class ConfigFile {
 
 		try {
 
-			input = new FileInputStream("config.properties");
+			input = new FileInputStream(dependencies_file_name);
 
 			// load a properties file
 			prop.load(input);

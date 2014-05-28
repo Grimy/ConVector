@@ -15,41 +15,60 @@ package controller;
 public class Dependencies {
 	private static String OS = System.getProperty("os.name").toLowerCase();
 
-	public static String get_pstoedit_path() {
-		String pstoedit_path;
+	public static String getPstoeditPath() {
+		String pstoeditPath;
 		switch (OS) {
 		case "win":
-			pstoedit_path = "C://Program Files/pstoedit/pstoedit.exe";
+			pstoeditPath = "C://Program Files/pstoedit/pstoedit.exe";
 			break;
 		case "mac":
-			pstoedit_path = "pstoedit";
+			pstoeditPath = "pstoedit";
 			break;
 		case "nux":
-			pstoedit_path = "pstoedit";
+			pstoeditPath = "pstoedit";
 			break;
 		default:
-			pstoedit_path = "pstoedit";
+			pstoeditPath = "pstoedit";
 			break;
 		}
-		return pstoedit_path;
+		return pstoeditPath;
 	}
 
-	public static String get_uniconverter_path() {
-		String uniconverter_path;
+	public static String getUniconverterPath() {
+		String uniconverterPath;
 		switch (OS) {
 		case "win":
-			uniconverter_path = "C://Program Files/uniconverter/uniconverter.exe";
+			uniconverterPath = "C://Program Files/uniconverter/uniconverter.exe";
 			break;
 		case "mac":
-			uniconverter_path = "uniconverter";
+			uniconverterPath = "uniconverter";
 			break;
 		case "nux":
-			uniconverter_path = "uniconverter";
+			uniconverterPath = "uniconverter";
 			break;
 		default:
-			uniconverter_path = "uniconverter";
+			uniconverterPath = "uniconverter";
 			break;
 		}
-		return uniconverter_path;
+		return uniconverterPath;
+	}
+	
+	public static String getPotracePath() {
+		String potracePath;
+		switch (OS) {
+		case "win":
+			potracePath = "C://Program Files/potrace/potrace.exe";
+			break;
+		case "mac":
+			potracePath = "potrace";
+			break;
+		case "nux":
+			potracePath = "potrace";
+			break;
+		default:
+			potracePath = "potrace";
+			break;
+		}
+		return potracePath;
 	}
 }

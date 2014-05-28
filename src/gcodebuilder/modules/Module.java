@@ -12,20 +12,9 @@
 
 package modules;
 
-public abstract class Module {
-	private String input_file_name;
-	private String output_file_name;
-	private String files_types;
-	private String params;
+public interface Module {
+	public String getParamTypes();
+	public String getSupportedFormats();
 
-	Module(String input_file_name, String output_file_name, String files_types) {
-		this(input_file_name, output_file_name, files_types, "");
-	}
-
-	Module(String input_file_name, String output_file_name, String files_types, String params) {
-		this.input_file_name = input_file_name;
-		this.output_file_name = output_file_name;
-		this.files_types = files_types;
-		this.params = output_file_name;
-	}
+	public void process(String inputFilePath, String outputFilePath);
 }
