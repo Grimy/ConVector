@@ -13,7 +13,7 @@
 package vue;
 
 public class DrawallGui {
-	public static void main(String [] args) {
+	public static void main(String... args) {
 		
 	}
 }

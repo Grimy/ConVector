@@ -18,80 +18,48 @@ import controller.GCodeCleaner;
 
 public class GCodeCleanerTest {
 
-	private String cleanString(String str_test) {
-		BufferedReader to_clean = new BufferedReader(new StringReader(str_test));
-		PrintStream cleaned = new PrintStream(new ByteArrayOutputStream());
-		GCodeCleaner cleaner = new GCodeCleaner();
-		cleaner.clean(to_clean, cleaned);
+	private static String[][] tests = {
+		// Input                                            Expected output
+		{"G20 X10 Y20",                                     ""},
+		{"G01 X[(10+20)*3/9] Y[5*2]",                       "G01 X10 Y25"},
+		// wrong function name
+		{"G42 X10 Y20",                                     "#WIDTH=0\n#HEIGHT=0"},
+		// good and wrong function names
+		{"G01 X10 Y20 G42 X10 Y20",                         "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
+		{"    G01    X10    Y  20   ",                      "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
+		{"G1 X10 Y20",                                      "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
+		{"G01 X10 Y20 (this is a comment)",                 "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
+		// 2 functions inline
+		{"G01 X10 Y20 G01 X10 Y20",                         "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X10 Y20"},
+		// multi-functions
+		{"G01 X10 Y20\nX20 Y30",                            "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X20 Y30"},
+		// delete empty lines
+		{"G01 X10 Y20\n\n\n\nG01 X20 Y30",                  "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X20 Y30"},
+		// mathematical expressions
+		{"G01 X[(10+20)*3/9] Y[5**2]",                      "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y25"},
+		// variables
+		{"#1000 = 10\n#1001 = 20\nG01 X#1000 Y#1001",       "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y25"},
+		// negative values
+		{"G00 X-10 Y-10\nG01 X0 Y0",                        "#WIDTH=0\n#HEIGHT=0\nG00 X0 Y0\nG01 X10 Y10"},
+		// variables with mathematical expressions
+		{"#1000=10\n#1001=20\nG01 X[#1000*10] X[#1001*10]", "#WIDTH=0\n#HEIGHT=0\nG01 X100 Y200"},
+	};
 
-		return cleaned.toString();
+	public static void main(String... args) {
+		new GCodeCleanerTest().testCleaner();
 	}
 	
 	@Test
 	public void testCleaner() {
+		for (String[] test : tests) {
+			String input = test[0];
+			String expectedOutput = test[1];
+			GCodeCleaner cleaner = new GCodeCleaner();
+			BufferedReader reader = new BufferedReader(new StringReader(input));
+			ByteArrayOutputStream writer = new ByteArrayOutputStream();
+			cleaner.clean(reader, new PrintStream(writer));
 
-		// wrong function name
-		String input = "G42 X10 Y20";
-		String expected = "#WIDTH=0\n#HEIGHT=0";
-		assertEquals(cleanString(input), expected);
-		
-		// good and wrong function names
-		input = "G01 X10 Y20 G42 X10 Y20";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20";
-		assertEquals(cleanString(input), expected);
-
-		input = "G42 X10 Y20 G01 X10 Y20";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20";
-		assertEquals(cleanString(input), expected);
-		
-		// spaces
-		input = "    G01    X10    Y  20   ";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20";
-		assertEquals(cleanString(input), expected);
-
-		// function name on 3 car.
-		input = "G1 X10 Y20";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20";
-		assertEquals(cleanString(input), expected);
-
-		// comments
-		input = "G01 X10 Y20 (this is a comment)";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20";
-		assertEquals(cleanString(input), expected);
-
-		// 2 functions inline
-		input = "G01 X10 Y20 G01 X10 Y20";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X10 Y20";
-		assertEquals(cleanString(input), expected);
-
-		// multi-functions
-		input = "G01 X10 Y20\nX20 Y30";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X20 Y30";
-		assertEquals(cleanString(input), expected);
-
-		// delete empty lines
-		input = "G01 X10 Y20\n\n\n\nG01 X20 Y30";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X20 Y30";
-		assertEquals(cleanString(input), expected);
-		
-		// mathematical expressions
-		input = "G01 X[(10+20)*3/9] Y[5**2]";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y25";
-		assertEquals(cleanString(input), expected);
-
-		// variables
-		input = "#1000 = 10\n#1001 = 20\nG01 X#1000 Y#1001";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y25";
-		assertEquals(cleanString(input), expected);
-
-		// variables with mathematical expressions
-		input = "#1000=10\n#1001=20\nG01 X[#1000*10] X[#1001*10]";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG01 X100 Y200";
-		assertEquals(cleanString(input), expected);
-
-		// negative values
-		input = "G00 X-10 Y-10\nG01 X0 Y0";
-		expected = "#WIDTH=0\n#HEIGHT=0\nG00 X0 Y0\nG01 X10 Y10";
-		assertEquals(cleanString(input), expected);
+			assertEquals(expectedOutput, writer.toString());
+		}
 	}
 }

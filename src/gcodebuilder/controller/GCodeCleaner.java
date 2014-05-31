@@ -13,29 +13,33 @@
 package controller;
 
 import java.io.*;
+import java.util.Scanner;
 
 public class GCodeCleaner {
-	private static double pos_x, pos_y, pos_z, width, height;
+	private double pos_x, pos_y, pos_z, width, height;
+	private String mask;
 
-	public void clean(BufferedReader in, PrintStream out) {
-		clean(in, out, "G00|G01");
+	public GCodeCleaner(String mask) {
+		this.mask = mask;
 	}
 
-	public void clean(BufferedReader in, PrintStream out, String mask) {
-		try {
-			while (in.ready()) {
-				// TODO: remove empty lines
-				out.println(cleanLine(in.readLine()));
-			}
-		} catch (IOException e) {
-			// TODO: handle this
+	public GCodeCleaner() {
+		this("G00|G01");
+	}
+
+	public void clean(BufferedReader in, PrintStream out) {
+		Scanner scanner = new Scanner(in);
+		while (scanner.hasNextLine()) {
+			// TODO: remove empty lines
+			out.println(cleanLine(scanner.nextLine()));
 		}
 	}
 
-	private static String cleanLine(String line) {
+	private String cleanLine(String line) {
 		String cleaned = line;
 
 		// Remove whitespace
+		System.out.println(line);
 		cleaned = cleaned.replaceAll("[ \\t]", "");
 		// Remove comments
 		cleaned = cleaned.replaceAll("^;.*", "");
@@ -43,8 +47,7 @@ public class GCodeCleaner {
 		// Insert G01 if the line begins with an argument
 		cleaned = cleaned.replaceAll("([IJKXYZPQ])", " \\1");
 		// Insert spaces before each argument
-		// TODO: this doesn’t work in Java
-		// cleaned = cleaned.replaceAll("([GM])(\\d\\s)"n "\\g<1>0\\2", "");
+		cleaned = cleaned.replaceAll("([GM])(\\d\\s)", "\\10\\2");
 
 		boolean pos = false;
 		if (cleaned.indexOf('X') >= 0) {
@@ -69,7 +72,7 @@ public class GCodeCleaner {
 		return cleaned;
 	}
 
-	private static double getValue(String line, String param) {
+	private double getValue(String line, String param) {
 		return Double.parseDouble(line.replaceAll(".*" + param + "([-0-9.]+).*", "\\1"));
 	}
 }
