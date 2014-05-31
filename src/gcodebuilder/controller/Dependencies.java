@@ -15,11 +15,11 @@ package controller;
 public class Dependencies {
 	private static final boolean win = System.getProperty("os.name").toLowerCase().equals("win");
 
-	public static String get_pstoedit_path() {
+	public static String getPstoeditPath() {
 		return win ? "C://Program Files/pstoedit/pstoedit.exe" : "pstoedit";
 	}
 
-	public static String get_uniconverter_path() {
+	public static String getUniconverterPath() {
 		return win ? "C://Program Files/uniconverter/uniconverter.exe" : "uniconverter";
 	}
 	

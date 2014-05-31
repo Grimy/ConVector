@@ -21,64 +21,36 @@ import java.util.Properties;
 
 public class ConfigParser {
 
-	public static String dependencies_file_name = "drawall_dependencies.properties";
+	public static String dependenciesFileName = "drawall_dependencies.properties";
+
+	/**
+	 * Save properties to the project’s root folder.
+	 */
 	public void writeProperties() {
 		Properties prop = new Properties();
-		OutputStream output = null;
+		prop.setProperty("database", "localhost");
+		prop.setProperty("dbuser", "mkyong");
+		prop.setProperty("dbpassword", "password");
 
-		try {
-
-			output = new FileOutputStream(dependencies_file_name);
-
-			// set the properties value
-			prop.setProperty("database", "localhost");
-			prop.setProperty("dbuser", "mkyong");
-			prop.setProperty("dbpassword", "password");
-
-			// save properties to project root folder
+		try (FileOutputStream output = new FileOutputStream(dependenciesFileName)) {
 			prop.store(output, null);
-
-		} catch (IOException io) {
-			io.printStackTrace();
-		} finally {
-			if (output != null) {
-				try {
-					output.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-
+		} catch (IOException e) {
+			// TODO: handle this
 		}
 	}
 
 	public void readProperties() {
-
 		Properties prop = new Properties();
-		InputStream input = null;
 
-		try {
-
-			input = new FileInputStream(dependencies_file_name);
-
-			// load a properties file
+		try (FileInputStream input = new FileInputStream(dependenciesFileName)) {
 			prop.load(input);
-
-			// get the property value and print it out
-			System.out.println(prop.getProperty("database"));
-			System.out.println(prop.getProperty("dbuser"));
-			System.out.println(prop.getProperty("dbpassword"));
-
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		} finally {
-			if (input != null) {
-				try {
-					input.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+		} catch (IOException e) {
+			// TODO: handle this
 		}
+
+		// get the property value and print it out
+		System.out.println(prop.getProperty("database"));
+		System.out.println(prop.getProperty("dbuser"));
+		System.out.println(prop.getProperty("dbpassword"));
 	}
 }

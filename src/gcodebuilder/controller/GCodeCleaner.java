@@ -14,9 +14,11 @@ package controller;
 
 import java.io.*;
 import java.util.Scanner;
+import java.util.regex.*;
 
 public class GCodeCleaner {
-	private double pos_x, pos_y, pos_z, width, height;
+	private double[] pos = { 0.0, 0.0, 0.0 };
+	private double width, height;
 	private String mask;
 
 	public GCodeCleaner(String mask) {
@@ -30,8 +32,10 @@ public class GCodeCleaner {
 	public void clean(BufferedReader in, PrintStream out) {
 		Scanner scanner = new Scanner(in);
 		while (scanner.hasNextLine()) {
-			// TODO: remove empty lines
-			out.println(cleanLine(scanner.nextLine()));
+			String cleaned = cleanLine(scanner.nextLine());
+			if (!cleaned.isEmpty()) {
+				out.println(cleaned);
+			}
 		}
 	}
 
@@ -45,34 +49,33 @@ public class GCodeCleaner {
 		cleaned = cleaned.replaceAll("^;.*", "");
 		cleaned = cleaned.replaceAll("\\(.*", "");
 		// Insert G01 if the line begins with an argument
-		cleaned = cleaned.replaceAll("([IJKXYZPQ])", " \\1");
+		// cleaned = cleaned.replaceAll("([IJKXYZPQ])", " \\1");
 		// Insert spaces before each argument
 		cleaned = cleaned.replaceAll("([GM])(\\d\\s)", "\\10\\2");
 
-		boolean pos = false;
-		if (cleaned.indexOf('X') >= 0) {
-			pos_x = getValue(cleaned, "X");
-			pos = true;
+		boolean posChanged = false;
+		for (char param = 'X'; param <= 'Z'; ++param) {
+			Matcher matcher = Pattern.compile(param + "\\s*([.0-9]+)").matcher(line);
+			if (matcher.find()) {
+				setPos(param, Double.parseDouble(matcher.toMatchResult().group(1)));
+				posChanged = true;
+			}
 		}
-		if (cleaned.indexOf('Y') >= 0) {
-			pos_y = getValue(cleaned, "Y");
-			pos = true;
-		}
-		if (cleaned.indexOf('Z') >= 0) {
-			pos_y = getValue(cleaned, "Z");
-			pos = true;
-		}
-		if (pos) {
-			cleaned = cleaned.replaceAll("([GM][0-9][0-9]).*",
-					"\\1" + " X" + Double.toString(pos_x) + " Y" + Double.toString(pos_y) + " Z"
-							+ Double.toString(pos_z));
+
+		if (posChanged) {
+			cleaned = cleaned.substring(0, 3) + " X" + getPos('X') +
+				" Y" + getPos('Y') + " Z" + getPos('Z');
 		}
 
 		cleaned = cleaned.replaceAll("^G0[01]$", "");
 		return cleaned;
 	}
 
-	private double getValue(String line, String param) {
-		return Double.parseDouble(line.replaceAll(".*" + param + "([-0-9.]+).*", "\\1"));
+	public double getPos(char param) {
+		return pos[param - 'X'];
+	}
+
+	public void setPos(char param, double value) {
+		pos[param - 'X'] = value;
 	}
 }

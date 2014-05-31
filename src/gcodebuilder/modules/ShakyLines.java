@@ -45,7 +45,7 @@ def __init__(self):
 	self._trace()
 
 def _trace(self):
-	ngc_path = 'output.ngc' if args.output_file == None else args.output_file.name # todo: nommer en input.ngc
+	ngc_path = 'output.ngc' if args.output_file == None else args.output_file.name
 	with open(ngc_path, 'w') as gcode_file:
 		gcode_file.write('G0 X0 Y0 Z0\nG1\n')
 		for line in reversed(self.bitmap):

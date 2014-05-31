@@ -20,6 +20,8 @@ public class GCodeCleanerTest {
 
 	private static String[][] tests = {
 		// Input                                            Expected output
+		{"    G01    X10    Y  20   ",                      "G01 X10.0 Y20.0 Z0.0\n"},
+		{";This is a comment",                              ""},
 		{"G20 X10 Y20",                                     ""},
 		{"G01 X[(10+20)*3/9] Y[5*2]",                       "G01 X10 Y25"},
 		// wrong function name
