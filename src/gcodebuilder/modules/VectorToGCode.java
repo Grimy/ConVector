@@ -61,4 +61,10 @@ public class VectorToGCode implements Module {
 	public String getSupportedFormats() {
 		return "svg,ps";
 	}
+	
+	@Override
+	public String getName() {
+		return "VectorToGCode";
+	}
+
 }

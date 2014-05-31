@@ -15,6 +15,7 @@ package modules;
 public interface Module {
 	public String getParamTypes();
 	public String getSupportedFormats();
+	public String getName();
 
 	public void process(String inputFilePath, String outputFilePath);
 }
