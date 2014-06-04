@@ -20,32 +20,30 @@ public class GCodeCleanerTest {
 
 	private static String[][] tests = {
 		// Input                                            Expected output
-		{"    G01    X10    Y  20   ",                      "G01 X10.0 Y20.0 Z0.0\n"},
-		{";This is a comment",                              ""},
-		{"G20 X10 Y20",                                     ""},
-		{"G01 X[(10+20)*3/9] Y[5*2]",                       "G01 X10 Y25"},
-		// wrong function name
-		{"G42 X10 Y20",                                     "#WIDTH=0\n#HEIGHT=0"},
-		// good and wrong function names
-		{"G01 X10 Y20 G42 X10 Y20",                         "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
-		{"    G01    X10    Y  20   ",                      "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
-		{"G1 X10 Y20",                                      "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
-		{"G01 X10 Y20 (this is a comment)",                 "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20"},
-		// 2 functions inline
-		{"G01 X10 Y20 G01 X10 Y20",                         "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X10 Y20"},
-		// multi-functions
-		{"G01 X10 Y20\nX20 Y30",                            "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X20 Y30"},
+		// delete whitespace
+		{"    G01 \t  X10    Y  20   ",                     "G01 X10.0 Y20.0 Z0.0\n"},
 		// delete empty lines
-		{"G01 X10 Y20\n\n\n\nG01 X20 Y30",                  "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y20\nG01 X20 Y30"},
-		// mathematical expressions
-		{"G01 X[(10+20)*3/9] Y[5**2]",                      "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y25"},
+		{"G01 X10 Y20\n\n\n\nG01 X20 Y30",                  "G01 X10 Y20\nG01 X20 Y30"},
+		// delete comments
+		{";This is a comment",                              ""},
+		{"G01 X10 Y20 (this is a comment)",                 "G01 X10.0 Y20.0 Z0.0\n"},
+		// delete invalid functions
+		{"G42 X10 Y20",                                     ""},
 		// variables
-		{"#1000 = 10\n#1001 = 20\nG01 X#1000 Y#1001",       "#WIDTH=0\n#HEIGHT=0\nG01 X10 Y25"},
-		// negative values
-		{"G00 X-10 Y-10\nG01 X0 Y0",                        "#WIDTH=0\n#HEIGHT=0\nG00 X0 Y0\nG01 X10 Y10"},
-		// variables with mathematical expressions
-		{"#1000=10\n#1001=20\nG01 X[#1000*10] X[#1001*10]", "#WIDTH=0\n#HEIGHT=0\nG01 X100 Y200"},
+		{"#1000 = 10\n#1001 = 20\nG01 X#1000 Y#1001",       "G01 X10.0 Y20.0 Z0.0\n"},
+		// mathematical expressions
+		{"G01 X[(10+20)*3/9] Y[5**2]",                      "G01 X10.0 Y25.0 Z0.0\n"},
+		// mathematical expressions with variables
+		{"#1000=10\n#1001=20\nG01 X[#1000*10] X[#1001*10]", "G01 X100 Y200 Z0.0\n"},
+		// normalize function names
+		{"G1 X10 Y20",                                      "G01 X10.0 Y20.0 Z0.0\n"},
+		// repeated functions
+		{"G01 X10 Y20\nX20 Y30",                            "G01 X10.0 Y20.0 Z0.0\nG01 X20.0 Y30.0 Z0.0\n"},
 	};
+
+	// TODO: test width, height, and cropping
+	// negative values
+	// {"G00 X-10 Y-10\nG01 X0 Y0",                        "G00 X0 Y0\nG01 X10 Y10"},
 
 	public static void main(String... args) {
 		new GCodeCleanerTest().testCleaner();
