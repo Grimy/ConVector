@@ -32,6 +32,11 @@ public class ShakyLines implements Module {
 	public String getSupportedFormats() {
 		return "png,bmp";
 	}
+
+	@Override
+	public String getName() {
+		return "Shaky lines";
+	}
 }
 
 /*

@@ -31,4 +31,10 @@ public class Vectorizer implements Module {
 	public String getSupportedFormats() {
 		return "png,bmp";
 	}
+
+	@Override
+	public String getName() {
+		return "Vectorizer";
+	}
+
 }
