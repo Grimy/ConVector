@@ -20,6 +20,8 @@ public class Vectorizer implements Module {
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Process potrace aborted.");
 		}
+		
+		// then call Vector module!
 	}
 	
 	@Override
@@ -35,6 +37,11 @@ public class Vectorizer implements Module {
 	@Override
 	public String getName() {
 		return "Vectorizer";
+	}
+
+	@Override
+	public String getDescription() {
+		return "Vectorise a monochrome image.";
 	}
 
 }

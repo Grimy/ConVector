@@ -16,16 +16,18 @@ import java.io.*;
 import java.util.Scanner;
 import java.util.regex.*;
 
-public class GCodeCleaner {
+// TODO: Move the clean functions to the GCodeImporter module.
+
+public class GCodeBuilder {
 	private double[] pos = { 0.0, 0.0, 0.0 };
 	private double width, height;
 	private String mask;
 
-	public GCodeCleaner(String mask) {
+	public GCodeBuilder(String mask) {
 		this.mask = mask;
 	}
 
-	public GCodeCleaner() {
+	public GCodeBuilder() {
 		this("G00|G01");
 	}
 

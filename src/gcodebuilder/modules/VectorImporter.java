@@ -20,7 +20,7 @@ import controller.Dependencies;
 // uniconvertor dessin.svg dessin.ps
 // pstoedit dessin.ps dessin.gcode -f gcode
 
-public class VectorToGCode implements Module {
+public class VectorImporter implements Module {
 
 	@Override
 	public void process(String inputFilePath, String outputFilePath) {
@@ -65,6 +65,11 @@ public class VectorToGCode implements Module {
 	@Override
 	public String getName() {
 		return "VectorToGCode";
+	}
+
+	@Override
+	public String getDescription() {
+		return "Draw a vector image.";
 	}
 
 }

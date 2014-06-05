@@ -13,7 +13,7 @@
 package modules;
 
 /**
- * The *Lines* module draws a bitmap image with lines.
+ * Draws a bitmap image with lines.
  *
  */
 public class ShakyLines implements Module {
@@ -25,7 +25,7 @@ public class ShakyLines implements Module {
 
 	@Override
 	public String getParamTypes() {
-		return "[{'name':'nbLines','type':'int','min':10}]";
+		return "[{'name':'Number of lines','type':'int','min':10}]";
 	}
 
 	@Override
@@ -36,6 +36,11 @@ public class ShakyLines implements Module {
 	@Override
 	public String getName() {
 		return "Shaky lines";
+	}
+
+	@Override
+	public String getDescription() {
+		return "Draws the image with horizontal lines. When a black pixel is detected, the line do a peak.";
 	}
 }
 

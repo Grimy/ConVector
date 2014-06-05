@@ -14,7 +14,7 @@ package test;
 import java.io.*;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
-import controller.GCodeCleaner;
+import controller.GCodeBuilder;
 
 public class GCodeCleanerTest {
 
@@ -54,7 +54,7 @@ public class GCodeCleanerTest {
 		for (String[] test : tests) {
 			String input = test[0];
 			String expectedOutput = test[1];
-			GCodeCleaner cleaner = new GCodeCleaner();
+			GCodeBuilder cleaner = new GCodeBuilder();
 			BufferedReader reader = new BufferedReader(new StringReader(input));
 			ByteArrayOutputStream writer = new ByteArrayOutputStream();
 			cleaner.clean(reader, new PrintStream(writer));

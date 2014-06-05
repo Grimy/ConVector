@@ -30,6 +30,6 @@ public class Drawall {
 			return;
 		}
 
-		new GCodeCleaner("G00|G01").clean(in, out);
+		new GCodeBuilder("G00|G01").clean(in, out);
 	}
 }
