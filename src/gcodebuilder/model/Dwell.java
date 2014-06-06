@@ -2,9 +2,9 @@ package model;
 
 public class Dwell extends Instruction {
 	/** Time to sleep, in seconds. */
-	private int t;
+	private double t;
 
-	public Dwell(int t) {
+	public Dwell(double t) {
 		this.t = t;
 	}
 

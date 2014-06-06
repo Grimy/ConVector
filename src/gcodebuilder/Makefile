@@ -11,4 +11,7 @@ clean:
 test: test/GCodeCleanerTest.class
 	java $(JAVA_FLAGS) test.GCodeCleanerTest
 
+run: controller/Drawall.class
+	java $(JAVA_FLAGS) controller.Drawall
+
 .PHONY: test

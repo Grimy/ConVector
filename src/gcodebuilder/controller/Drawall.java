@@ -13,23 +13,18 @@
 package controller;
 
 import java.io.*;
+import model.Instruction;
+import modules.*;
 
 public class Drawall {
 
 	public static void main(String... args) {
 		// TODO: parse args instead of hard-coding this
-		BufferedReader in;
-		PrintStream out;
-		try {
-			in = new BufferedReader(new FileReader("_.gcode"));
-			out = new PrintStream(new File("_.glc"));
-		} catch (Exception e) {
-			// TODO: handle system exceptions properly
-			System.err.println("Can't find file _.gcode");
-			System.exit(1);
-			return;
+		Module module = new GCodeImporter();
+		for (Instruction cmd: module.process("_.gcode")) {
+			System.out.println(cmd.toGCode());
 		}
-
-		new GCodeBuilder("G00|G01").clean(in, out);
+			// in = new BufferedReader(new FileReader("_.gcode"));
+			// out = new PrintStream(new File("_.glc"));
 	}
 }
