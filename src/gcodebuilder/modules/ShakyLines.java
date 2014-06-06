@@ -72,12 +72,12 @@ def _draw(self, isPixel):
 		else:
 			self.pos = (self.pos[0] + 1, self.pos[1])
 			line = _get_line(self.pos)
-	else:		
+	else:
 		self.pos = (0, self.pos[1] + 1)
 		line = 'Z25\n'
 		line += _get_line(self.pos)
 		line += 'Z0\n'
-	
+
 	return line
 
 def _get_line(pos):

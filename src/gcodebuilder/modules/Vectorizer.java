@@ -20,10 +20,10 @@ public class Vectorizer implements Module {
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Process potrace aborted.");
 		}
-		
+
 		// then call Vector module!
 	}
-	
+
 	@Override
 	public String getParamTypes() {
 		return "[]";

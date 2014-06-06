@@ -61,7 +61,7 @@ public class VectorImporter implements Module {
 	public String getSupportedFormats() {
 		return "svg,ps";
 	}
-	
+
 	@Override
 	public String getName() {
 		return "VectorToGCode";

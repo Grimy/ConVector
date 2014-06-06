@@ -14,7 +14,7 @@ package vue;
 
 public class DrawallGui {
 	public static void main(String... args) {
-		
+
 	}
 }
 
@@ -26,4 +26,4 @@ public class DrawallGui {
  * int with values -> listbox
  * String -> textbox
  * boolean -> checkbox
- */ 
+ */

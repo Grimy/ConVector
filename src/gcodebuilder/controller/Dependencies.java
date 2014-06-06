@@ -22,7 +22,7 @@ public class Dependencies {
 	public static String getUniconverterPath() {
 		return win ? "C://Program Files/uniconverter/uniconverter.exe" : "uniconverter";
 	}
-	
+
 	public static String getPotracePath() {
 		return win ? "C://Program Files/potrace/potrace.exe" : "potrace";
 	}

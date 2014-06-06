@@ -25,7 +25,7 @@ public class GCodeImporter implements Module {
 	@Override
 	public void process(String inputFilePath, String outputFilePath) {
 		// TODO Move GCode-cleaner code here!
-		
+
 	}
 
 }

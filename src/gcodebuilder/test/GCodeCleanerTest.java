@@ -48,7 +48,7 @@ public class GCodeCleanerTest {
 	public static void main(String... args) {
 		new GCodeCleanerTest().testCleaner();
 	}
-	
+
 	@Test
 	public void testCleaner() {
 		for (String[] test : tests) {

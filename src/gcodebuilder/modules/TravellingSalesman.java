@@ -1,9 +1,9 @@
 package modules;
 
 /**
- * This module draw a picture with a single line, all the black pixels in the picture (after processing a filter witch 
+ * This module draw a picture with a single line, all the black pixels in the picture (after processing a filter witch
  * convert the picture in B&W colors) are joined with each others with a Travelling salesman algorithm.
- * 
+ *
  */
 public class TravellingSalesman implements Module {
 
@@ -26,7 +26,7 @@ public class TravellingSalesman implements Module {
 	@Override
 	public void process(String inputFilePath, String outputFilePath) {
 		// TODO
-		// using convert : 
+		// using convert :
 		// http://www.imagemagick.org/script/command-line-options.php#black-threshold
 		// or http://www.imagemagick.org/script/command-line-options.php#monochrome
 		// or something else better
