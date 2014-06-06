@@ -12,16 +12,14 @@
 
 package modules;
 
+import java.util.Collection;
+import model.Instruction;
+
 /**
  * Draws a bitmap image with lines.
  *
  */
 public class ShakyLines implements Module {
-
-	@Override
-	public void process(String inputFilePath, String outputFilePath) {
-		// TODO Implement the method using the python code below.
-	}
 
 	@Override
 	public String getParamTypes() {
@@ -34,13 +32,14 @@ public class ShakyLines implements Module {
 	}
 
 	@Override
-	public String getName() {
-		return "Shaky lines";
+	public String getDescription() {
+		return "Draws the image with horizontal lines. When a black pixel is detected, the line peaks.";
 	}
 
 	@Override
-	public String getDescription() {
-		return "Draws the image with horizontal lines. When a black pixel is detected, the line do a peak.";
+	public Collection<Instruction> process(String inputFilePath) {
+		// TODO Implement the method using the python code below.
+		throw new UnsupportedOperationException();
 	}
 }
 

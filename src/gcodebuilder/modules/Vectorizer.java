@@ -1,28 +1,11 @@
 package modules;
 
-import java.io.IOException;
-
 import controller.Dependencies;
+import java.io.IOException;
+import java.util.Collection;
+import model.Instruction;
 
 public class Vectorizer implements Module {
-
-	@Override
-	public void process(String inputFilePath, String outputFilePath) {
-		try {
-			Process process = new ProcessBuilder(Dependencies.getPotracePath(),
-					inputFilePath, outputFilePath).start();
-			process.waitFor();
-			// TODO catch potrace error
-		} catch (IOException e) {
-			System.out.println("Can not lauch potrace. Please check the path: it's currently "
-					+ Dependencies.getPotracePath() + ", is it correct ?");
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			throw new RuntimeException("Process potrace aborted.");
-		}
-
-		// then call Vector module!
-	}
 
 	@Override
 	public String getParamTypes() {
@@ -35,13 +18,25 @@ public class Vectorizer implements Module {
 	}
 
 	@Override
-	public String getName() {
-		return "Vectorizer";
+	public String getDescription() {
+		return "Vectorizes a monochrome image.";
 	}
 
 	@Override
-	public String getDescription() {
-		return "Vectorise a monochrome image.";
+	public Collection<Instruction> process(String inputFilePath) {
+		// try {
+			// Process process = new ProcessBuilder(Dependencies.getPotracePath(),
+					// inputFilePath, outputFilePath).start();
+			// process.waitFor();
+			// TODO catch potrace error
+		// } catch (IOException e) {
+			// System.out.println("Can not lauch potrace. Please check the path: it's currently "
+					// + Dependencies.getPotracePath() + ", is it correct ?");
+			// e.printStackTrace();
+		// } catch (InterruptedException e) {
+			// throw new RuntimeException("Process potrace aborted.");
+		// }
+		// TODO: call Vector module!
+		throw new UnsupportedOperationException();
 	}
-
 }

@@ -1,6 +1,6 @@
 JAVA_FLAGS = -classpath /usr/share/java/junit-4.11.jar:.
 
-all: test/GCodeCleanerTest.class controller/GCodeCleaner.class controller/Drawall.class model/ConfigParser.class
+all: $(shell find . -name '*.java' | sed 's/\.java/\.class/')
 
 %.class: %.java
 	javac $(JAVA_FLAGS) $<

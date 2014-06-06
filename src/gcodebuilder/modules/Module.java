@@ -12,13 +12,15 @@
 
 package modules;
 
+import java.util.Collection;
+import model.Instruction;
+
 public interface Module {
 	public String getParamTypes();
 	public String getSupportedFormats();
-	public String getName();
 	public String getDescription();
 
-	public void process(String inputFilePath, String outputFilePath);
+	public Collection<Instruction> process(String inputFilePath);
 }
 
 /* modules parameters:

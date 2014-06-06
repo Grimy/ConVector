@@ -12,9 +12,10 @@
 
 package modules;
 
-import java.io.IOException;
-
 import controller.Dependencies;
+import java.io.IOException;
+import java.util.Collection;
+import model.Instruction;
 
 // commands:
 // uniconvertor dessin.svg dessin.ps
@@ -23,7 +24,22 @@ import controller.Dependencies;
 public class VectorImporter implements Module {
 
 	@Override
-	public void process(String inputFilePath, String outputFilePath) {
+	public String getParamTypes() {
+		return "[]";
+	}
+
+	@Override
+	public String getSupportedFormats() {
+		return "svg,ps";
+	}
+
+	@Override
+	public String getDescription() {
+		return "Draws a vector image.";
+	}
+
+	@Override
+	public Collection<Instruction> process(String inputFilePath) {
 		String psTmpFilePath = System.getProperty("java.io.tmpdir") +
 				System.getProperty("file.separator") + "drawall_ps";
 
@@ -39,37 +55,19 @@ public class VectorImporter implements Module {
 			throw new RuntimeException("Process uniconverter aborted.");
 		}
 
-		try {
-			Process process = new ProcessBuilder(Dependencies.getPstoeditPath(), psTmpFilePath,
-					outputFilePath).start();
-			process.waitFor();
+		// try {
+			// Process process = new ProcessBuilder(Dependencies.getPstoeditPath(), psTmpFilePath,
+					// outputFilePath).start();
+			// process.waitFor();
 			// TODO catch pstoedit error
-		} catch (IOException e) {
-			throw new RuntimeException("Can not lauch pstoedit. Please check the path: it's currently "
-						+ Dependencies.getPstoeditPath() + ", is it correct ?");
-		} catch (InterruptedException e) {
-			throw new RuntimeException("Process pstoedit aborted.");
-		}
-	}
+		// } catch (IOException e) {
+			// throw new RuntimeException("Can not lauch pstoedit. Please check the path: it's currently "
+						// + Dependencies.getPstoeditPath() + ", is it correct ?");
+		// } catch (InterruptedException e) {
+			// throw new RuntimeException("Process pstoedit aborted.");
+		// }
 
-	@Override
-	public String getParamTypes() {
-		return "[]";
+		// TODO
+		throw new UnsupportedOperationException();
 	}
-
-	@Override
-	public String getSupportedFormats() {
-		return "svg,ps";
-	}
-
-	@Override
-	public String getName() {
-		return "VectorToGCode";
-	}
-
-	@Override
-	public String getDescription() {
-		return "Draw a vector image.";
-	}
-
 }

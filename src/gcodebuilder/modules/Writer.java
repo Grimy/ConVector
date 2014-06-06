@@ -1,5 +1,8 @@
 package modules;
 
+import java.util.Collection;
+import model.Instruction;
+
 public class Writer implements Module {
 	private static String fonts = "{'foo.ttf','bar.ttf'}"; // parse all *.ttf files in the module folder
 	private static String sizes = "{6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,32,36,40,44,48,54,60,66,72,80,88,96}";
@@ -16,19 +19,14 @@ public class Writer implements Module {
 	}
 
 	@Override
-	public String getName() {
-		return "Writer";
-	}
-
-	@Override
-	public void process(String inputFilePath, String outputFilePath) {
-		// TODO
-		// I have absolutely no idea how to use .ttf files to draw something, but this module should be very fun.
-	}
-
-	@Override
 	public String getDescription() {
 		return "Write a text in the specified font and size.";
 	}
 
+	@Override
+	public Collection<Instruction> process(String inputFilePath) {
+		// TODO
+		// I have absolutely no idea how to use .ttf files to draw something, but this module should be very fun.
+		throw new UnsupportedOperationException();
+	}
 }
