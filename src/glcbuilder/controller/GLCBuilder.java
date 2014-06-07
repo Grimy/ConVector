@@ -16,7 +16,7 @@ import java.io.*;
 import model.Instruction;
 import modules.*;
 
-public class Drawall {
+public class GLCBuilder {
 
 	public static void main(String... args) {
 		// TODO: parse args instead of hard-coding this

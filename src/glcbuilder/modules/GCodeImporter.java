@@ -16,7 +16,9 @@ public class GCodeImporter implements Module {
 	private boolean write = false;
 	private boolean metric = false;
 	private boolean relative = false;
-	private char axis = 'X';
+
+	/** The currently selected axis. This is used by arc motions (G2 and G3). */
+	private char axis = 'Z';
 
 	private double[] pos = { 0.0, 0.0, 0.0 };
 	private double[] minPos = { Double.POSITIVE_INFINITY,
@@ -27,27 +29,6 @@ public class GCodeImporter implements Module {
 	private Scanner scanner;
 	private Map<Integer, Double> variables = new HashMap<>();
 	private Collection<Instruction> instructions = new ArrayList<>();
-
-	public double getPos(char param) {
-		return pos[param - 'X'];
-	}
-
-	public void setPos(char param, double value) {
-		if (Double.isNaN(value)) {
-			return;
-		}
-		if (!metric) {
-			value *= INCHES_TO_MILLIMETERS;
-		}
-		if (relative) {
-			value += getPos(param);
-		}
-
-		int i = param - 'X';
-		pos[i] = value;
-		minPos[i] = value < minPos[i] ? value : minPos[i];
-		maxPos[i] = value > maxPos[i] ? value : maxPos[i];
-	}
 
 	@Override
 	public String getParamTypes() {
@@ -89,17 +70,39 @@ public class GCodeImporter implements Module {
 				parseVar(Integer.parseInt(token.substring(1)));
 				break;
 
-			case 'F': // set feedrate
-			case 'S': // set spindle speed
-			case 'T': // select tool
-				// ignored
+			// Ignored codes
+			case 'F': // Set feedrate (TODO!)
+			case 'T': // Select tool (TODO, not urgent)
+			case 'S': // Set spindle speed
 				break;
+
 			default:
-				throw new UnsupportedOperationException("Unimplemented or invalid GCode: " + token);
+				throw new IllegalArgumentException("Invalid GCode: " + token);
 			}
 		}
 
 		return instructions;
+	}
+
+	private double getPos(char param) {
+		return pos[param - 'X'];
+	}
+
+	private void setPos(char param, double value) {
+		if (Double.isNaN(value)) {
+			return;
+		}
+		if (!metric) {
+			value *= INCHES_TO_MILLIMETERS;
+		}
+		if (relative) {
+			value += getPos(param);
+		}
+
+		int i = param - 'X';
+		pos[i] = value;
+		minPos[i] = value < minPos[i] ? value : minPos[i];
+		maxPos[i] = value > maxPos[i] ? value : maxPos[i];
 	}
 
 	private void parseG(int code) {
@@ -126,21 +129,21 @@ public class GCodeImporter implements Module {
 			relative = code == 91;
 			break;
 
-		case 64: // Continuous path mode
-			readArg('P', true);
-		case 61: // Exact path mode
-			break;
-
-		// Silently ignored codes
 		case 17: // Select XY plane
 		case 18: // Select XZ plane
 		case 19: // Select YZ plane
+			axis = (char) ('Z' - (code - 17));
+			break;
+
+		// Silently ignored codes
 		case 33: // Spindle-synchronized motion
 		case 40: // Cancel cutter radius compensation
 		case 41: // Start cutter radius compensation left
 		case 42: // Start cutter radius compensation right
 		case 43: // Use tool length offset from tool table
 		case 49: // Cancel tool length offset
+		case 61: // Exact path mode
+		case 64: // Continuous path mode
 		case 73: // Peck drilling cycle
 		case 76: // Multipass lathe threading cycle
 		case 80: // Cancel motion mode
@@ -156,6 +159,7 @@ public class GCodeImporter implements Module {
 		case 97: // RPM mode
 		case 98: // Retract to previous postion
 		case 99: // Retract to R
+			scanner.nextLine();
 			break;
 
 		// Unsupported codes (TODO)
@@ -164,8 +168,9 @@ public class GCodeImporter implements Module {
 		case 5:  // Cubic spline
 		case 7:  // Diameter mode
 		case 8:  // Radius mode
+		case 28: // Return to or set reference point 1
+		case 30: // Return to or set reference point 2
 			throw new UnsupportedOperationException("Unimplemented GCode : G" + code);
-
 
 		default:
 			throw new UnsupportedOperationException("Invalid GCode : G" + code);
@@ -174,15 +179,11 @@ public class GCodeImporter implements Module {
 
 	private boolean parseM(int code) {
 		switch (code) {
-
-			case 3:  // Turn spindle CW
-			case 4:  // Turn spindle CCW
-				readArg('S', true);
-				break;
-
 			case 0:  // Program pause
 			case 1:  // Optional pause
 			case 2:  // End program
+			case 3:  // Turn spindle CW
+			case 4:  // Turn spindle CCW
 			case 5:  // Stop spindle
 			case 7:  // Turn mist on
 			case 8:  // Turn flood on
@@ -198,7 +199,7 @@ public class GCodeImporter implements Module {
 				break;
 
 			default:
-				throw new UnsupportedOperationException("Unimplemented or invalid GCode : M" + code);
+				throw new UnsupportedOperationException("Invalid GCode : M" + code);
 		}
 		return false;
 	}

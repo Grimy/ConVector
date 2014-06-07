@@ -12,7 +12,7 @@
 
 package vue;
 
-public class DrawallGui {
+public class GLCBuilderGUI {
 	public static void main(String... args) {
 
 	}
