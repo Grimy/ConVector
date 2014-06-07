@@ -179,23 +179,28 @@ public class GCodeImporter implements Module {
 
 	private boolean parseM(int code) {
 		switch (code) {
-			case 0:  // Program pause
-			case 1:  // Optional pause
 			case 2:  // End program
+			case 30: // End program
+				instructions.add(new EndProgram());
+
+			case 0:  // Program pause
+				instructions.add(new Pause());
+
+			// Silently ignored codes
+			case 1:  // Optional pause
 			case 3:  // Turn spindle CW
 			case 4:  // Turn spindle CCW
 			case 5:  // Stop spindle
 			case 7:  // Turn mist on
 			case 8:  // Turn flood on
 			case 9:  // Turn all coolant off
-			case 30: // End program
-			case 60: // Pallet change pause
 			case 48: // Speed and Feed Override Control
 			case 49: // Speed and Feed Override Control
 			case 50: // Feed Override Control
 			case 51: // Spindle Speed Override Control
 			case 52: // Adaptive Feed Control
 			case 53: // Feed Stop Control
+			case 60: // Pallet change pause
 				break;
 
 			default:
