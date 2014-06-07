@@ -1,7 +1,7 @@
 package model;
 
 public class DrawLine extends Instruction {
-	/** Coordinates of the end of the line, in an arbitrary unit. */
+	/** Coordinates of the end of this line. */
 	private double x, y, z;
 
 	/** When false, move without actually drawing. */
