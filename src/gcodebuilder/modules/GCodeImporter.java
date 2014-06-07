@@ -10,9 +10,13 @@ import java.util.regex.*;
 import model.*;
 
 public class GCodeImporter implements Module {
+
+	private static final double INCHES_TO_MILLIMETERS = 25.4;
+
 	private boolean write = false;
 	private boolean metric = false;
 	private boolean relative = false;
+	private char axis = 'X';
 
 	private double[] pos = { 0.0, 0.0, 0.0 };
 	private double[] minPos = { Double.POSITIVE_INFINITY,
@@ -32,6 +36,13 @@ public class GCodeImporter implements Module {
 		if (Double.isNaN(value)) {
 			return;
 		}
+		if (!metric) {
+			value *= INCHES_TO_MILLIMETERS;
+		}
+		if (relative) {
+			value += getPos(param);
+		}
+
 		int i = param - 'X';
 		pos[i] = value;
 		minPos[i] = value < minPos[i] ? value : minPos[i];
@@ -92,62 +103,98 @@ public class GCodeImporter implements Module {
 	}
 
 	private void parseG(int code) {
-		boolean on = code % 10 == 1;
-
 		switch (code) {
-		case 0:
-		case 1:
-			write = on;
-			setPos('X', getArg('X'));
-			setPos('Y', getArg('Y'));
-			setPos('Z', getArg('Z'));
+		case 0:  // Linear motion without writing
+		case 1:  // Linear motion
+			write = code == 1;
+			setPos('X', readArg('X', true));
+			setPos('Y', readArg('Y', true));
+			setPos('Z', readArg('Z', true));
 			instructions.add(new DrawLine(getPos('X'), getPos('Y'), getPos('Z'), write));
 			break;
 
-		case 4:
-			instructions.add(new Dwell(getArg('P')));
+		case 4:  // Dwell
+			instructions.add(new Dwell(readArg('P', false)));
 
-		case 20:
-		case 21:
-			metric = on;
+		case 20: // Switch to inches
+		case 21: // Switch to millimeters
+			metric = code == 21;
 			break;
 
-		case 90:
-		case 91:
-			relative = on;
+		case 90: // Switch to absolute mode
+		case 91: // Switch to relative mode
+			relative = code == 91;
 			break;
 
-		// Plane selection; ignored at the moment
-		case 17:
-		case 18:
-		case 19:
+		case 64: // Continuous path mode
+			readArg('P', true);
+		case 61: // Exact path mode
 			break;
 
-		// Exact / continuous mode
-		case 64:
-			getArg('P');
-		case 61:
+		// Silently ignored codes
+		case 17: // Select XY plane
+		case 18: // Select XZ plane
+		case 19: // Select YZ plane
+		case 33: // Spindle-synchronized motion
+		case 40: // Cancel cutter radius compensation
+		case 41: // Start cutter radius compensation left
+		case 42: // Start cutter radius compensation right
+		case 43: // Use tool length offset from tool table
+		case 49: // Cancel tool length offset
+		case 73: // Peck drilling cycle
+		case 76: // Multipass lathe threading cycle
+		case 80: // Cancel motion mode
+		case 81: // Drilling cycle without dwell
+		case 82: // Drilling cycle with dwell
+		case 83: // Chip-break drilling cycle
+		case 85: // Boring cycle without dwell
+		case 89: // Boring cycle with dwell
+		case 93: // Inverse time feed rate
+		case 94: // Units per minute feed rate
+		case 95: // Units per revolution
+		case 96: // CSS mode (Constant Surface Speed)
+		case 97: // RPM mode
+		case 98: // Retract to previous postion
+		case 99: // Retract to R
 			break;
+
+		// Unsupported codes (TODO)
+		case 2:  // Helical motion, CW
+		case 3:  // Helical motion, CCW
+		case 5:  // Cubic spline
+		case 7:  // Diameter mode
+		case 8:  // Radius mode
+			throw new UnsupportedOperationException("Unimplemented GCode : G" + code);
+
 
 		default:
-			throw new UnsupportedOperationException("Unimplemented or invalid GCode : G" + code);
+			throw new UnsupportedOperationException("Invalid GCode : G" + code);
 		}
 	}
 
 	private boolean parseM(int code) {
 		switch (code) {
 
-			case 3:
-			case 4:
-				getArg('S');
+			case 3:  // Turn spindle CW
+			case 4:  // Turn spindle CCW
+				readArg('S', true);
 				break;
 
+			case 0:  // Program pause
+			case 1:  // Optional pause
 			case 2:  // End program
 			case 5:  // Stop spindle
 			case 7:  // Turn mist on
 			case 8:  // Turn flood on
 			case 9:  // Turn all coolant off
 			case 30: // End program
+			case 60: // Pallet change pause
+			case 48: // Speed and Feed Override Control
+			case 49: // Speed and Feed Override Control
+			case 50: // Feed Override Control
+			case 51: // Spindle Speed Override Control
+			case 52: // Adaptive Feed Control
+			case 53: // Feed Stop Control
 				break;
 
 			default:
@@ -164,22 +211,41 @@ public class GCodeImporter implements Module {
 		variables.put(var, scanner.nextDouble());
 	}
 
-	private double getArg(char arg) {
-		if (!scanner.hasNext(arg + ".*")) {
+	/**
+	 * Reads a named argument from the file.
+	 * Throws an exception when a mandatory argument isn’t found.
+	 * Returns NaN when an optional argument isn’t found.
+	 * Examples: given the input "X4.2", readArg('X') returns 4.2.
+	 */
+	private double readArg(char arg, boolean optional) {
+		if (optional && !scanner.hasNext(arg + ".*")) {
 			return Double.NaN;
 		}
-		String token = scanner.next().substring(1);
-		if (token.charAt(0) != '[') {
-			return getValue(token);
+		String token = scanner.next();
+		if (!optional && token.charAt(0) != arg) {
+			throw new IllegalArgumentException("");
 		}
-		double result = 1;
-		for (String operand: token.substring(1, token.length() - 2).split("\\*")) {
-			result *= getValue(operand);
+
+		if (token.charAt(1) != '[') {
+			return parseRealValue(token.substring(1));
+		}
+
+		// Compute mathematical expressions
+		double result = 0;
+		for (String addend: token.substring(2, token.length() - 2).split("\\+")) {
+			double product = 1;
+			for (String factor: addend.split("\\*")) {
+				product *= parseRealValue(factor);
+			}
+			result += product;
 		}
 		return result;
 	}
 
-	private double getValue(String string) {
+	/**
+	 * Parses the specified string as a double. Handles GCode variables (#%d).
+	 */
+	private double parseRealValue(String string) {
 		return string.charAt(0) == '#' ? variables.get(Integer.parseInt(string.substring(1)))
 		                               : Double.parseDouble(string);
 	}
