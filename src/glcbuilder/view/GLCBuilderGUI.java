@@ -10,7 +10,7 @@
  * Copyright (c) 2012-2014 Nathanaël Jourdane.
  */
 
-package vue;
+package view;
 
 public class GLCBuilderGUI {
 	public static void main(String... args) {

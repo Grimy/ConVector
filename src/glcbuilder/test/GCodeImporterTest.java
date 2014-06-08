@@ -1,3 +1,4 @@
+package test;
 
 /*
 // Input                                            Expected output
