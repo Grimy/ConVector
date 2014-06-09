@@ -12,7 +12,7 @@ import model.*;
 public class GCodeImporter implements Module {
 
 	private static final double INCHES_TO_MILLIMETERS = 25.4;
-	private static final Pattern TOKEN = Pattern.compile("\\d+(\\.\\d+)?|#\\d+|\\[.*?\\]")
+	private static final Pattern TOKEN = Pattern.compile("\\d+(\\.\\d+)?|#\\d+|\\[.*?\\]");
 
 	private boolean write = false;
 	private boolean metric = false;
@@ -47,13 +47,8 @@ public class GCodeImporter implements Module {
 	}
 
 	@Override
-	public Collection<Instruction> process(String inputFilePath) {
-		try {
-			scanner = new Scanner(new File(inputFilePath));
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
+	public Collection<Instruction> process(InputStream input) {
+		scanner = new Scanner(input);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)+");

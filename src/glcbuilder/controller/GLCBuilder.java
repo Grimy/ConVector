@@ -18,13 +18,43 @@ import modules.*;
 
 public class GLCBuilder {
 
+	// public static final boolean win = System.getProperty("os.name").toLowerCase().equals("win");
+
 	public static void main(String... args) {
-		// TODO: parse args instead of hard-coding this
-		Module module = new GCodeImporter();
-		for (Instruction cmd: module.process("_.gcode")) {
+		if (args.length != 1) {
+			System.err.println("Usage: GLCBuilder [filename]");
+			System.exit(1);
+		}
+
+		String filename = args[0];
+		InputStream input = null;
+		try {
+			input = new FileInputStream(filename);
+		} catch (FileNotFoundException e) {
+			System.err.println("Cannot read file " + filename);
+			System.exit(2);
+		}
+
+		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
+
+		for (Instruction cmd: module.process(input)) {
 			System.out.println(cmd.toGCode());
 		}
 			// in = new BufferedReader(new FileReader("_.gcode"));
 			// out = new PrintStream(new File("_.glc"));
+	}
+
+	private static Module pickModule(String extension) {
+		// TODO: look at each module’s supported file type and return a list of possible modules
+		switch (extension) {
+			case "gcode":
+				return new GCodeImporter();
+			case "ps":
+				return new PSImporter();
+			default:
+				System.err.println("Unsupported file type : " + extension);
+				System.exit(3);
+				return null;
+		}
 	}
 }

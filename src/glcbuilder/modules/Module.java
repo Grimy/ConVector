@@ -13,6 +13,8 @@
 package modules;
 
 import java.util.Collection;
+import java.io.InputStream;
+import java.io.IOException;
 import model.Instruction;
 
 public interface Module {
@@ -20,7 +22,7 @@ public interface Module {
 	public String getSupportedFormats();
 	public String getDescription();
 
-	public Collection<Instruction> process(String inputFilePath);
+	public Collection<Instruction> process(InputStream input) throws IOException;
 }
 
 /* modules parameters:
