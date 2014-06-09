@@ -12,6 +12,7 @@ import model.*;
 public class GCodeImporter implements Module {
 
 	private static final double INCHES_TO_MILLIMETERS = 25.4;
+	private static final Pattern TOKEN = Pattern.compile("\\d+(\\.\\d+)?|#\\d+|\\[.*?\\]")
 
 	private boolean write = false;
 	private boolean metric = false;
@@ -75,6 +76,9 @@ public class GCodeImporter implements Module {
 			case 'T': // Select tool (TODO, not urgent)
 			case 'S': // Set spindle speed
 				break;
+
+			case 'o': // Control flow
+				throw new UnsupportedOperationException("Unimplemented GCode : G" + token);
 
 			default:
 				throw new IllegalArgumentException("Invalid GCode: " + token);
@@ -170,6 +174,7 @@ public class GCodeImporter implements Module {
 		case 8:  // Radius mode
 		case 28: // Return to or set reference point 1
 		case 30: // Return to or set reference point 2
+		case 92: // Coordinate system offset
 			throw new UnsupportedOperationException("Unimplemented GCode : G" + code);
 
 		default:
