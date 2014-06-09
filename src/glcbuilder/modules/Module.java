@@ -22,7 +22,7 @@ public interface Module {
 	public String getSupportedFormats();
 	public String getDescription();
 
-	public Collection<Instruction> process(InputStream input) throws IOException;
+	public Collection<Instruction> process(InputStream input) throws Exception;
 }
 
 /* modules parameters:

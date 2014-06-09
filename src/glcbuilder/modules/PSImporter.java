@@ -20,7 +20,6 @@ import model.Instruction;
  * A simple wrapper for pstoedit.
  */
 public class PSImporter implements Module {
-
 	@Override
 	public String getParamTypes() {
 		return "[]";
@@ -28,7 +27,7 @@ public class PSImporter implements Module {
 
 	@Override
 	public String getSupportedFormats() {
-		return "ps";
+		return "ps,pdf";
 	}
 
 	@Override
@@ -36,22 +35,10 @@ public class PSImporter implements Module {
 		return "Draws a vector image.";
 	}
 
-	public void pipe(InputStream in, OutputStream out) throws IOException {
-		int n;
-		byte[] buffer = new byte[4096];
-		while ((n = in.read(buffer)) >= 0) {
-			out.write(buffer, 0, n);
-		}
-		out.close();
-	}
-
 	@Override
 	public Collection<Instruction> process(InputStream input) throws IOException {
-
-		// new ProcessBuilder(name, inputFilePath, psTmpFilePath).start().waitFor();
-		Process process = new ProcessBuilder("pstoedit", "-f", "gcode", "-").start();
-		pipe(input, process.getOutputStream());
-
+		Process process = new ProcessBuilder("pstoedit", "-f", "gcode").start();
+		Pipe.pipe(input, process.getOutputStream());
 		return new GCodeImporter().process(process.getInputStream());
 	}
 }

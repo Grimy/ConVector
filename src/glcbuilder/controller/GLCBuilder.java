@@ -37,11 +37,13 @@ public class GLCBuilder {
 
 		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
 
-		for (Instruction cmd: module.process(input)) {
-			System.out.println(cmd.toGCode());
+		try {
+			for (Instruction cmd: module.process(input)) {
+				System.out.println(cmd.toGCode());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-			// in = new BufferedReader(new FileReader("_.gcode"));
-			// out = new PrintStream(new File("_.glc"));
 	}
 
 	private static Module pickModule(String extension) {
@@ -50,7 +52,11 @@ public class GLCBuilder {
 			case "gcode":
 				return new GCodeImporter();
 			case "ps":
+			case "pdf":
 				return new PSImporter();
+			case "svg":
+				return new SVGImporter();
+
 			default:
 				System.err.println("Unsupported file type : " + extension);
 				System.exit(3);

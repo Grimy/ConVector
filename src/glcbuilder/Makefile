@@ -1,6 +1,6 @@
-JAVA_FLAGS = -classpath /usr/share/java/junit-4.11.jar:.
+JAVA_FLAGS = -classpath .:/usr/share/java/junit-4.11.jar:lib/*
 
-all: $(shell find . -name '*.java' | sed 's/\.java/\.class/')
+all: $(shell echo */*.java | sed 's/\.java/\.class/g')
 
 %.class: %.java
 	javac $(JAVA_FLAGS) $<
