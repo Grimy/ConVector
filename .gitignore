@@ -1,4 +1,5 @@
 # Fichiers générés
+*.gch
 *.pyc
 *.class
 documentation/doxygen/html
