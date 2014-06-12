@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.regex.*;
+import java.util.Locale;
 import model.*;
 
 public class GCodeImporter implements Module {
@@ -49,6 +50,7 @@ public class GCodeImporter implements Module {
 	@Override
 	public Collection<Instruction> process(InputStream input) {
 		scanner = new Scanner(input);
+		scanner.useLocale(Locale.US);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)+");
