@@ -14,7 +14,6 @@ package modules;
 
 import java.util.Collection;
 import java.io.InputStream;
-import java.io.IOException;
 import model.Instruction;
 
 public interface Module {

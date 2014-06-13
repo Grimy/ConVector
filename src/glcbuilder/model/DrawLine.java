@@ -1,5 +1,7 @@
 package model;
 
+import java.util.Locale;
+
 public class DrawLine extends Instruction {
 	/** Coordinates of the end of this line. */
 	private double x, y, z;
@@ -16,6 +18,7 @@ public class DrawLine extends Instruction {
 
 	@Override
 	public String toGCode() {
-		return (write ? "G01" : "G00") + " X" + x + " Y" + y + " Z" + z;
+		return (write ? "G01" : "G00") + " X" + String.format(Locale.US, "%.3f", x) + " Y"
+				+ String.format(Locale.US, "%.3f", y) + " Z" + String.format(Locale.US, "%.3f", z);
 	}
 }

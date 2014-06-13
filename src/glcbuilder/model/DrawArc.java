@@ -1,5 +1,7 @@
 package model;
 
+import java.util.Locale;
+
 public class DrawArc extends Instruction {
 	/** Coordinates of the end of this arc. */
 	private double x, y;
@@ -20,6 +22,8 @@ public class DrawArc extends Instruction {
 
 	@Override
 	public String toGCode() {
-		return (clockwise ? "G02" : "G03") + " X" + x + " Y" + y + " I" + i + " J" + j;
+		return (clockwise ? "G02" : "G03") + " X" + String.format(Locale.US, "%.3f", x) + " Y"
+				+ String.format(Locale.US, "%.3f", y) + " I" + String.format(Locale.US, "%.3f", i)
+				+ " J" + String.format(Locale.US, "%.3f", j);
 	}
 }

@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.Collection;
 import model.Instruction;
 
-import org.apache.batik.transcoder.Transcoder;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
