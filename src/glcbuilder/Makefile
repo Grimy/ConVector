@@ -12,6 +12,6 @@ test: test/GCodeCleanerTest.class
 	java $(JAVA_FLAGS) test.GCodeCleanerTest
 
 run: controller/GLCBuilder.class
-	java $(JAVA_FLAGS) controller.GLCBuilder $(ARGS)
+	@java $(JAVA_FLAGS) controller.GLCBuilder $(ARGS)
 
 .PHONY: test
