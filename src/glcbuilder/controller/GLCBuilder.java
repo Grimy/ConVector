@@ -64,15 +64,21 @@ public class GLCBuilder {
 		}
 
 		// Output the parsed instructions
+
+		//TODO: get the real picture height
+		//int height = 1478; // Lyra
+		int height = 258; // Rose
+		
 		if (svg) {
 			System.out.println("<?xml version='1.0' encoding='UTF-8' standalone='no'?>");
 			System.out.println("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' "
 					+ "'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
-			System.out.println("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>");
-			System.out.println("<path transform='translate(0 300) scale(1 -1)' stroke-width='3' d='");
+			System.out.println("<svg xmlns='http://www.w3.org/2000/svg'>");
+			System.out.println("<path style='fill:none;stroke:#000000;stroke-width:1;' " +
+							"transform='translate(0 " + height + ") scale(1 -1)' d='");
 		}
 
-		for (Instruction cmd: instructions) {
+		for (Instruction cmd : instructions) {
 			System.out.print(svg ? cmd.toSVG() : cmd.toGCode() + "\n");
 		}
 
@@ -84,18 +90,18 @@ public class GLCBuilder {
 	private static Module pickModule(String extension) {
 		// TODO: look at each module’s supported file type and return a list of possible modules
 		switch (extension) {
-			case "gcode":
-				return new GCodeImporter();
-			case "ps":
-			case "pdf":
-				return new PSImporter();
-			case "svg":
-				return new SVGImporter();
+		case "gcode":
+			return new GCodeImporter();
+		case "ps":
+		case "pdf":
+			return new PSImporter();
+		case "svg":
+			return new SVGImporter();
 
-			default:
-				System.err.println("Unsupported file type : " + extension);
-				System.exit(3);
-				return null;
+		default:
+			System.err.println("Unsupported file type : " + extension);
+			System.exit(3);
+			return null;
 		}
 	}
 }
