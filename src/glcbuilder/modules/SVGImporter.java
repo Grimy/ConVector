@@ -33,6 +33,7 @@ public class SVGImporter implements Module {
 		new PDFTranscoder().transcode(new TranscoderInput(input),
 				new TranscoderOutput(process.getOutputStream()));
 		process.getOutputStream().close();
+		// Pipe.pipe(process.getInputStream(), System.out);
 		return new GCodeImporter().process(process.getInputStream());
 	}
 }

@@ -240,7 +240,7 @@ public class GCodeImporter implements Module {
 
 		// Compute mathematical expressions
 		double result = 0;
-		for (String addend: token.substring(2, token.length() - 2).split("\\+")) {
+		for (String addend: token.substring(2, token.length() - 1).split("\\+")) {
 			double product = 1;
 			for (String factor: addend.split("\\*")) {
 				product *= parseRealValue(factor);
