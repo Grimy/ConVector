@@ -29,6 +29,7 @@ public class SVGImporter implements Module {
 
 	@Override
 	public Collection<Instruction> process(final InputStream input) throws IOException, TranscoderException {
+		// -flat 0.1 ?
 		Process process = new ProcessBuilder("pstoedit", "-f", "gcode").start();
 		new PDFTranscoder().transcode(new TranscoderInput(input),
 				new TranscoderOutput(process.getOutputStream()));
