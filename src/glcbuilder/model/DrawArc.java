@@ -26,4 +26,10 @@ public class DrawArc extends Instruction {
 				+ String.format(Locale.US, "%.3f", y) + " I" + String.format(Locale.US, "%.3f", i)
 				+ " J" + String.format(Locale.US, "%.3f", j);
 	}
+
+	@Override
+	public String toSVG() {
+		// TODO
+		throw new UnsupportedOperationException("Converting arcs to SVG is not yet supported");
+	}
 }

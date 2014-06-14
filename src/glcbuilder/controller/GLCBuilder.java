@@ -21,12 +21,30 @@ public class GLCBuilder {
 	// public static final boolean win = System.getProperty("os.name").toLowerCase().equals("win");
 
 	public static void main(String... args) {
-		if (args.length != 1) {
+		// TODO: method too long, refactor
+
+		// Parse arguments
+		boolean svg = false;
+		int i = 0;
+
+		for (i = 0; i < args.length && args[i].charAt(0) == '-'; i++) {
+			switch (args[i]) {
+			case "-svg":
+				svg = true;
+				break;
+			default:
+				System.err.println("Unknown option: " + args[i]);
+				System.exit(1);
+			}
+		}
+
+		if (args.length != i + 1) {
 			System.err.println("Usage: GLCBuilder [filename]");
 			System.exit(1);
 		}
+		String filename = args[i];
 
-		String filename = args[0];
+		// Open an input stream
 		InputStream input = null;
 		try {
 			input = new FileInputStream(filename);
@@ -35,14 +53,31 @@ public class GLCBuilder {
 			System.exit(2);
 		}
 
+		// Pick a module and use it to parse the input stream
 		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
-
+		Iterable<Instruction> instructions = null;
 		try {
-			for (Instruction cmd: module.process(input)) {
-				System.out.println(cmd.toGCode());
-			}
+			instructions = module.process(input);
 		} catch (Exception e) {
+			System.err.println("Error while processing file " + filename);
 			e.printStackTrace();
+		}
+
+		// Output the parsed instructions
+		if (svg) {
+			System.out.println("<?xml version='1.0' encoding='UTF-8' standalone='no'?>");
+			System.out.println("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' "
+					+ "'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
+			System.out.println("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>");
+			System.out.println("<path transform='translate(0 300) scale(1 -1)' stroke-width='3' d='");
+		}
+
+		for (Instruction cmd: instructions) {
+			System.out.print(svg ? cmd.toSVG() : cmd.toGCode() + "\n");
+		}
+
+		if (svg) {
+			System.out.println("'/></svg>");
 		}
 	}
 

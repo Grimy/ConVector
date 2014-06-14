@@ -21,4 +21,9 @@ public class DrawLine extends Instruction {
 		return (write ? "G01" : "G00") + " X" + String.format(Locale.US, "%.3f", x) + " Y"
 				+ String.format(Locale.US, "%.3f", y) + " Z" + String.format(Locale.US, "%.3f", z);
 	}
+
+	@Override
+	public String toSVG() {
+		return (write ? "L " : "M ") + x + " " + y + "\n";
+	}
 }
