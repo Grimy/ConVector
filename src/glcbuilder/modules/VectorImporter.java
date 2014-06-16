@@ -16,10 +16,23 @@ import java.io.*;
 import java.util.Collection;
 import model.Instruction;
 
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.fop.svg.PDFTranscoder;
+
 /**
  * A simple wrapper for pstoedit.
  */
-public class PSImporter implements Module {
+public enum VectorImporter implements Module {
+	PS,
+	SVG {
+		@Override
+		protected void pipe(InputStream in, OutputStream out) throws TranscoderException {
+			new PDFTranscoder().transcode(new TranscoderInput(in), new TranscoderOutput(out));
+		}
+	};
+
 	@Override
 	public String getParamTypes() {
 		return "[]";
@@ -36,9 +49,25 @@ public class PSImporter implements Module {
 	}
 
 	@Override
-	public Collection<Instruction> process(InputStream input) throws IOException {
-		Process process = new ProcessBuilder("pstoedit", "-f", "gcode").start();
-		Pipe.pipe(input, process.getOutputStream());
+	public Collection<Instruction> process(InputStream input) {
+		Process process = null;
+		try {
+			process = new ProcessBuilder("pstoedit", "-f", "gcode").start();
+			pipe(input, process.getOutputStream());
+			process.getOutputStream().close();
+		} catch (IOException e) {
+			throw new RuntimeException("Blah");
+		} catch (TranscoderException e) {
+			throw new RuntimeException("Blah");
+		}
 		return new GCodeImporter().process(process.getInputStream());
+	}
+
+	protected void pipe(InputStream in, OutputStream out) throws IOException, TranscoderException {
+		int n;
+		byte[] buffer = new byte[4096];
+		while ((n = in.read(buffer)) >= 0) {
+			out.write(buffer, 0, n);
+		}
 	}
 }

@@ -21,7 +21,7 @@ public interface Module {
 	public String getSupportedFormats();
 	public String getDescription();
 
-	public Collection<Instruction> process(InputStream input) throws Exception;
+	public Collection<Instruction> process(InputStream input);
 }
 
 /* modules parameters:

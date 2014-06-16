@@ -18,19 +18,51 @@ import modules.*;
 
 public class GLCBuilder {
 
+	private enum OutputFormat {
+		GCODE,
+		SVG,
+	}
+
 	// public static final boolean win = System.getProperty("os.name").toLowerCase().equals("win");
+	private OutputFormat format;
+	private Module module;
+
+	public GLCBuilder(Module module, OutputFormat format) {
+		this.module = module;
+		this.format = format;
+	}
+
+	public void parse(InputStream input) {
+
+		// Output the parsed instructions
+		boolean svg = format == OutputFormat.SVG;
+		if (svg) {
+			System.out.println("<?xml version='1.0' encoding='UTF-8' standalone='no'?>");
+			System.out.println("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' "
+					+ "'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
+			System.out.println("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>");
+			System.out.println("<path transform='translate(0 300) scale(1 -1)' stroke-width='3' d='");
+		}
+
+		Iterable<Instruction> instructions = module.process(input);
+		for (Instruction cmd: instructions) {
+			System.out.print(svg ? cmd.toSVG() : cmd.toGCode() + "\n");
+		}
+
+		if (svg) {
+			System.out.println("'/></svg>");
+		}
+	}
 
 	public static void main(String... args) {
-		// TODO: method too long, refactor
-
 		// Parse arguments
-		boolean svg = false;
+		OutputFormat format = OutputFormat.GCODE;
 		int i = 0;
 
 		for (i = 0; i < args.length && args[i].charAt(0) == '-'; i++) {
 			switch (args[i]) {
 			case "-svg":
-				svg = true;
+				format = OutputFormat.SVG;
 				break;
 			default:
 				System.err.println("Unknown option: " + args[i]);
@@ -44,40 +76,18 @@ public class GLCBuilder {
 		}
 		String filename = args[i];
 
-		// Open an input stream
-		InputStream input = null;
+		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
+		GLCBuilder builder = new GLCBuilder(module, format);
+
 		try {
-			input = new FileInputStream(filename);
+			builder.parse(new FileInputStream(filename));
 		} catch (FileNotFoundException e) {
 			System.err.println("Cannot read file " + filename);
 			System.exit(2);
-		}
-
-		// Pick a module and use it to parse the input stream
-		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
-		Iterable<Instruction> instructions = null;
-		try {
-			instructions = module.process(input);
 		} catch (Exception e) {
+			e.printStackTrace(); // XXX this is for debugging only
 			System.err.println("Error while processing file " + filename);
-			e.printStackTrace();
-		}
-
-		// Output the parsed instructions
-		if (svg) {
-			System.out.println("<?xml version='1.0' encoding='UTF-8' standalone='no'?>");
-			System.out.println("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' "
-					+ "'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
-			System.out.println("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>");
-			System.out.println("<path transform='translate(0 300) scale(1 -1)' stroke-width='3' d='");
-		}
-
-		for (Instruction cmd: instructions) {
-			System.out.print(svg ? cmd.toSVG() : cmd.toGCode() + "\n");
-		}
-
-		if (svg) {
-			System.out.println("'/></svg>");
+			System.exit(3);
 		}
 	}
 
@@ -88,9 +98,9 @@ public class GLCBuilder {
 				return new GCodeImporter();
 			case "ps":
 			case "pdf":
-				return new PSImporter();
+				return VectorImporter.PS;
 			case "svg":
-				return new SVGImporter();
+				return VectorImporter.SVG;
 
 			default:
 				System.err.println("Unsupported file type : " + extension);
