@@ -102,10 +102,10 @@ public class GLCBuilder {
 			case "svg":
 				return VectorImporter.SVG;
 
-			default:
-				System.err.println("Unsupported file type : " + extension);
-				System.exit(3);
-				return null;
+		default:
+			System.err.println("Unsupported file type : " + extension);
+			System.exit(3);
+			return null;
 		}
 	}
 }
