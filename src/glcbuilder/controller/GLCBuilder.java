@@ -49,41 +49,55 @@ public class GLCBuilder {
 			System.out.print(svg ? cmd.toSVG() : cmd.toGCode() + "\n");
 		}
 
-		if (svg) {
-			System.out.println("'/></svg>");
-		}
+	}
+
+	private static void usage(int returnCode) {
+		System.err.println("Usage: GLCBuilder [options] [input] [output]");
+		System.exit(returnCode);
 	}
 
 	public static void main(String... args) {
 		// Parse arguments
 		OutputFormat format = OutputFormat.GCODE;
+		InputStream input = System.in;
+		OutputStream output = System.out;
+		String filetype = null;
 		int i = 0;
 
-		for (i = 0; i < args.length && args[i].charAt(0) == '-'; i++) {
-			switch (args[i]) {
+		while (i < args.length && args[i].charAt(0) == '-') {
+			switch (args[i++]) {
 			case "-svg":
 				format = OutputFormat.SVG;
 				break;
 			default:
 				System.err.println("Unknown option: " + args[i]);
-				System.exit(1);
+				usage(1);
 			}
 		}
 
-		if (args.length != i + 1) {
-			System.err.println("Usage: GLCBuilder [filename]");
-			System.exit(1);
+		String filename = null;
+		try {
+			if (args.length > i) {
+				input = new FileInputStream(args[i++]);
+				filename = args[i - 1];
+			}
+			if (args.length > i) {
+				output = new FileOutputStream(args[i++]);
+			}
+		} catch (FileNotFoundException e) {
+			System.err.println("Cannot open file " + args[i - 1]);
+			System.exit(2);
 		}
-		String filename = args[i];
+		if (args.length > i) {
+			System.err.println("Too many arguments.");
+			usage(1);
+		}
 
 		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
 		GLCBuilder builder = new GLCBuilder(module, format);
 
 		try {
-			builder.parse(new FileInputStream(filename));
-		} catch (FileNotFoundException e) {
-			System.err.println("Cannot read file " + filename);
-			System.exit(2);
+			builder.parse(input);
 		} catch (Exception e) {
 			e.printStackTrace(); // XXX this is for debugging only
 			System.err.println("Error while processing file " + filename);

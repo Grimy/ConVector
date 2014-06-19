@@ -19,17 +19,23 @@ import model.Instruction;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.svg2svg.SVGTranscoder;
 import org.apache.fop.svg.PDFTranscoder;
+import org.apache.fop.render.ps.EPSTranscoder;
 
 /**
  * A simple wrapper for pstoedit.
  */
 public enum VectorImporter implements Module {
+
 	PS,
 	SVG {
 		@Override
 		protected void pipe(InputStream in, OutputStream out) throws TranscoderException {
-			new PDFTranscoder().transcode(new TranscoderInput(in), new TranscoderOutput(out));
+			new EPSTranscoder().transcode(new TranscoderInput(in),
+					// new TranscoderOutput(out));
+					new TranscoderOutput(System.out));
+			// new SVGTranscoder().transcode(new TranscoderInput(new InputStreamReader(in)),
 		}
 	};
 
@@ -56,9 +62,9 @@ public enum VectorImporter implements Module {
 			pipe(input, process.getOutputStream());
 			process.getOutputStream().close();
 		} catch (IOException e) {
-			throw new RuntimeException("Blah");
+			throw new RuntimeException(e);
 		} catch (TranscoderException e) {
-			throw new RuntimeException("Blah");
+			throw new RuntimeException(e);
 		}
 		return new GCodeImporter().process(process.getInputStream());
 	}
