@@ -106,11 +106,12 @@ public class GCodeImporter implements Module {
 			setPos('X', readArg('X', true));
 			setPos('Y', readArg('Y', true));
 			setPos('Z', readArg('Z', true));
-			instructions.add(new DrawLine(getPos('X'), getPos('Y'), getPos('Z'), write));
+			instructions.add(new Instruction(write ? Instruction.Kind.LINE : Instruction.Kind.MOVE,
+					getPos('X'), getPos('Y')));
 			break;
 
 		case 4:  // Dwell
-			instructions.add(new Dwell(readArg('P', false)));
+			instructions.add(new Instruction(Instruction.Kind.DWELL, readArg('P', false)));
 			break;
 
 		case 20: // Switch to inches
@@ -176,11 +177,11 @@ public class GCodeImporter implements Module {
 		switch (code) {
 			case 2:  // End program
 			case 30: // End program
-				instructions.add(new EndProgram());
+				instructions.add(new Instruction(Instruction.Kind.END));
 				break;
 
 			case 0:  // Program pause
-				instructions.add(new Pause());
+				instructions.add(new Instruction(Instruction.Kind.PAUSE));
 				break;
 
 			// Silently ignored codes

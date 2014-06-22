@@ -43,9 +43,9 @@ public class Parser implements Consumer<String> {
 
 		// Paths
 		vars.put("newpath", () -> graphics.path.clear());
-		vars.put("moveto", () -> graphics.path.add(new DrawLine(popPoints(1), false)));
-		vars.put("lineto", () -> graphics.path.add(new DrawLine(popPoints(1), true)));
-		vars.put("curveto", () -> graphics.path.add(new DrawBezier(popPoints(3))));
+		vars.put("moveto", () -> graphics.path.add(new Instruction(Instruction.Kind.MOVE, popPoints(1))));
+		vars.put("lineto", () -> graphics.path.add(new Instruction(Instruction.Kind.LINE, popPoints(1))));
+		vars.put("curveto", () -> graphics.path.add(new Instruction(Instruction.Kind.CUBIC, popPoints(3))));
 		vars.put("closepath", () -> graphics.path.add(graphics.path.get(0)));
 		vars.put("stroke", () -> {
 			result.addAll(graphics.path);
@@ -131,7 +131,7 @@ public class Parser implements Consumer<String> {
 		while (scanner.hasNext()) {
 			accept(scanner.next());
 		}
-		result.add(new EndProgram());
+		result.add(new Instruction(Instruction.Kind.END));
 
 		return result;
 	}

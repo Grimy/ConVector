@@ -16,15 +16,60 @@ package drawall;
 /**
  * Intern representation of a single machine instruction.
  */
-public abstract class Instruction {
-	public abstract String toGCode();
+public class Instruction {
+
+	// return (clockwise ? "G02" : "G03") + String.format(" X%.3f Y%.3f I%.3f J%.3f", x, y, i, j);
+	public enum Kind {
+		MOVE("G00 X% Y%", "M %,%"),
+		LINE("G01 X% Y%", "L %,%"),
+		ARC_CW("", ""),
+		ARC_CCW("", ""),
+		QUADRATIC("", "Q %,% %,%"),
+		CUBIC("", "C %,% %,% %,%"),
+		DWELL("G04 P%", ""),
+		PAUSE("M0", ""),
+		END("M30", "'/></svg>");
+		
+		String gcodeFormat, svgFormat;
+		Kind(String gcodeFormat, String svgFormat) {
+			this.gcodeFormat = gcodeFormat;
+			this.svgFormat = svgFormat;
+		}
+	}
+
+	private Kind kind;
+	private double[] args;
+
+	public Instruction(Kind kind, double... args) {
+		this.kind = kind;
+		this.args = args;
+	}
+
+	public String toGCode() {
+		return format(this.kind.gcodeFormat);
+	}
 
 	public String toSVG() {
-		return "";
+		return format(this.kind.svgFormat);
+	}
+
+	// perf
+	private String format(String format) {
+		StringBuilder builder = new StringBuilder();
+		int i = 0;
+		for (char c: format.toCharArray()) {
+			if (c == '%') {
+				builder.append(String.format("%.3f", args[i++]));
+			} else {
+				builder.append(c);
+			}
+		}
+		return builder.toString();
 	}
 
 	@Override
 	public String toString() {
-		return getClass().getName() + " " + toGCode();
+		return toGCode();
 	}
 }
+

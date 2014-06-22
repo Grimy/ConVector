@@ -9,8 +9,7 @@ all: format $(CLASSES)
 
 format: $(FORMATS)
 .%.format: %.java
-	perl -i format.pl $< $<
-	touch $@
+	# perl -i format.pl $< $< && touch $@
 
 %.class: %.java
 	$(JAVAC) $<
@@ -21,7 +20,7 @@ clean:
 test: test/GCodeCleanerTest.class
 	$(JAVA) test.GCodeCleanerTest
 
-run: controller/GLCBuilder.class
-	$(JAVA) controller.GLCBuilder $(ARGS)
+run: drawall/GLCBuilder.class
+	$(JAVA) drawall.GLCBuilder $(ARGS)
 
 .PHONY: all format clean test run
