@@ -14,9 +14,8 @@ package drawall;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Locale;
 
 /**
@@ -38,22 +37,22 @@ public class GLCBuilder {
 		this.format = format;
 	}
 
-	public void parse(InputStream input) {
+	public void parse(InputStream input, PrintStream output) {
 
 		// Output the parsed instructions
 		boolean svg = format == OutputFormat.SVG;
 		if (svg) {
-			System.out.print("<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n");
-			System.out.print("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' ");
-			System.out.print("'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n");
-			System.out.print("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>\n");
-			System.out.print("<path transform='translate(0 300) scale(1 -1)' ");
-			System.out.print("style='fill:none; stroke:#000000; stroke-width:2' d='");
+			output.print("<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n");
+			output.print("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' ");
+			output.print("'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n");
+			output.print("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>\n");
+			output.print("<path transform='translate(0 300) scale(1 -1)' ");
+			output.print("style='fill:none; stroke:#000000; stroke-width:2' d='");
 		}
 
 		Iterable<Instruction> instructions = module.process(input);
 		for (Instruction cmd: instructions) {
-			System.out.println(svg ? cmd.toSVG() : cmd.toGCode());
+			output.println(svg ? cmd.toSVG() : cmd.toGCode());
 		}
 	}
 
@@ -68,7 +67,7 @@ public class GLCBuilder {
 		// Parse arguments
 		OutputFormat format = OutputFormat.GCODE;
 		InputStream input = System.in;
-		OutputStream output = System.out;
+		PrintStream output = System.out;
 		String filetype = null;
 		int i = 0;
 
@@ -83,14 +82,14 @@ public class GLCBuilder {
 			}
 		}
 
-		String filename = null;
+		String filename = "";
 		try {
 			if (args.length > i) {
 				input = new FileInputStream(args[i++]);
 				filename = args[i - 1];
 			}
 			if (args.length > i) {
-				output = new FileOutputStream(args[i++]);
+				output = new PrintStream(args[i++]);
 			}
 		} catch (FileNotFoundException e) {
 			System.err.println("Cannot open file " + args[i - 1]);
@@ -105,7 +104,7 @@ public class GLCBuilder {
 		GLCBuilder builder = new GLCBuilder(module, format);
 
 		try {
-			builder.parse(input);
+			builder.parse(input, output);
 		} catch (Exception e) {
 			e.printStackTrace(); // XXX this is for debugging only
 			System.err.println("Error while processing file " + filename);
@@ -116,13 +115,14 @@ public class GLCBuilder {
 	private static Module pickModule(String extension) {
 		// TODO: look at each module’s supported file type and return a list of possible modules
 		switch (extension) {
-			case "gcode":
-				return new GCodeImporter();
-			case "ps":
-			case "pdf":
-				return VectorImporter.PS;
-			case "svg":
-				return VectorImporter.SVG;
+		case "ngc":
+		case "glc":
+		case "gcode":
+			return new GCodeImporter();
+		case "ps":
+			return new PSImporter();
+		case "svg":
+			return new SVGImporter();
 
 		default:
 			System.err.println("Unsupported file type : " + extension);

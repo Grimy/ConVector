@@ -37,7 +37,7 @@ public class GCodeImporter implements Module {
 		Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
 
 	private Scanner scanner;
-	private Map<Integer, Double> variables = new HashMap<>();
+	private Map<Integer, Double> variables = new HashMap<>(); // use double[] instead?
 	private Collection<Instruction> instructions = new ArrayList<>();
 
 	@Override
@@ -85,17 +85,11 @@ public class GCodeImporter implements Module {
 		if (Double.isNaN(value)) {
 			return;
 		}
-		if (!metric) {
-			value *= INCHES_TO_MILLIMETERS;
-		}
-		if (relative) {
-			value += getPos(param);
-		}
-
+		double val = value * (metric ? 1 : INCHES_TO_MILLIMETERS) + (relative ? 0 : getPos(param));
 		int i = param - 'X';
-		pos[i] = value;
-		minPos[i] = value < minPos[i] ? value : minPos[i];
-		maxPos[i] = value > maxPos[i] ? value : maxPos[i];
+		pos[i] = val;
+		minPos[i] = val < minPos[i] ? val : minPos[i];
+		maxPos[i] = val > maxPos[i] ? val : maxPos[i];
 	}
 
 	private void parseG(int code) {

@@ -22,26 +22,24 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.fop.render.ps.EPSTranscoder;
 
-public enum VectorImporter implements Module {
-	PS,
-	SVG;
+/**
+ * Uses Batik to convert SVG to PS.
+ * Feeds the output of Batik into PSImporter.
+ */
+public class SVGImporter implements Module {
 
 	@Override
 	public Collection<Instruction> process(InputStream input) {
-		if (this == SVG) {
-			TranscoderInput tin = new TranscoderInput(input);
-			PipedInputStream pin = new PipedInputStream();
-			input = pin;
-			new Thread(() -> {
-				try {
-					PipedOutputStream pout = new PipedOutputStream(pin);
-					TranscoderOutput tout = new TranscoderOutput(pout);
-					new EPSTranscoder().transcode(tin, tout);
-				} catch (IOException | TranscoderException e) {
-					throw new RuntimeException(e);
-				}
-			}).start();
-		}
-		return new Parser().process(input);
+		TranscoderInput tin = new TranscoderInput(input);
+		PipedInputStream pin = new PipedInputStream();
+		new Thread(() -> {
+			try {
+				TranscoderOutput tout = new TranscoderOutput(new PipedOutputStream(pin));
+				new EPSTranscoder().transcode(tin, tout);
+			} catch (IOException | TranscoderException e) {
+				throw new RuntimeException(e);
+			}
+		}).start();
+		return new Parser().process(pin);
 	}
 }

@@ -20,9 +20,11 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
 import java.util.Vector;
-import java.util.function.Consumer;
 
-public class Parser implements Consumer<String> {
+public class PSImporter implements Module {
+
+	// A runnable that does nothing.
+	private static final Runnable NOOP = () -> {/* empty */};
 
 	private PSGraphics graphics = new PSGraphics();
 	private final Stack<Object> stack = new Stack<>();
@@ -32,13 +34,15 @@ public class Parser implements Consumer<String> {
 	private Scanner scanner;
 	private final Vector<Instruction> result = new Vector<>();
 
-	public Parser() {
+	public PSImporter() {
 		// Fonts / colors
 		vars.put("setrgbcolor", () -> {popNum(); popNum(); popNum();});
 		vars.put("setgray", () -> {popNum();});
 		vars.put("findfont", () -> {
 			stack.pop();
-			while (!scanner.nextLine().equals("%%EndProlog"));
+			while (!scanner.nextLine().equals("%%EndProlog")) {
+				// TODO: handle font definitions
+			}
 		});
 
 		// Paths
@@ -59,10 +63,10 @@ public class Parser implements Consumer<String> {
 			// TODO
 			graphics.path.clear();
 		});
-		vars.put("clip", () -> {}); // TODO (no clear)
+		vars.put("clip", NOOP); // TODO (no clear)
 
 		// Computations
-		vars.put("length", () -> {});
+		vars.put("length", NOOP);
 		// TODO: mul, add, sub
 
 		// Stack manipulation
@@ -100,7 +104,7 @@ public class Parser implements Consumer<String> {
 		vars.put("setmiterlimit", () -> graphics.miterLimit = popNum());
 
 		// Variables
-		vars.put("bind", () -> {});
+		vars.put("bind", NOOP);
 		vars.put("load", () -> stack.push(getVar(popString())));
 		vars.put("def", () -> {
 			Object value = stack.pop();
@@ -125,6 +129,7 @@ public class Parser implements Consumer<String> {
 
 	}
 
+	@Override
 	public Collection<Instruction> process(InputStream in) {
 		scanner = new Scanner(in);
 		scanner.useDelimiter("\\s*(?:\\s|(?=[{\\[\\]}/])|(?<=[{\\[\\]}])|%.*\\n)+");
@@ -136,7 +141,6 @@ public class Parser implements Consumer<String> {
 		return result;
 	}
 
-	@Override
 	public void accept(String token) {
 		char c = token.charAt(0);
 		if (c == '/') {
@@ -152,7 +156,7 @@ public class Parser implements Consumer<String> {
 				}
 				vector.add(s);
 			}
-			Runnable code = () -> vector.forEach(Parser.this);
+			Runnable code = () -> vector.forEach(this::accept);
 			stack.push(code);
 		} else if (Character.isAlphabetic(c)) {
 			getVar(token).run();
@@ -184,16 +188,15 @@ public class Parser implements Consumer<String> {
 
 		if (stack.peek() instanceof Double) {
 			double[] array = new double[n];
-			while (n > 0) {
-				array[--n] = popNum();
+			for (int i = n - 1; i >= 0; --i) {
+				array[i] = popNum();
 			}
 			return array;
-		} else {
-			List<Object> sublist = stack.subList(stack.size() - n, stack.size());
-			Object[] array = sublist.toArray();
-			sublist.clear();
-			return array;
 		}
+		List<Object> sublist = stack.subList(stack.size() - n, stack.size());
+		Object[] array = sublist.toArray();
+		sublist.clear();
+		return array;
 	}
 
 	private Runnable getVar(String name) {

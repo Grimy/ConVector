@@ -22,11 +22,11 @@ public class Instruction {
 	public enum Kind {
 		MOVE("G00 X% Y%", "M %,%"),
 		LINE("G01 X% Y%", "L %,%"),
-		ARC_CW("", ""),
-		ARC_CCW("", ""),
-		QUADRATIC("", "Q %,% %,%"),
-		CUBIC("", "C %,% %,% %,%"),
+		ARC_CW("G02 X% Y% I% J%", ""),
+		ARC_CCW("G03 X% Y% I% J%", ""),
 		DWELL("G04 P%", ""),
+		CUBIC("G05 I% J% P% Q% X% Y%", "C %,% %,% %,%"),
+		QUADRATIC("G5.1 I% J% X% Y%", "Q %,% %,%"),
 		PAUSE("M0", ""),
 		END("M30", "'/></svg>");
 		
@@ -41,6 +41,7 @@ public class Instruction {
 	private double[] args;
 
 	public Instruction(Kind kind, double... args) {
+		assert args.length == count(kind.gcodeFormat);
 		this.kind = kind;
 		this.args = args;
 	}
@@ -53,13 +54,24 @@ public class Instruction {
 		return format(this.kind.svgFormat);
 	}
 
+	private static int count(String format) {
+		int i = 0;
+		for (char c: format.toCharArray()) {
+			i += c == '%' ? 1 : 0;
+		}
+		return i;
+	}
+
 	// perf
 	private String format(String format) {
 		StringBuilder builder = new StringBuilder();
 		int i = 0;
 		for (char c: format.toCharArray()) {
 			if (c == '%') {
-				builder.append(String.format("%.3f", args[i++]));
+				double arg = args[i++];
+				builder.append((int) arg);
+				builder.append('.');
+				builder.append((int) arg * 1E3);
 			} else {
 				builder.append(c);
 			}
@@ -69,7 +81,7 @@ public class Instruction {
 
 	@Override
 	public String toString() {
-		return toGCode();
+		return super.toString() + toGCode();
 	}
 }
 
