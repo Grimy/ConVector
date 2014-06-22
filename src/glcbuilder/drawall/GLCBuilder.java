@@ -10,13 +10,18 @@
  * Copyright (c) 2012-2014 Nathanaël Jourdane.
  */
 
-package controller;
+package drawall;
 
+import java.io.OutputStream;
+import java.io.FileInputStream;
 import java.util.Locale;
-import java.io.*;
-import model.Instruction;
-import modules.*;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
+/**
+ * Javadoc
+ */
 public class GLCBuilder {
 
 	private enum OutputFormat {

@@ -1,16 +1,26 @@
-package modules;
+/*
+ * This file is part of DraWall.
+ * DraWall is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * DraWall is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU
+ * General Public License along with DraWall. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (c) 2012-2014 Nathanaël Jourdane.
+ */
 
-import java.util.Collection;
-import java.io.InputStream;
-import java.lang.Runnable;
-import java.util.HashMap;
+package drawall;
+
 import java.util.List;
 import java.util.Map;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Collection;
 import java.util.Scanner;
+import java.util.function.Consumer;
 import java.util.Stack;
 import java.util.Vector;
-import java.util.function.Consumer;
-import model.*;
 
 public class Parser implements Consumer<String> {
 
@@ -35,7 +45,7 @@ public class Parser implements Consumer<String> {
 		vars.put("newpath", () -> graphics.path.clear());
 		vars.put("moveto", () -> graphics.path.add(new DrawLine(popPoints(1), false)));
 		vars.put("lineto", () -> graphics.path.add(new DrawLine(popPoints(1), true)));
-		vars.put("curveto", () -> graphics.path.add(new DrawBézier(popPoints(3))));
+		vars.put("curveto", () -> graphics.path.add(new DrawBezier(popPoints(3))));
 		vars.put("closepath", () -> graphics.path.add(graphics.path.get(0)));
 		vars.put("stroke", () -> {
 			result.addAll(graphics.path);

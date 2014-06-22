@@ -1,19 +1,22 @@
-CLASSPATH = -classpath .:/usr/share/java/junit-4.11.jar:lib/*
-JAVAC = javac $(CLASSPATH) -Werror -Xlint:all -Xmaxerrs 10
+# VPATH = .
+CLASSPATH = -classpath .:/usr/share/java/junit-4.11.jar
+JAVAC = ecj $(CLASSPATH) -source 1.8 -d . -maxProblems 10
 JAVA = java $(CLASSPATH)
+CLASSES = $(shell find -name '*.java' | sed 's!\.java!\.class!')
 
-all: $(shell echo */*.java | sed 's/\.java/\.class/g')
+all: $(CLASSES)
 
 %.class: %.java
-	@$(JAVAC) $<
+	perl -i format.pl $< $<
+	$(JAVAC) $<
 
 clean:
-	@find . -name '*.class' -delete
+	rm $(CLASSES)
 
 test: test/GCodeCleanerTest.class
-	@$(JAVA) test.GCodeCleanerTest
+	$(JAVA) test.GCodeCleanerTest
 
 run: controller/GLCBuilder.class
-	@$(JAVA) controller.GLCBuilder $(ARGS)
+	$(JAVA) controller.GLCBuilder $(ARGS)
 
 .PHONY: test

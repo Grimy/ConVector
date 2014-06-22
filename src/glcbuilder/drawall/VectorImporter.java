@@ -10,38 +10,23 @@
  * Copyright (c) 2012-2014 Nathanaël Jourdane.
  */
 
-package modules;
+package drawall;
 
-import java.io.*;
-import java.util.Collection;
-import model.Instruction;
-
-import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.svg2svg.SVGTranscoder;
 import org.apache.fop.svg.PDFTranscoder;
+import org.apache.batik.transcoder.TranscoderOutput;
+import java.io.PipedInputStream;
+import java.io.InputStream;
 import org.apache.fop.render.ps.EPSTranscoder;
+import java.io.IOException;
+import org.apache.batik.transcoder.TranscoderInput;
+import java.util.Collection;
+import java.io.PipedOutputStream;
+import org.apache.batik.transcoder.svg2svg.SVGTranscoder;
+import org.apache.batik.transcoder.TranscoderException;
 
 public enum VectorImporter implements Module {
-
 	PS,
 	SVG;
-
-	@Override
-	public String getParamTypes() {
-		return "[]";
-	}
-
-	@Override
-	public String getSupportedFormats() {
-		return "ps,pdf";
-	}
-
-	@Override
-	public String getDescription() {
-		return "Draws a vector image.";
-	}
 
 	@Override
 	public Collection<Instruction> process(InputStream input) {

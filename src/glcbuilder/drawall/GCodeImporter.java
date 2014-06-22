@@ -1,13 +1,24 @@
-package modules;
+/*
+ * This file is part of DraWall.
+ * DraWall is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * DraWall is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU
+ * General Public License along with DraWall. If not, see <http://www.gnu.org/licenses/>.
+ * Copyright (c) 2012-2014 Nathanaël Jourdane.
+ */
 
-import java.io.*;
+package drawall;
+
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Scanner;
-import java.util.regex.*;
-import model.*;
+import java.util.Collection;
+import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.io.InputStream;
 
 public class GCodeImporter implements Module {
 
@@ -30,21 +41,6 @@ public class GCodeImporter implements Module {
 	private Scanner scanner;
 	private Map<Integer, Double> variables = new HashMap<>();
 	private Collection<Instruction> instructions = new ArrayList<>();
-
-	@Override
-	public String getParamTypes() {
-		return "[]";
-	}
-
-	@Override
-	public String getSupportedFormats() {
-		return ".ngc,.gcode";
-	}
-
-	@Override
-	public String getDescription() {
-		return "Import a GCode file.";
-	}
 
 	@Override
 	public Collection<Instruction> process(InputStream input) {
