@@ -1,7 +1,5 @@
 package model;
 
-import java.util.Locale;
-
 public class DrawLine extends Instruction {
 	/** Coordinates of the end of this line. */
 	private double x, y, z;
@@ -16,14 +14,17 @@ public class DrawLine extends Instruction {
 		this.write = write;
 	}
 
+	public DrawLine(double[] points, boolean write) {
+		this(points[0], points[1], 0, write);
+	}
+
 	@Override
 	public String toGCode() {
-		return (write ? "G01" : "G00") + " X" + String.format(Locale.US, "%.3f", x) + " Y"
-				+ String.format(Locale.US, "%.3f", y) + " Z" + String.format(Locale.US, "%.3f", z);
+		return (write ? "G01" : "G00") + String.format(" X%.3f Y%.3f Z%.3f", x, y, z);
 	}
 
 	@Override
 	public String toSVG() {
-		return (write ? "L " : "M ") + x + " " + y + "\n";
+		return (write ? "L " : "M ") + String.format("%.3f,%.3f", x, y);
 	}
 }

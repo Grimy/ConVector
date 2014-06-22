@@ -23,21 +23,10 @@ import org.apache.batik.transcoder.svg2svg.SVGTranscoder;
 import org.apache.fop.svg.PDFTranscoder;
 import org.apache.fop.render.ps.EPSTranscoder;
 
-/**
- * A simple wrapper for pstoedit.
- */
 public enum VectorImporter implements Module {
 
 	PS,
-	SVG {
-		@Override
-		protected void pipe(InputStream in, OutputStream out) throws TranscoderException {
-			new EPSTranscoder().transcode(new TranscoderInput(in),
-					// new TranscoderOutput(out));
-					new TranscoderOutput(System.out));
-			// new SVGTranscoder().transcode(new TranscoderInput(new InputStreamReader(in)),
-		}
-	};
+	SVG;
 
 	@Override
 	public String getParamTypes() {
@@ -56,24 +45,20 @@ public enum VectorImporter implements Module {
 
 	@Override
 	public Collection<Instruction> process(InputStream input) {
-		Process process = null;
-		try {
-			process = new ProcessBuilder("pstoedit", "-f", "gcode").start();
-			pipe(input, process.getOutputStream());
-			process.getOutputStream().close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} catch (TranscoderException e) {
-			throw new RuntimeException(e);
+		if (this == SVG) {
+			TranscoderInput tin = new TranscoderInput(input);
+			PipedInputStream pin = new PipedInputStream();
+			input = pin;
+			new Thread(() -> {
+				try {
+					PipedOutputStream pout = new PipedOutputStream(pin);
+					TranscoderOutput tout = new TranscoderOutput(pout);
+					new EPSTranscoder().transcode(tin, tout);
+				} catch (IOException | TranscoderException e) {
+					throw new RuntimeException(e);
+				}
+			}).start();
 		}
-		return new GCodeImporter().process(process.getInputStream());
-	}
-
-	protected void pipe(InputStream in, OutputStream out) throws IOException, TranscoderException {
-		int n;
-		byte[] buffer = new byte[4096];
-		while ((n = in.read(buffer)) >= 0) {
-			out.write(buffer, 0, n);
-		}
+		return new Parser().process(input);
 	}
 }

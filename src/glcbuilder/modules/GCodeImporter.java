@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.regex.*;
-import java.util.Locale;
 import model.*;
 
 public class GCodeImporter implements Module {
@@ -50,7 +49,6 @@ public class GCodeImporter implements Module {
 	@Override
 	public Collection<Instruction> process(InputStream input) {
 		scanner = new Scanner(input);
-		scanner.useLocale(Locale.US);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)+");
@@ -119,6 +117,7 @@ public class GCodeImporter implements Module {
 
 		case 4:  // Dwell
 			instructions.add(new Dwell(readArg('P', false)));
+			break;
 
 		case 20: // Switch to inches
 		case 21: // Switch to millimeters
@@ -184,9 +183,11 @@ public class GCodeImporter implements Module {
 			case 2:  // End program
 			case 30: // End program
 				instructions.add(new EndProgram());
+				break;
 
 			case 0:  // Program pause
 				instructions.add(new Pause());
+				break;
 
 			// Silently ignored codes
 			case 1:  // Optional pause

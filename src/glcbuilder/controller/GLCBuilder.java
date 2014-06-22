@@ -12,6 +12,7 @@
 
 package controller;
 
+import java.util.Locale;
 import java.io.*;
 import model.Instruction;
 import modules.*;
@@ -37,18 +38,18 @@ public class GLCBuilder {
 		// Output the parsed instructions
 		boolean svg = format == OutputFormat.SVG;
 		if (svg) {
-			System.out.println("<?xml version='1.0' encoding='UTF-8' standalone='no'?>");
-			System.out.println("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' "
-					+ "'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
-			System.out.println("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>");
-			System.out.println("<path transform='translate(0 300) scale(1 -1)' stroke-width='3' d='");
+			System.out.print("<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n");
+			System.out.print("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' ");
+			System.out.print("'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n");
+			System.out.print("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>\n");
+			System.out.print("<path transform='translate(0 300) scale(1 -1)' ");
+			System.out.print("style='fill:none; stroke:#000000; stroke-width:2' d='");
 		}
 
 		Iterable<Instruction> instructions = module.process(input);
 		for (Instruction cmd: instructions) {
-			System.out.print(svg ? cmd.toSVG() : cmd.toGCode() + "\n");
+			System.out.println(svg ? cmd.toSVG() : cmd.toGCode());
 		}
-
 	}
 
 	private static void usage(int returnCode) {
@@ -57,6 +58,8 @@ public class GLCBuilder {
 	}
 
 	public static void main(String... args) {
+		Locale.setDefault(Locale.US);
+
 		// Parse arguments
 		OutputFormat format = OutputFormat.GCODE;
 		InputStream input = System.in;
