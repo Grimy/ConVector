@@ -12,15 +12,15 @@
 
 package drawall;
 
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Collection;
 import java.util.Scanner;
-import java.util.function.Consumer;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.function.Consumer;
 
 public class Parser implements Consumer<String> {
 

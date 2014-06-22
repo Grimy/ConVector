@@ -13,8 +13,8 @@
 package drawall;
 
 import java.util.Collection;
-import java.util.Vector;
 import java.util.Iterator;
+import java.util.Vector;
 
 public class InstructionList implements Iterable<Instruction> {
 	private Collection<Instruction> delegate = new Vector<>();

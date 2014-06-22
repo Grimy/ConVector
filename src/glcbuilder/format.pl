@@ -31,7 +31,7 @@ for (@fqcn) {
 # Ignore strings and comments
 my $cleaned = s!"(?:[^"\\]|\\.)*"!!gr =~ s!//.*!!gr =~ s!/\*(?:[^*]|\*[^/])*\*/!!gsrx;
 my %classes;
-scalar(\@classes{$cleaned =~ /(?<!class )\b[A-Z]\w*[a-z]\w*/g});
+scalar(\@classes{$cleaned =~ /(?<!class )(?<!\.)\b[A-Z]\w*[a-z]\w*/g});
 delete $classes{$_} for $cleaned =~ /$type/g;
 
 say <<'LICENSE';
@@ -50,9 +50,10 @@ LICENSE
 
 say "package $package;";
 say "";
-for (keys %classes) {
-	say "import $fqcn{$_}.$_;" if $fqcn{$_} ne 'java.lang' and $fqcn{$_} ne $package and $_ ne 'NaN';
-}
+my @imports = map {
+	 $fqcn{$_} ne 'java.lang' && $fqcn{$_} ne $package ? "import $fqcn{$_}.$_;" : ()
+} keys %classes;
+say for sort @imports;
 
 s!.*?(\n(?:/\*(?:[^*]|\*[^/])*\*/\n)?\N*)\b(class|interface|enum) \w+!$1$2 $classname!s or die;
 

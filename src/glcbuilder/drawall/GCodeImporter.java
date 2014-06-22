@@ -12,25 +12,23 @@
 
 package drawall;
 
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Collection;
-import java.util.regex.Pattern;
-import java.util.HashMap;
-import java.io.InputStream;
 
 public class GCodeImporter implements Module {
 
 	private static final double INCHES_TO_MILLIMETERS = 25.4;
-	private static final Pattern TOKEN = Pattern.compile("\\d+(\\.\\d+)?|#\\d+|\\[.*?\\]");
 
 	private boolean write = false;
 	private boolean metric = false;
 	private boolean relative = false;
 
 	/** The currently selected axis. This is used by arc motions (G2 and G3). */
-	private char axis = 'Z';
+	// private char axis = 'Z';
 
 	private double[] pos = { 0.0, 0.0, 0.0 };
 	private double[] minPos = { Double.POSITIVE_INFINITY,
@@ -128,7 +126,7 @@ public class GCodeImporter implements Module {
 		case 17: // Select XY plane
 		case 18: // Select XZ plane
 		case 19: // Select YZ plane
-			axis = (char) ('Z' - (code - 17));
+			// axis = (char) ('Z' - (code - 17));
 			break;
 
 		// Silently ignored codes

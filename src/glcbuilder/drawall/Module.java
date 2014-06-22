@@ -12,8 +12,8 @@
 
 package drawall;
 
-import java.util.Collection;
 import java.io.InputStream;
+import java.util.Collection;
 
 public interface Module {
 	public Collection<Instruction> process(InputStream input);

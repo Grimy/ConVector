@@ -10,7 +10,7 @@
  * Copyright (c) 2012-2014 Nathanaël Jourdane.
  */
 
-package test;
+package drawall.test;
 
 
 public class GCodeImporterTest {
