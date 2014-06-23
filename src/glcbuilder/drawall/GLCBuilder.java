@@ -18,27 +18,29 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Locale;
 
-/**
- * Javadoc
- */
+/** Main entry point. */
 public class GLCBuilder {
 
+	/** TODO: make this a separate class. */
 	private enum OutputFormat {
 		GCODE,
 		SVG,
 	}
 
-	// public static final boolean win = System.getProperty("os.name").toLowerCase().equals("win");
-	private OutputFormat format;
+	/** Used to parse the input into a sequence of Instructions. */
 	private Module module;
 
+	/** How to output the parsed Instructions. */
+	private OutputFormat format;
+
+	/** Standard constructor. */
 	public GLCBuilder(Module module, OutputFormat format) {
 		this.module = module;
 		this.format = format;
 	}
 
+	/** Converts `input` to `this.format` and writes the result to `output`. */
 	public void parse(InputStream input, PrintStream output) {
-
 		// Output the parsed instructions
 		boolean svg = format == OutputFormat.SVG;
 		if (svg) {
@@ -56,22 +58,28 @@ public class GLCBuilder {
 		}
 	}
 
+	/** Shows an usage message and exits with code `returnCode`. */
 	private static void usage(int returnCode) {
 		System.err.println("Usage: GLCBuilder [options] [input] [output]");
 		System.exit(returnCode);
 	}
 
+	/** Parses command-line arguments, instantiates a GLCBuilder and runs it. */
 	public static void main(String... args) {
-		Locale.setDefault(Locale.US);
-
-		// Parse arguments
 		OutputFormat format = OutputFormat.GCODE;
 		InputStream input = System.in;
 		PrintStream output = System.out;
+		String filename = "";
 		String filetype = null;
 		int i = 0;
 
+		// This is necessary so that the decimal separator is "." everywhere.
+		// It might become a problem if we want to internationalize the interface.
+		Locale.setDefault(Locale.US);
+
+		// Parse named arguments (how I wish Java had a GetOpts)
 		while (i < args.length && args[i].charAt(0) == '-') {
+			// TODO: move the body of this while to a method responsible for parsing a single argument
 			switch (args[i++]) {
 			case "-svg":
 				format = OutputFormat.SVG;
@@ -82,7 +90,7 @@ public class GLCBuilder {
 			}
 		}
 
-		String filename = "";
+		// Parse positional arguments (ditto)
 		try {
 			if (args.length > i) {
 				input = new FileInputStream(args[i++]);
@@ -100,9 +108,9 @@ public class GLCBuilder {
 			usage(1);
 		}
 
+		// Instantiate and run a GLCBuilder
 		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
 		GLCBuilder builder = new GLCBuilder(module, format);
-
 		try {
 			builder.parse(input, output);
 		} catch (Exception e) {
@@ -112,8 +120,11 @@ public class GLCBuilder {
 		}
 	}
 
+	/** Pick a plugin capable of interpreting the input’s filetype.
+	 * TODO: find a better way to detect filetype than the extension.
+	 * Extensions technically mean nothing (easy to modify), and STDIN doesn’t have an extension.
+	 */
 	private static Module pickModule(String extension) {
-		// TODO: look at each module’s supported file type and return a list of possible modules
 		switch (extension) {
 		case "ngc":
 		case "glc":

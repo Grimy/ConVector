@@ -15,16 +15,10 @@ package drawall;
 import java.io.InputStream;
 import java.util.Collection;
 
+/** Base interface for plugins. */
 public interface Module {
+
+	/** Parses `input` and return a sequence of instructions. */
+	// TODO: use a Consumer<Instruction> instead.
 	public Collection<Instruction> process(InputStream input);
 }
-
-/* modules parameters:
- * name, type, min, max, values
- *
- * int -> spinner
- * int with min and max -> cursor
- * int with values -> listbox
- * String -> textbox
- * boolean -> checkbox
- */

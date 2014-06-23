@@ -22,16 +22,15 @@ import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.fop.render.ps.EPSTranscoder;
 
-/**
- * Uses Batik to convert SVG to PS.
- * Feeds the output of Batik into PSImporter.
- */
+/** Uses Batik to convert SVG to PS.
+  * Feeds the output of Batik into PSImporter. will*/
 public class SVGImporter implements Module {
 
 	@Override
 	public Collection<Instruction> process(InputStream input) {
 		TranscoderInput tin = new TranscoderInput(input);
 		PipedInputStream pin = new PipedInputStream();
+		// XXX: is it really better to use a Thread?
 		new Thread(() -> {
 			try {
 				TranscoderOutput tout = new TranscoderOutput(new PipedOutputStream(pin));

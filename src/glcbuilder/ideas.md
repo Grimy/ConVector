@@ -1,6 +1,22 @@
+InstructionList.java
+====================
+public class InstructionList implements Iterable<Instruction> {
+	private Collection<Instruction> delegate = new Vector<>();
+
+	public void add(Instruction el) {
+		delegate.add(el);
+	}
+
+	@Override
+		public Iterator<Instruction> iterator() {
+			return delegate.iterator();
+		}
+}
+
 Writer.java
 ===========
 I have absolutely no idea how to use .ttf files to draw something, but this module should be very fun.
+
 
 Vectorizer.java
 ===============
@@ -63,6 +79,17 @@ Lines()
 ConfigParser.java
 =================
 
+/* modules parameters:
+ * name, type, min, max, values
+ *
+ * int -> spinner
+ * int with min and max -> cursor
+ * int with values -> listbox
+ * String -> textbox
+ * boolean -> checkbox
+ */
+
+// public static final boolean win = System.getProperty("os.name").toLowerCase().equals("win");
 public class ConfigParser {
 
 	public static String dependenciesFileName = "drawall_dependencies.properties";

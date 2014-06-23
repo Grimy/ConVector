@@ -19,45 +19,62 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+/* Plugin used to parse GCode. */
 public class GCodeImporter implements Module {
 
+	/* Convertion ratio. */
 	private static final double INCHES_TO_MILLIMETERS = 25.4;
 
+	/* Default mode for lines without an instruction. Set by G0 / G1. */
 	private boolean write = false;
+
+	/* Whether to use millimeters. Set by G20 / G21 */
 	private boolean metric = false;
+
+	/* Whether to compute coordinates relative to the current point. Set by G20 / G21 */
 	private boolean relative = false;
 
-	/** The currently selected axis. This is used by arc motions (G2 and G3). */
+	/** The axis used by arc motions. Set by G17 / G18 / G19. Ignored. */
 	// private char axis = 'Z';
 
+	/** The current position, represented by an { X, Y, Z } array. */
 	private double[] pos = { 0.0, 0.0, 0.0 };
-	private double[] minPos = { Double.POSITIVE_INFINITY,
-		Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY };
-	private double[] maxPos = { Double.NEGATIVE_INFINITY,
-		Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
 
+	/** min/max values for each coordinate. Will be used to scale images to a predefined width/height. */
+	private double[] minPos = { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY };
+	private double[] maxPos = { Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
+
+	/** The scanner used to parse the input. XXX: could be made local. */
 	private Scanner scanner;
-	private Map<Integer, Double> variables = new HashMap<>(); // use double[] instead?
+
+	/* Maps GCode variable names to their values. XXX: use a SparseArray for performance. */
+	private Map<Integer, Double> variables = new HashMap<>();
+
+	/** The resulting list of Instructions. */
 	private Collection<Instruction> instructions = new ArrayList<>();
 
 	@Override
 	public Collection<Instruction> process(InputStream input) {
 		scanner = new Scanner(input);
 
-		// Ignore whitespace and comments
+		// Ignore whitespace and comments (regex ftw)
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)+");
+		// TODO: split tokens on (?=[a-zA-Z]), /then/ remove whitespace
 
+		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
 			String token = scanner.next();
+			int code = Integer.parseInt(token.substring(1));
+
 			switch (token.charAt(0)) {
 			case 'G':
-				parseG(Integer.parseInt(token.substring(1)));
+				parseG(code);
 				break;
 			case 'M':
-				parseM(Integer.parseInt(token.substring(1)));
+				parseM(code);
 				break;
 			case '#':
-				parseVar(Integer.parseInt(token.substring(1)));
+				parseVar(code);
 				break;
 
 			// Ignored codes
@@ -77,21 +94,24 @@ public class GCodeImporter implements Module {
 		return instructions;
 	}
 
-	private double getPos(char param) {
-		return pos[param - 'X'];
+	/** Returns the current position along the specified axis ('X', 'Y' or 'Z'). */
+	private double getPos(char axis) {
+		return pos[axis - 'X'];
 	}
 
-	private void setPos(char param, double value) {
+	/** Sets the current position along the specified axis ('X', 'Y' or 'Z'). */
+	private void setPos(char axis, double value) {
 		if (Double.isNaN(value)) {
 			return;
 		}
-		double val = value * (metric ? 1 : INCHES_TO_MILLIMETERS) + (relative ? 0 : getPos(param));
-		int i = param - 'X';
+		double val = value * (metric ? 1 : INCHES_TO_MILLIMETERS) + (relative ? 0 : getPos(axis));
+		int i = axis - 'X';
 		pos[i] = val;
 		minPos[i] = val < minPos[i] ? val : minPos[i];
 		maxPos[i] = val > maxPos[i] ? val : maxPos[i];
 	}
 
+	/** Interprets a single G-code. */
 	private void parseG(int code) {
 		switch (code) {
 		case 0:  // Linear motion without writing
@@ -167,6 +187,7 @@ public class GCodeImporter implements Module {
 		}
 	}
 
+	/** Interprets a single M-code. */
 	private boolean parseM(int code) {
 		switch (code) {
 			case 2:  // End program
@@ -201,11 +222,13 @@ public class GCodeImporter implements Module {
 		return false;
 	}
 
+	/** Interprets a variable declaration. */
 	private void parseVar(int var) {
 		String token = scanner.next();
 		if (!token.equals("=")) {
-			throw new IllegalArgumentException("Invalid variable declaration: " + token);
+			throw new IllegalArgumentException("Invalid variable declaration: expected '=', got " + token);
 		}
+		// TODO: handle []-notation by calling readArg('=') or something
 		variables.put(var, scanner.nextDouble());
 	}
 

@@ -13,12 +13,10 @@
 package drawall;
 
 
-/**
- * Intern representation of a single machine instruction.
- */
+/** Internal representation of a single machine instruction. */
 public class Instruction {
 
-	// return (clockwise ? "G02" : "G03") + String.format(" X%.3f Y%.3f I%.3f J%.3f", x, y, i, j);
+	/** An instruction type. */
 	public enum Kind {
 		MOVE("G00 X% Y%", "M %,%"),
 		LINE("G01 X% Y%", "L %,%"),
@@ -31,6 +29,8 @@ public class Instruction {
 		END("M30", "'/></svg>");
 		
 		String gcodeFormat, svgFormat;
+
+		/** Standard constructor. */
 		Kind(String gcodeFormat, String svgFormat) {
 			this.gcodeFormat = gcodeFormat;
 			this.svgFormat = svgFormat;
@@ -40,6 +40,7 @@ public class Instruction {
 	private Kind kind;
 	private double[] args;
 
+	/** Standard constructor. */
 	public Instruction(Kind kind, double... args) {
 		assert args.length == count(kind.gcodeFormat);
 		this.kind = kind;
@@ -54,7 +55,9 @@ public class Instruction {
 		return format(this.kind.svgFormat);
 	}
 
+	/** Counts the occurences of the '%' character withing a String. */
 	private static int count(String format) {
+		// XXX: move this to an util class?
 		int i = 0;
 		for (char c: format.toCharArray()) {
 			i += c == '%' ? 1 : 0;
@@ -62,8 +65,11 @@ public class Instruction {
 		return i;
 	}
 
-	// perf
+	/** Replaces each '%' character in the input with an element from `args`. */
 	private String format(String format) {
+		// Irritatingly, String.format treats a double[] as a single Object.
+		// Converting to a Double[] works, but is cumbersome and terrible for perf.
+		// That’s why we have our own implementation of this.
 		StringBuilder builder = new StringBuilder();
 		int i = 0;
 		for (char c: format.toCharArray()) {
@@ -77,11 +83,6 @@ public class Instruction {
 			}
 		}
 		return builder.toString();
-	}
-
-	@Override
-	public String toString() {
-		return super.toString() + toGCode();
 	}
 }
 

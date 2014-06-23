@@ -21,20 +21,34 @@ import java.util.Scanner;
 import java.util.Stack;
 import java.util.Vector;
 
+/** Plugin used to parse PostScript. */
 public class PSImporter implements Module {
 
-	// A runnable that does nothing.
+	// A runnable that does nothing, used for ignored instructions.
 	private static final Runnable NOOP = () -> {/* empty */};
 
+	/** Current graphical state. */
 	private PSGraphics graphics = new PSGraphics();
+
+	/** Main PostScript stack (aka operand stack). */
 	private final Stack<Object> stack = new Stack<>();
+
+	/** Stack of '[' marks’ positions.
+	  * A corresponding ']' pops the operand stack until the top '[' mark. */
 	private final Stack<Integer> marks = new Stack<>();
+
+	/** Maps variable names to their values. */
 	private final Map<String, Runnable> vars = new HashMap<>();
 
+	/** The scanner used to parse the input. XXX: could be made local. */
 	private Scanner scanner;
+
+	/** The resulting list of Instructions. */
 	private final Vector<Instruction> result = new Vector<>();
 
+	/** Fills the `vars` dictionnary with built-in operators. */
 	public PSImporter() {
+
 		// Fonts / colors
 		vars.put("setrgbcolor", () -> {popNum(); popNum(); popNum();});
 		vars.put("setgray", () -> {popNum();});
@@ -126,12 +140,12 @@ public class PSImporter implements Module {
 			}
 		});
 		// TODO: ifelse, for, foreach
-
 	}
 
 	@Override
 	public Collection<Instruction> process(InputStream in) {
 		scanner = new Scanner(in);
+		// Skip whitespace and comments, break around '[', ']', '{', '}' and before '/'
 		scanner.useDelimiter("\\s*(?:\\s|(?=[{\\[\\]}/])|(?<=[{\\[\\]}])|%.*\\n)+");
 		while (scanner.hasNext()) {
 			accept(scanner.next());
@@ -141,7 +155,8 @@ public class PSImporter implements Module {
 		return result;
 	}
 
-	public void accept(String token) {
+	/** Process a single input token. */
+	private void accept(String token) {
 		char c = token.charAt(0);
 		if (c == '/') {
 			stack.push(token.substring(1));
@@ -172,6 +187,8 @@ public class PSImporter implements Module {
 		}
 	}
 
+	/** Pops 2*n numbers from the stack, treating them as a list of (X, Y) coordinates.
+	  * Applies the current transformation matrix and returns the result. */
 	private double[] popPoints(int n) {
 		double[] points = (double[]) popN(2 * n);
 		double[] a = graphics.ctm;
@@ -183,6 +200,8 @@ public class PSImporter implements Module {
 		return points;
 	}
 
+	/** Pops n items from the stack and returns them as an array.
+	  * If possible, returns a double[] (perf). Otherwise, falls back to Object[]. */
 	private Object popN(int n) {
 		assert n >= 0 && n <= stack.size();
 
@@ -199,12 +218,14 @@ public class PSImporter implements Module {
 		return array;
 	}
 
+	/** Returns the value of the specified variable. */
 	private Runnable getVar(String name) {
 		Runnable value = vars.get(name);
 		// assert value != null;
 		return value;
 	}
 
+	/** Pops a specific type from the stack. XXX: generify this */
 	private double popNum() {
 		Object val = stack.pop();
 		assert val instanceof Double;
