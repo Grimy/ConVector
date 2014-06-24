@@ -51,7 +51,8 @@ LICENSE
 say "package $package;";
 say "";
 my @imports = map {
-	 $fqcn{$_} ne 'java.lang' && $fqcn{$_} ne $package ? "import $fqcn{$_}.$_;" : ()
+	die "Class not found: $_" if not defined $fqcn{$_};
+	$fqcn{$_} ne 'java.lang' && $fqcn{$_} ne $package ? "import $fqcn{$_}.$_;" : ()
 } keys %classes;
 say for sort @imports;
 

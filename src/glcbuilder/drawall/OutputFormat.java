@@ -12,13 +12,17 @@
 
 package drawall;
 
-import java.io.InputStream;
-import java.util.Collection;
 
-/** Base interface for plugins. */
-public interface Module {
-
-	/** Parses `input` and return a sequence of instructions. */
-	// TODO: use a Consumer<Instruction> instead.
-	public Collection<Instruction> process(InputStream input);
+public class OutputFormat {
+	// SEG_MOVETO  0
+	// SEG_LINETO  1
+	// SEG_QUADTO  2
+	// SEG_CUBICTO 3
+	// SEG_CLOSE   4
+	public static final String[] GCODE = {
+		"G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G05 I% J% P% Q% X% Y%", ""
+	};
+	public static final String[] SVG = {
+		"M %, %", "L %,%", "Q %,% %,%", "C %,% %,% %,%", "z"
+	};
 }

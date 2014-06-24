@@ -16,29 +16,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.Collection;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.fop.render.ps.EPSTranscoder;
 
-/** Uses Batik to convert SVG to PS.
-  * Feeds the output of Batik into PSImporter. will*/
-public class SVGImporter implements Module {
+/** Uses Batik to convert SVG to PS. */
+public class SVGtoPS extends PipedInputStream {
 
-	@Override
-	public Collection<Instruction> process(InputStream input) {
+	public SVGtoPS(InputStream input) {
 		TranscoderInput tin = new TranscoderInput(input);
-		PipedInputStream pin = new PipedInputStream();
 		// XXX: is it really better to use a Thread?
 		new Thread(() -> {
 			try {
-				TranscoderOutput tout = new TranscoderOutput(new PipedOutputStream(pin));
+				TranscoderOutput tout = new TranscoderOutput(new PipedOutputStream(SVGtoPS.this));
 				new EPSTranscoder().transcode(tin, tout);
 			} catch (IOException | TranscoderException e) {
 				throw new RuntimeException(e);
 			}
 		}).start();
-		return new Parser().process(pin);
 	}
 }

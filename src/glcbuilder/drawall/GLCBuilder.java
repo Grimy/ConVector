@@ -12,6 +12,10 @@
 
 package drawall;
 
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -19,43 +23,35 @@ import java.io.PrintStream;
 import java.util.Locale;
 
 /** Main entry point. */
-public class GLCBuilder {
-
-	/** TODO: make this a separate class. */
-	private enum OutputFormat {
-		GCODE,
-		SVG,
-	}
-
-	/** Used to parse the input into a sequence of Instructions. */
-	private Module module;
+public class GLCBuilder extends Canvas {
 
 	/** How to output the parsed Instructions. */
-	private OutputFormat format;
+	private static String filetype = "";
+	private static String[] format = OutputFormat.GCODE;
+	private static InputStream input = System.in;
+	private static PrintStream output = System.out;
 
-	/** Standard constructor. */
-	public GLCBuilder(Module module, OutputFormat format) {
-		this.module = module;
-		this.format = format;
+	/** Converts `input` to `format` and writes the result to `output`. */
+	public static void run() {
+		// Output the parsed instructions
+		// boolean svg = format == OutputFormat.SVG;
+		// JFrame frame = new JFrame();
+		// frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
+		// frame.setSize(new Dimension(500,500));
+		// frame.setVisible(true);
+		pickPlugin().process(input, new WriterGraphics2D(output, format));
 	}
 
-	/** Converts `input` to `this.format` and writes the result to `output`. */
-	public void parse(InputStream input, PrintStream output) {
-		// Output the parsed instructions
-		boolean svg = format == OutputFormat.SVG;
-		if (svg) {
-			output.print("<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n");
-			output.print("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' ");
-			output.print("'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n");
-			output.print("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>\n");
-			output.print("<path transform='translate(0 300) scale(1 -1)' ");
-			output.print("style='fill:none; stroke:#000000; stroke-width:2' d='");
-		}
-
-		Iterable<Instruction> instructions = module.process(input);
-		for (Instruction cmd: instructions) {
-			output.println(svg ? cmd.toSVG() : cmd.toGCode());
-		}
+	@Override
+	public void paint(Graphics graphics) {
+		super.paint(graphics);
+		System.out.println(graphics);
+		Graphics2D g = (Graphics2D) graphics;
+		g.setColor(Color.BLACK);
+		g.fillRect(0, 0, 500, 500);
+		g.setColor(Color.BLUE);
+		pickPlugin().process(input, g);
 	}
 
 	/** Shows an usage message and exits with code `returnCode`. */
@@ -66,11 +62,7 @@ public class GLCBuilder {
 
 	/** Parses command-line arguments, instantiates a GLCBuilder and runs it. */
 	public static void main(String... args) {
-		OutputFormat format = OutputFormat.GCODE;
-		InputStream input = System.in;
-		PrintStream output = System.out;
 		String filename = "";
-		String filetype = null;
 		int i = 0;
 
 		// This is necessary so that the decimal separator is "." everywhere.
@@ -107,12 +99,10 @@ public class GLCBuilder {
 			System.err.println("Too many arguments.");
 			usage(1);
 		}
+		filetype = filename.substring(filename.lastIndexOf('.') + 1);
 
-		// Instantiate and run a GLCBuilder
-		Module module = pickModule(filename.substring(filename.lastIndexOf('.') + 1));
-		GLCBuilder builder = new GLCBuilder(module, format);
 		try {
-			builder.parse(input, output);
+			run();
 		} catch (Exception e) {
 			e.printStackTrace(); // XXX this is for debugging only
 			System.err.println("Error while processing file " + filename);
@@ -121,22 +111,21 @@ public class GLCBuilder {
 	}
 
 	/** Pick a plugin capable of interpreting the input’s filetype.
-	 * TODO: find a better way to detect filetype than the extension.
-	 * Extensions technically mean nothing (easy to modify), and STDIN doesn’t have an extension.
-	 */
-	private static Module pickModule(String extension) {
-		switch (extension) {
+	  * TODO: find a better way to detect filetype than the extension.
+	  * Extensions technically mean nothing (easy to modify), and STDIN doesn’t have an extension. */
+	private static Plugin pickPlugin() {
+		switch (filetype) {
 		case "ngc":
 		case "glc":
 		case "gcode":
 			return new GCodeImporter();
+		case "svg":
+			input = new SVGtoPS(input); // $FALL-THROUGH$
 		case "ps":
 			return new PSImporter();
-		case "svg":
-			return new SVGImporter();
 
 		default:
-			System.err.println("Unsupported file type : " + extension);
+			System.err.println("Unsupported file type : " + filetype);
 			System.exit(3);
 			return null;
 		}

@@ -12,15 +12,15 @@
 
 package drawall;
 
+import java.awt.Graphics2D;
+import java.awt.geom.Path2D;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
 /* Plugin used to parse GCode. */
-public class GCodeImporter implements Module {
+public class GCodeImporter implements Plugin {
 
 	/* Convertion ratio. */
 	private static final double INCHES_TO_MILLIMETERS = 25.4;
@@ -50,11 +50,12 @@ public class GCodeImporter implements Module {
 	/* Maps GCode variable names to their values. XXX: use a SparseArray for performance. */
 	private Map<Integer, Double> variables = new HashMap<>();
 
-	/** The resulting list of Instructions. */
-	private Collection<Instruction> instructions = new ArrayList<>();
+	private Graphics2D g;
+	private Path2D.Double path = new Path2D.Double();
 
 	@Override
-	public Collection<Instruction> process(InputStream input) {
+	public void process(InputStream input, Graphics2D output) {
+		g = output;
 		scanner = new Scanner(input);
 
 		// Ignore whitespace and comments (regex ftw)
@@ -90,8 +91,6 @@ public class GCodeImporter implements Module {
 				throw new IllegalArgumentException("Invalid GCode: " + token);
 			}
 		}
-
-		return instructions;
 	}
 
 	/** Returns the current position along the specified axis ('X', 'Y' or 'Z'). */
@@ -120,12 +119,17 @@ public class GCodeImporter implements Module {
 			setPos('X', readArg('X', true));
 			setPos('Y', readArg('Y', true));
 			setPos('Z', readArg('Z', true));
-			instructions.add(new Instruction(write ? Instruction.Kind.LINE : Instruction.Kind.MOVE,
-					getPos('X'), getPos('Y')));
+			if (write) {
+				path.lineTo(getPos('X'), getPos('Y'));
+			} else {
+				g.draw(path);
+				path = new Path2D.Double();
+				path.moveTo(getPos('X'), getPos('Y'));
+			}
 			break;
 
 		case 4:  // Dwell
-			instructions.add(new Instruction(Instruction.Kind.DWELL, readArg('P', false)));
+			// instructions.add(new Instruction(Instruction.Kind.DWELL, readArg('P', false)));
 			break;
 
 		case 20: // Switch to inches
@@ -192,11 +196,11 @@ public class GCodeImporter implements Module {
 		switch (code) {
 			case 2:  // End program
 			case 30: // End program
-				instructions.add(new Instruction(Instruction.Kind.END));
+				g.draw(path);
 				break;
 
 			case 0:  // Program pause
-				instructions.add(new Instruction(Instruction.Kind.PAUSE));
+				// instructions.add(new Instruction(Instruction.Kind.PAUSE));
 				break;
 
 			// Silently ignored codes

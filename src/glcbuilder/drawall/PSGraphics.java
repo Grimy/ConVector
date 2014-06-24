@@ -12,7 +12,7 @@
 
 package drawall;
 
-import java.util.Vector;
+import java.awt.geom.Path2D;
 
 /** PostScript’s graphical state stack.
   * Acts as a singly linked stack. Clients should only keep a reference to the top item. */
@@ -32,10 +32,13 @@ public class PSGraphics {
 	double[] ctm = idMatrix();
 
 	/** Current path. */
-	Vector<Instruction> path = new Vector<>();
+	Path2D path = new Path2D.Double();
 
 	//** Current clip path. (XXX: unimplemented) */
 
+	// BasicStroke stroke = new BasicStroke(linewidth, linecap, linejoin, miterLimit, dash, dash_phase);
+	// float[] dash
+	// float dash_phase
 	/** Current linecap. 0 = buttcap, 1 = round cap, 2 = projecting cap. */
 	byte linecap = 0;
 
@@ -54,7 +57,7 @@ public class PSGraphics {
 		// so that clients don’t have to switch pointers
 		PSGraphics clone = new PSGraphics();
 		clone.ctm = ctm.clone();
-		clone.path.addAll(path);
+		clone.path = (Path2D) path.clone();
 		clone.linecap = linecap;
 		clone.linejoin = linejoin;
 		clone.miterLimit = miterLimit;

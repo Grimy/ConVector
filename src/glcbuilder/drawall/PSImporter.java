@@ -12,8 +12,10 @@
 
 package drawall;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.Path2D;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +24,7 @@ import java.util.Stack;
 import java.util.Vector;
 
 /** Plugin used to parse PostScript. */
-public class PSImporter implements Module {
+public class PSImporter implements Plugin {
 
 	// A runnable that does nothing, used for ignored instructions.
 	private static final Runnable NOOP = () -> {/* empty */};
@@ -43,15 +45,20 @@ public class PSImporter implements Module {
 	/** The scanner used to parse the input. XXX: could be made local. */
 	private Scanner scanner;
 
-	/** The resulting list of Instructions. */
-	private final Vector<Instruction> result = new Vector<>();
+	private Graphics2D g;
 
 	/** Fills the `vars` dictionnary with built-in operators. */
 	public PSImporter() {
 
 		// Fonts / colors
-		vars.put("setrgbcolor", () -> {popNum(); popNum(); popNum();});
-		vars.put("setgray", () -> {popNum();});
+		vars.put("setrgbcolor", () -> {
+			int blue = popColor(), green = popColor(), red = popColor();
+			g.setColor(new Color(red, green, blue));
+		});
+		vars.put("setgray", () -> {
+			int gray = popColor();
+			g.setColor(new Color(gray, gray, gray));
+		});
 		vars.put("findfont", () -> {
 			stack.pop();
 			while (!scanner.nextLine().equals("%%EndProlog")) {
@@ -60,22 +67,33 @@ public class PSImporter implements Module {
 		});
 
 		// Paths
-		vars.put("newpath", () -> graphics.path.clear());
-		vars.put("moveto", () -> graphics.path.add(new Instruction(Instruction.Kind.MOVE, popPoints(1))));
-		vars.put("lineto", () -> graphics.path.add(new Instruction(Instruction.Kind.LINE, popPoints(1))));
-		vars.put("curveto", () -> graphics.path.add(new Instruction(Instruction.Kind.CUBIC, popPoints(3))));
-		vars.put("closepath", () -> graphics.path.add(graphics.path.get(0)));
+		vars.put("newpath", () -> graphics.path.reset());
+		vars.put("moveto", () -> {
+			double[] p = popPoints(1);
+			graphics.path.moveTo(p[0], p[1]);
+		});
+		vars.put("lineto", () -> {
+			double[] p = popPoints(1);
+			graphics.path.lineTo(p[0], p[1]);
+		});
+		vars.put("curveto", () -> {
+			double[] p = popPoints(3);
+			graphics.path.curveTo(p[0], p[1], p[2], p[3], p[4], p[5]);
+		});
+		vars.put("closepath", () -> graphics.path.closePath());
 		vars.put("stroke", () -> {
-			result.addAll(graphics.path);
-			graphics.path.clear();
+			g.draw(graphics.path);
+			graphics.path.reset();
 		});
 		vars.put("fill", () -> {
-			result.addAll(graphics.path);
-			graphics.path.clear();
+			graphics.path.setWindingRule(Path2D.WIND_NON_ZERO);
+			g.fill(graphics.path);
+			graphics.path.reset();
 		});
 		vars.put("eofill", () -> {
-			// TODO
-			graphics.path.clear();
+			graphics.path.setWindingRule(Path2D.WIND_EVEN_ODD);
+			g.fill(graphics.path);
+			graphics.path.reset();
 		});
 		vars.put("clip", NOOP); // TODO (no clear)
 
@@ -97,7 +115,7 @@ public class PSImporter implements Module {
 		// Transformations matrices
 		vars.put("matrix", () -> stack.push(PSGraphics.idMatrix()));
 		vars.put("concat", () -> {
-			double[] a = (double[]) stack.pop();
+			double[] a = this.<double[]>pop();
 			double[] b = graphics.ctm.clone();
 			double[] c = graphics.ctm;
 			c[0] = a[0] * b[0] + a[1] * b[2];
@@ -112,14 +130,14 @@ public class PSImporter implements Module {
 		// Graphics
 		vars.put("gsave", () -> graphics = graphics.dup());
 		vars.put("grestore", () -> graphics = graphics.prev);
-		vars.put("setlinecap", () -> graphics.linecap = (byte) popNum());
-		vars.put("setlinejoin", () -> graphics.linejoin = (byte) popNum());
-		vars.put("setlinewidth", () -> graphics.linewidth = popNum());
-		vars.put("setmiterlimit", () -> graphics.miterLimit = popNum());
+		vars.put("setlinecap", () -> graphics.linecap = popFlag());
+		vars.put("setlinejoin", () -> graphics.linejoin = popFlag());
+		vars.put("setlinewidth", () -> graphics.linewidth = this.<Double>pop());
+		vars.put("setmiterlimit", () -> graphics.miterLimit = this.<Double>pop());
 
 		// Variables
 		vars.put("bind", NOOP);
-		vars.put("load", () -> stack.push(getVar(popString())));
+		vars.put("load", () -> stack.push(getVar(this.<String>pop())));
 		vars.put("def", () -> {
 			Object value = stack.pop();
 			// Convert non-code objects to code pushing them on the stack
@@ -127,13 +145,13 @@ public class PSImporter implements Module {
 				assert value != null;
 				stack.push(value);
 			};
-			String name = popString();
+			String name = this.<String>pop();
 			vars.put(name, code);
 		});
 
 		// Flow control
 		vars.put("if", () -> {
-			Runnable code = popCode();
+			Runnable code = this.<Runnable>pop();
 			boolean condition = (boolean) stack.pop();
 			if (condition) {
 				code.run();
@@ -143,16 +161,15 @@ public class PSImporter implements Module {
 	}
 
 	@Override
-	public Collection<Instruction> process(InputStream in) {
+	public void process(InputStream in, Graphics2D out) {
 		scanner = new Scanner(in);
+		g = out;
 		// Skip whitespace and comments, break around '[', ']', '{', '}' and before '/'
 		scanner.useDelimiter("\\s*(?:\\s|(?=[{\\[\\]}/])|(?<=[{\\[\\]}])|%.*\\n)+");
 		while (scanner.hasNext()) {
 			accept(scanner.next());
 		}
-		result.add(new Instruction(Instruction.Kind.END));
-
-		return result;
+		// result.add(new Instruction(Instruction.Kind.END));
 	}
 
 	/** Process a single input token. */
@@ -208,7 +225,7 @@ public class PSImporter implements Module {
 		if (stack.peek() instanceof Double) {
 			double[] array = new double[n];
 			for (int i = n - 1; i >= 0; --i) {
-				array[i] = popNum();
+				array[i] = this.<Double>pop();
 			}
 			return array;
 		}
@@ -226,21 +243,20 @@ public class PSImporter implements Module {
 	}
 
 	/** Pops a specific type from the stack. XXX: generify this */
-	private double popNum() {
-		Object val = stack.pop();
-		assert val instanceof Double;
-		return (double) val;
+	private int popColor() {
+		double val = this.<Double>pop();
+		assert val >= 0 && val <= 1;
+		return (int) (val * 255);
 	}
 
-	private Runnable popCode() {
-		Object val = stack.pop();
-		assert val instanceof Runnable;
-		return (Runnable) val;
+	@SuppressWarnings("unchecked")
+	private <T> T pop() {
+		return (T) stack.pop();
 	}
 
-	private String popString() {
-		Object val = stack.pop();
-		assert val instanceof String;
-		return (String) val;
+	private byte popFlag() {
+		double val = this.<Double>pop();
+		assert val >= 0 && val <= 2;
+		return (byte) val;
 	}
 }
