@@ -12,11 +12,16 @@
 
 package drawall;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Shape;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -29,8 +34,8 @@ public class PSImporter implements Plugin {
 	// A runnable that does nothing, used for ignored instructions.
 	private static final Runnable NOOP = () -> {/* empty */};
 
-	/** Current graphical state. */
-	private PSGraphics graphics = new PSGraphics();
+	/** Saved graphical state. */
+	private GraphicsSave gsave = null;
 
 	/** Main PostScript stack (aka operand stack). */
 	private final Stack<Object> stack = new Stack<>();
@@ -46,6 +51,7 @@ public class PSImporter implements Plugin {
 	private Scanner scanner;
 
 	private Graphics2D g;
+	private Path2D path = new Path2D.Double();
 
 	/** Fills the `vars` dictionnary with built-in operators. */
 	public PSImporter() {
@@ -55,10 +61,7 @@ public class PSImporter implements Plugin {
 			int blue = popColor(), green = popColor(), red = popColor();
 			g.setColor(new Color(red, green, blue));
 		});
-		vars.put("setgray", () -> {
-			int gray = popColor();
-			g.setColor(new Color(gray, gray, gray));
-		});
+		vars.put("setgray", () -> g.setColor(new Color(65793 * popColor())));
 		vars.put("findfont", () -> {
 			stack.pop();
 			while (!scanner.nextLine().equals("%%EndProlog")) {
@@ -67,35 +70,15 @@ public class PSImporter implements Plugin {
 		});
 
 		// Paths
-		vars.put("newpath", () -> graphics.path.reset());
-		vars.put("moveto", () -> {
-			double[] p = popPoints(1);
-			graphics.path.moveTo(p[0], p[1]);
-		});
-		vars.put("lineto", () -> {
-			double[] p = popPoints(1);
-			graphics.path.lineTo(p[0], p[1]);
-		});
-		vars.put("curveto", () -> {
-			double[] p = popPoints(3);
-			graphics.path.curveTo(p[0], p[1], p[2], p[3], p[4], p[5]);
-		});
-		vars.put("closepath", () -> graphics.path.closePath());
-		vars.put("stroke", () -> {
-			g.draw(graphics.path);
-			graphics.path.reset();
-		});
-		vars.put("fill", () -> {
-			graphics.path.setWindingRule(Path2D.WIND_NON_ZERO);
-			g.fill(graphics.path);
-			graphics.path.reset();
-		});
-		vars.put("eofill", () -> {
-			graphics.path.setWindingRule(Path2D.WIND_EVEN_ODD);
-			g.fill(graphics.path);
-			graphics.path.reset();
-		});
-		vars.put("clip", NOOP); // TODO (no clear)
+		vars.put("newpath", () -> path.reset());
+		vars.put("moveto", () -> path.moveTo(p(2), p()));
+		vars.put("lineto", () -> path.lineTo(p(2), p()));
+		vars.put("curveto", () -> path.curveTo(p(6), p(), p(), p(), p(), p()));
+		vars.put("closepath", () -> path.closePath());
+		vars.put("stroke", () -> { g.draw(path); path.reset(); });
+		vars.put("fill", () -> fill(Path2D.WIND_NON_ZERO));
+		vars.put("eofill", () -> fill(Path2D.WIND_EVEN_ODD));
+		vars.put("clip", () -> g.clip(path));
 
 		// Computations
 		vars.put("length", NOOP);
@@ -113,27 +96,17 @@ public class PSImporter implements Plugin {
 		// TODO: roll
 
 		// Transformations matrices
-		vars.put("matrix", () -> stack.push(PSGraphics.idMatrix()));
-		vars.put("concat", () -> {
-			double[] a = this.<double[]>pop();
-			double[] b = graphics.ctm.clone();
-			double[] c = graphics.ctm;
-			c[0] = a[0] * b[0] + a[1] * b[2];
-			c[1] = a[0] * b[1] + a[1] * b[3];
-			c[2] = a[2] * b[0] + a[3] * b[2];
-			c[3] = a[2] * b[1] + a[3] * b[3];
-			c[4] = a[4] * b[0] + a[5] * b[2] + b[4];
-			c[5] = a[4] * b[1] + a[5] * b[3] + b[5];
-		});
+		vars.put("matrix", () -> stack.push(new double[]{1.0, 0.0, 0.0, 1.0, 0.0, 0.0}));
+		vars.put("concat", () -> g.transform(new AffineTransform(this.<double[]>pop())));
 		// TODO: scale, translate, rotate
 
 		// Graphics
-		vars.put("gsave", () -> graphics = graphics.dup());
-		vars.put("grestore", () -> graphics = graphics.prev);
-		vars.put("setlinecap", () -> graphics.linecap = popFlag());
-		vars.put("setlinejoin", () -> graphics.linejoin = popFlag());
-		vars.put("setlinewidth", () -> graphics.linewidth = this.<Double>pop());
-		vars.put("setmiterlimit", () -> graphics.miterLimit = this.<Double>pop());
+		vars.put("gsave", () -> gsave = new GraphicsSave(g, path, gsave));
+		vars.put("grestore", this::restore);
+		vars.put("setlinecap", () -> ((MutableStroke) g.getStroke()).linecap = popFlag());
+		vars.put("setlinejoin", () -> ((MutableStroke) g.getStroke()).linejoin = popFlag());
+		vars.put("setlinewidth", () -> ((MutableStroke) g.getStroke()).linewidth = this.<Double>pop());
+		vars.put("setmiterlimit", () -> ((MutableStroke) g.getStroke()).miterLimit = this.<Double>pop());
 
 		// Variables
 		vars.put("bind", NOOP);
@@ -164,12 +137,15 @@ public class PSImporter implements Plugin {
 	public void process(InputStream in, Graphics2D out) {
 		scanner = new Scanner(in);
 		g = out;
+		g.setStroke(new MutableStroke());
+		g.translate(0, 300);
+		g.scale(1, -1);
+
 		// Skip whitespace and comments, break around '[', ']', '{', '}' and before '/'
 		scanner.useDelimiter("\\s*(?:\\s|(?=[{\\[\\]}/])|(?<=[{\\[\\]}])|%.*\\n)+");
 		while (scanner.hasNext()) {
 			accept(scanner.next());
 		}
-		// result.add(new Instruction(Instruction.Kind.END));
 	}
 
 	/** Process a single input token. */
@@ -204,17 +180,16 @@ public class PSImporter implements Plugin {
 		}
 	}
 
-	/** Pops 2*n numbers from the stack, treating them as a list of (X, Y) coordinates.
-	  * Applies the current transformation matrix and returns the result. */
-	private double[] popPoints(int n) {
-		double[] points = (double[]) popN(2 * n);
-		double[] a = graphics.ctm;
-		for (int i = 0; i < 2 * n; i += 2) {
-			double tmp = points[i] * a[0] + points[i + 1] * a[2] + a[4];
-			points[i + 1] = points[i] * a[1] + points[i + 1] * a[3] + a[5];
-			points[i] = tmp;
-		}
-		return points;
+	private Iterator<Object> itr;
+
+	private double p(int n) {
+		itr = new Vector<>(stack.subList(stack.size() - n, stack.size())).iterator();
+		stack.setSize(stack.size() - n);
+		return (Double) itr.next();
+	}
+
+	private double p() {
+		return (Double) itr.next();
 	}
 
 	/** Pops n items from the stack and returns them as an array.
@@ -231,7 +206,7 @@ public class PSImporter implements Plugin {
 		}
 		List<Object> sublist = stack.subList(stack.size() - n, stack.size());
 		Object[] array = sublist.toArray();
-		sublist.clear();
+		stack.setSize(stack.size() - n);
 		return array;
 	}
 
@@ -254,9 +229,78 @@ public class PSImporter implements Plugin {
 		return (T) stack.pop();
 	}
 
-	private byte popFlag() {
+	private int popFlag() {
 		double val = this.<Double>pop();
 		assert val >= 0 && val <= 2;
-		return (byte) val;
+		return (int) val;
+	}
+
+	private class GraphicsSave {
+		/** Current Transformation Matrix. */
+		final AffineTransform ctm;
+		final Stroke stroke;
+		final Color color;
+		final Shape clip;
+		final Path2D savedPath;
+		/** The previously saved graphical state. */
+		final GraphicsSave prev;
+
+		GraphicsSave(Graphics2D g, Path2D path, GraphicsSave prev) {
+			ctm = g.getTransform();
+			stroke = ((MutableStroke) g.getStroke()).clone();
+			color = g.getColor();
+			clip = g.getClip();
+			savedPath = (Path2D) path.clone();
+			this.prev = prev;
+		}
+	}
+
+	private class MutableStroke implements Stroke, Cloneable {
+		/** Current linecap. 0 = buttcap, 1 = round cap, 2 = projecting cap. */
+		int linecap = 0;
+
+		/** Current line join. 0 = Miter join, 1 = round join, 2 = Bevel join. */
+		int linejoin = 0;
+
+		/** Below this angle, a Bevel join is used instead of a Miter join. */
+		double miterLimit = 10;
+
+		/** Line width for stroked paths. */
+		double linewidth = 1;
+
+		// float dash_phase
+		// float[] dash
+
+		MutableStroke() {}
+
+		@Override
+		public Shape createStrokedShape(Shape s) {
+			return new BasicStroke((float) linewidth, linecap, linejoin, (float) miterLimit).createStrokedShape(s);
+			//, dash, dash_phase);
+		}
+
+		@Override
+		public MutableStroke clone() {
+			try {
+				return (MutableStroke) super.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new AssertionError();
+			}
+		}
+	}
+
+	private void fill(int windingRule) {
+		path.setWindingRule(windingRule);
+		g.fill(path);
+		path.reset();
+	}
+
+	void restore() {
+		g.setTransform(gsave.ctm);
+		g.setStroke(gsave.stroke);
+		g.setColor(gsave.color);
+		g.setClip(gsave.clip);
+		path = gsave.savedPath;
+		gsave = gsave.prev;
 	}
 }

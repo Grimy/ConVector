@@ -20,6 +20,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.PathIterator;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
@@ -31,28 +32,44 @@ import org.apache.xmlgraphics.java2d.GraphicContext;
 public class WriterGraphics2D extends AbstractGraphics2D {
 	private final PrintStream out;
 	private String[] format;
+
 	private int flatness = -1;
+	private double[] coords = new double[6]; // buffer
 
 	public WriterGraphics2D(PrintStream out, String[] format) {
 		super(true);
 		this.gc = new GraphicContext();
 		this.out = out;
 		this.format = format;
+
+		out.println(format[5]);
 	}
 
 	@Override
 	public void draw(Shape s) {
-		double[] coords = new double[6];
-		PathIterator itr = flatness < 0 ? s.getPathIterator(null) : s.getPathIterator(null, flatness);
-
-		for (; !itr.isDone(); itr.next()) {
-			format(format[itr.currentSegment(coords)], coords);
-		}
+		fill(gc.getStroke().createStrokedShape(s));
 	}
 
 	@Override
 	public void fill(Shape s) {
-		draw(s);
+		Area a = new Area(s);
+		if (gc.getClip() != null) {
+			a.intersect(new Area(gc.getClip()));
+		}
+		PathIterator itr = flatness < 0 ? a.getPathIterator(gc.getTransform())
+			: a.getPathIterator(gc.getTransform(), flatness);
+		out.format("<path style='fill:#%06x;stroke:none' d='", gc.getColor().getRGB() & 0xFFFFFF);
+		// out.format("<path style='fill:none;alpha:0.5;stroke:black' d='");
+		for (; !itr.isDone(); itr.next()) {
+			format(format[itr.currentSegment(coords)], coords);
+		}
+		out.print("'/>");
+	}
+
+	@Override
+	public void dispose() {
+		out.println(format[6]);
+		out.close();
 	}
 
 	/** Replaces each '%' character in the input with an element from `args`. */
@@ -78,11 +95,6 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 
 	@Override
 	public Graphics create() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void dispose() {
 		throw new UnsupportedOperationException();
 	}
 

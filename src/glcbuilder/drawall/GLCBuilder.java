@@ -13,7 +13,6 @@
 package drawall;
 
 import java.awt.Canvas;
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.io.FileInputStream;
@@ -27,20 +26,21 @@ public class GLCBuilder extends Canvas {
 
 	/** How to output the parsed Instructions. */
 	private static String filetype = "";
-	private static String[] format = OutputFormat.GCODE;
+	private static String[] format = OutputFormat.SVG;
 	private static InputStream input = System.in;
 	private static PrintStream output = System.out;
 
 	/** Converts `input` to `format` and writes the result to `output`. */
 	public static void run() {
 		// Output the parsed instructions
-		// boolean svg = format == OutputFormat.SVG;
 		// JFrame frame = new JFrame();
 		// frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
 		// frame.setSize(new Dimension(500,500));
 		// frame.setVisible(true);
-		pickPlugin().process(input, new WriterGraphics2D(output, format));
+		Graphics2D g = new WriterGraphics2D(output, format);
+		pickPlugin().process(input, g);
+		g.dispose();
 	}
 
 	@Override
@@ -48,9 +48,6 @@ public class GLCBuilder extends Canvas {
 		super.paint(graphics);
 		System.out.println(graphics);
 		Graphics2D g = (Graphics2D) graphics;
-		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, 500, 500);
-		g.setColor(Color.BLUE);
 		pickPlugin().process(input, g);
 	}
 
