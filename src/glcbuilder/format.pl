@@ -2,8 +2,9 @@
 
 use v5.20;
 use warnings;
-my ($package, $classname) = pop =~ /(.*)\/(.*)\.java/;
+my ($package, $classname) = pop =~ /(.*)\/(.*)/;
 $package =~ s!/!.!g;
+$package =~ s!^plj!drawall!;
 my $type = qr/(?:enum|class|interface) (\w+)/;
 
 my @fqcn = split /\n/, `cat ~/.vim/cache/java/*`;
@@ -55,6 +56,7 @@ my @imports = map {
 	$fqcn{$_} ne 'java.lang' && $fqcn{$_} ne $package ? "import $fqcn{$_}.$_;" : ()
 } keys %classes;
 say for sort @imports;
+say "";
 
-s!.*?(\n(?:/\*(?:[^*]|\*[^/])*\*/\n)?\N*)\b(class|interface|enum) \w+!$1$2 $classname!s or die;
+s!;\n! $classname !;
 

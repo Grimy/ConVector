@@ -26,8 +26,10 @@ import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.io.PrintStream;
+import java.util.Random;
 import org.apache.xmlgraphics.java2d.AbstractGraphics2D;
 import org.apache.xmlgraphics.java2d.GraphicContext;
+
 
 public class WriterGraphics2D extends AbstractGraphics2D {
 	private final PrintStream out;
@@ -45,6 +47,28 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		out.println(format[5]);
 	}
 
+	public double computeSurface(Area a) {
+		PathIterator i = a.getPathIterator(null, 1);
+		double surface = 0.0;
+		double x = 0.0, y = 0.0, startX = 0.0, startY = 0.0, prevX, prevY;
+
+		for (; !i.isDone(); i.next()) {
+			prevX = x;
+			prevY = y;
+			int segType = i.currentSegment(coords);
+			if (segType == PathIterator.SEG_MOVETO) {
+				startX = coords[0];
+				startY = coords[1];
+			} else {
+				boolean close = segType == PathIterator.SEG_CLOSE;
+				x = close ? startX : coords[0];
+				y = close ? startY : coords[1];
+				surface += prevX * y - x * prevY;
+			}
+		}
+		return Math.abs(surface) / 2;
+	}
+
 	@Override
 	public void draw(Shape s) {
 		fill(gc.getStroke().createStrokedShape(s));
@@ -56,10 +80,14 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		if (gc.getClip() != null) {
 			a.intersect(new Area(gc.getClip()));
 		}
+		boolean huge = computeSurface(a) > 1000;
+		Random rng = new Random();
+
 		PathIterator itr = flatness < 0 ? a.getPathIterator(gc.getTransform())
 			: a.getPathIterator(gc.getTransform(), flatness);
-		out.format("<path style='fill:#%06x;stroke:none' d='", gc.getColor().getRGB() & 0xFFFFFF);
-		// out.format("<path style='fill:none;alpha:0.5;stroke:black' d='");
+		// out.format("<path style='fill:#%06x;stroke:none' d='", gc.getColor().getRGB() & 0xFFFFFF);
+		out.format("<path style='fill:#%06x;stroke:none;opacity:0.5' d='", gc.getColor().getRGB() & rng.nextInt());
+		// out.format("<path style='fill:none;stroke:%s' d='", huge ? "green" : "black");
 		for (; !itr.isDone(); itr.next()) {
 			format(format[itr.currentSegment(coords)], coords);
 		}
@@ -73,7 +101,7 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 	}
 
 	/** Replaces each '%' character in the input with an element from `args`. */
-	private void format(String template, double[] args) {
+	protected void format(String template, double[] args) {
 		// Irritatingly, String.format treats a double[] as a single Object.
 		// Converting to a Double[] works, but is cumbersome and terrible for perf.
 		// That’s why we have our own implementation of this.
