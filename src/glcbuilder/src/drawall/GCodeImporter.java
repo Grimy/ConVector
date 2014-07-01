@@ -244,13 +244,14 @@ public class GCodeImporter implements Plugin {
 	 * Handles GCode variables (#%d) and mathematical expressions.
 	 */
 	private double parseDouble(String string) {
+		String expr = string;
 		if (string.charAt(0) == '[') {
-			string = string.substring(1, string.length() - 1);
+			expr = string.substring(1, string.length() - 1);
 		}
 
 		// Compute mathematical expressions
 		double result = 0;
-		for (String addend: string.split("\\+")) {
+		for (String addend: expr.split("\\+")) {
 			double product = 1;
 			for (String factor: addend.split("\\*")) {
 				product *= factor.charAt(0) == '#'
