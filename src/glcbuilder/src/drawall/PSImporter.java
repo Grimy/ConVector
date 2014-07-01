@@ -138,16 +138,12 @@ public class PSImporter implements Plugin {
 		scanner = new Scanner(in);
 		g = out;
 		g.setStroke(new MutableStroke());
-		g.translate(0, 300);
-		g.scale(1, -1);
 
 		// Skip whitespace and comments, break around '[', ']', '{', '}' and before '/'
 		scanner.useDelimiter("\\s*(?:\\s|(?=[{\\[\\]}/])|(?<=[{\\[\\]}])|%.*\\n)+");
 		while (scanner.hasNext()) {
 			accept(scanner.next());
 		}
-
-		g.dispose();
 	}
 
 	/** Process a single input token. */

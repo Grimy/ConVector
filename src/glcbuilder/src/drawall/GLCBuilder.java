@@ -13,8 +13,6 @@
 package drawall;
 
 import java.awt.Canvas;
-import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -37,17 +35,18 @@ public class GLCBuilder extends Canvas {
 		// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
 		// frame.setSize(new Dimension(500,500));
 		// frame.setVisible(true);
-		Graphics2D g = new WriterGraphics2D(output);
+		WriterGraphics2D g = new WriterGraphics2D();
 		pickPlugin().process(input, g);
+		g.done(new SVGOutput(output));
 	}
 
-	@Override
-	public void paint(Graphics graphics) {
-		super.paint(graphics);
-		System.out.println(graphics);
-		Graphics2D g = (Graphics2D) graphics;
-		pickPlugin().process(input, g);
-	}
+	// @Override
+	// public void paint(Graphics graphics) {
+		// super.paint(graphics);
+		// System.out.println(graphics);
+		// Graphics2D g = (Graphics2D) graphics;
+		// pickPlugin().process(input, g);
+	// }
 
 	/** Shows an usage message and exits with code `returnCode`. */
 	private static void usage(int returnCode) {

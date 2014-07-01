@@ -1,7 +1,7 @@
 CLASSPATH = -classpath bin:/usr/share/java/junit-4.11.jar
 IGNORE = nls,unqualifiedField,boxing,serial
 WARN = unusedLocal,resource
-JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:+$(WARN) -warn:-$(IGNORE) -err:all -err:-$(IGNORE),$(WARN) -source 1.8 -d bin -maxProblems 10
+JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:all -warn:-$(IGNORE) -err:all -err:-$(IGNORE),$(WARN) -source 1.8 -d bin -maxProblems 10
 JAVA = java $(CLASSPATH)
 SOURCES = $(shell find drawall/* | sed -r 's!^!src/!;s!$$!.java!')
 CLASSES = $(shell find drawall/* | sed -r 's!^!bin/!;s!$$!.class!')

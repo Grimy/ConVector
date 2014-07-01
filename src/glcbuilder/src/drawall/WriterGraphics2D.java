@@ -18,6 +18,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -32,10 +33,7 @@ import java.util.Stack;
 import org.apache.xmlgraphics.java2d.AbstractGraphics2D;
 import org.apache.xmlgraphics.java2d.GraphicContext;
 
-/* A Graphics2D object that writes to a stream. */
 public class WriterGraphics2D extends AbstractGraphics2D {
-
-	private final PrintStream out;
 
 	private int flatness = -1;
 	private double[] coords = new double[6]; // buffer
@@ -43,25 +41,9 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 	private Stack<Color> colors = new Stack<>();
 	private Map<Color, Area> colorMap = new HashMap<>();
 
-	public static final String[] GLC = {
-		"G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G05 I% J% P% Q% X% Y%", "",
-		"", "M30"
-	};
-	public static final String[] SVG = {
-		"M %,%", "L %,%", "Q %,% %,%", "C %,% %,% %,%", "z",
-		"<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n" +
-			"<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' 'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n" +
-			"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>",
-		"</svg>"
-	};
-	private String[] format = SVG;
-
-	public WriterGraphics2D(PrintStream out) {
+	public WriterGraphics2D() {
 		super(true);
 		this.gc = new GraphicContext();
-		this.out = out;
-
-		out.println(format[5]);
 	}
 
 	public double computeSurface(Area a) {
@@ -86,14 +68,6 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		return Math.abs(surface) / 2;
 	}
 
-	private static int getPathLength(Area a) {
-		int result = 0;
-		for (PathIterator i = a.getPathIterator(null); !i.isDone(); i.next()) {
-			result++;
-		}
-		return result;
-	}
-
 	@Override
 	public void draw(Shape s) {
 		fill(gc.getStroke().createStrokedShape(s));
@@ -110,31 +84,16 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		colors.push(gc.getColor());
 	}
 
-	protected void paintSVG(Area a, Color color) {
-		// Random rng = new Random();
-
-		PathIterator itr = flatness < 0 ? a.getPathIterator(null) : a.getPathIterator(null, flatness);
-
-		out.format("<path style='fill:#%06x;stroke:none' d='", color.getRGB() & 0xFFFFFF);
-		// out.format("<path style='fill:#%06x;stroke:none;opacity:0.5' d='", rng.nextInt() & 0xFFFFFF);
-		for (; !itr.isDone(); itr.next()) {
-			format(format[itr.currentSegment(coords)], coords);
-		}
-		out.print("'/>");
-	}
-
-	// protected void paintGCode(ColoredArea a) {
-	// }
-
+	// TODO: move this to an util class
 	/** Replaces each '%' character in the input with an element from `args`. */
-	protected void format(String template, double[] args) {
+	public static void format(PrintStream out, String template, double[] args) {
 		// Irritatingly, String.format treats a double[] as a single Object.
 		// Converting to a Double[] works, but is cumbersome and terrible for perf.
 		// That’s why we have our own implementation of this.
 		int i = 0;
 		for (char c: template.toCharArray()) {
 			if (c == '%') {
-				out.format("%.3f", args[i++]);
+				out.print((int) args[i++]);
 			} else {
 				out.print(c);
 			}
@@ -142,8 +101,7 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		out.println();
 	}
 
-	@Override
-	public void dispose() {
+	public void done(Output out) {
 		Area mask = new Area();
 
 		while (!areas.isEmpty()) {
@@ -160,8 +118,8 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 			// double w = r.getWidth(), h = r.getHeight();
 			// double ratio = computeSurface(a) * 2 / (w * w + h * h);
 			// if (ratio > .2 && computeSurface(a) > 900) {
-				// System.err.println(ratio + ", " + computeSurface(a));
-				// continue;
+			// System.err.println(ratio + ", " + computeSurface(a));
+			// continue;
 			// }
 			// color = ratio < .2 ? Color.RED : ratio < .4 ? Color.BLUE : new Color(rng.nextInt());
 
@@ -172,16 +130,30 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 			}
 		}
 
-		for (Color color: colorMap.keySet()) {
-			paintSVG(colorMap.get(color), color);
-		}
+		Rectangle bounds = mask.getBounds();
+		System.out.println(bounds);
+		double ratio = 65535.0 / Math.max(bounds.width, bounds.height);
+		System.out.println(ratio);
+		AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio, -bounds.x * ratio, -bounds.y * ratio);
 
-		out.println(format[6]);
-		out.close();
+		out.start();
+		for (Color color: colorMap.keySet()) {
+			out.draw(colorMap.get(color), normalize, flatness, color);
+		}
+		out.end();
+	}
+
+	/******************************************\
+	|* ONLY BOILERPLATE CODE BEYOND THIS LINE *|
+	\******************************************/
+
+	@Override
+	public void dispose() {
+		/* No resources to free */
 	}
 
 	@Override
-	public void copyArea(int a, int b, int c, int d, int e, int f) {
+	public void copyArea(int x, int y, int width, int height, int dx, int dy) {
 		throw new UnsupportedOperationException();
 	}
 

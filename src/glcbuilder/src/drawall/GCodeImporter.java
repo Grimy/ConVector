@@ -12,6 +12,8 @@
 
 package drawall;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 import java.io.InputStream;
@@ -52,31 +54,35 @@ public class GCodeImporter implements Plugin {
 	@Override
 	public void process(InputStream input, Graphics2D output) {
 		g = output;
+		path.moveTo(0, 0);
+		g.setStroke(new BasicStroke(1));
+		g.setColor(Color.BLACK);
 		scanner = new Scanner(input);
 
 		// Ignore whitespace and comments (regex ftw)
-		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)*(?=[a-zA-Z=])");
+		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
 			String token = scanner.next().toUpperCase().replaceAll("\\s", "");
-			int code = Integer.parseInt(token.substring(1));
+			double arg = parseDouble(token.substring(1));
 
 			switch (token.charAt(0)) {
 			case 'G':
-				parseG(code);
+				parseG((int) arg);
 				break;
 			case 'M':
-				parseM(code);
+				parseM((int) arg);
 				break;
 			case '#':
-				parseVar(code);
+				variables.put((int) arg, readArg('=', false));
 				break;
 
 			// Ignored codes
 			case 'F': // Set feedrate (TODO!)
 			case 'T': // Select tool (TODO, not urgent)
 			case 'S': // Set spindle speed
+				// instructions.add(new Instruction(Instruction.Kind.PAUSE));
 				break;
 
 			case 'o': // Control flow
@@ -98,7 +104,7 @@ public class GCodeImporter implements Plugin {
 		if (Double.isNaN(value)) {
 			return;
 		}
-		double val = value * (metric ? 1 : INCHES_TO_MILLIMETERS) + (relative ? 0 : getPos(axis));
+		double val = value * (metric ? 1 : INCHES_TO_MILLIMETERS) + (relative ? getPos(axis) : 0);
 		pos[axis - 'X'] = val;
 	}
 
@@ -121,7 +127,7 @@ public class GCodeImporter implements Plugin {
 			break;
 
 		case 4:  // Dwell
-			// instructions.add(new Instruction(Instruction.Kind.DWELL, readArg('P', false)));
+			readArg('P', false); // TODO
 			break;
 
 		case 20: // Switch to inches
@@ -189,11 +195,10 @@ public class GCodeImporter implements Plugin {
 			case 2:  // End program
 			case 30: // End program
 				g.draw(path);
-				g.dispose();
 				break;
 
 			case 0:  // Program pause
-				// instructions.add(new Instruction(Instruction.Kind.PAUSE));
+				// TODO
 				break;
 
 			// Silently ignored codes
@@ -219,16 +224,6 @@ public class GCodeImporter implements Plugin {
 		return false;
 	}
 
-	/** Interprets a variable declaration. */
-	private void parseVar(int var) {
-		String token = scanner.next();
-		if (!token.equals("=")) {
-			throw new IllegalArgumentException("Invalid variable declaration: expected '=', got " + token);
-		}
-		// TODO: handle []-notation by calling readArg('=') or something
-		variables.put(var, scanner.nextDouble());
-	}
-
 	/**
 	 * Reads a named argument from the file.
 	 * Throws an exception when a mandatory argument isn’t found.
@@ -240,31 +235,30 @@ public class GCodeImporter implements Plugin {
 			return Double.NaN;
 		}
 		String token = scanner.next();
-		if (!optional && token.charAt(0) != arg) {
-			throw new IllegalArgumentException("");
-		}
+		assert optional || token.charAt(0) != arg : "Required: " + arg + ", found: " + token;
+		return parseDouble(token.substring(1));
+	}
 
-		if (token.charAt(1) != '[') {
-			return parseRealValue(token.substring(1));
+	/**
+	 * Parses the specified string as a double.
+	 * Handles GCode variables (#%d) and mathematical expressions.
+	 */
+	private double parseDouble(String string) {
+		if (string.charAt(0) == '[') {
+			string = string.substring(1, string.length() - 1);
 		}
 
 		// Compute mathematical expressions
 		double result = 0;
-		for (String addend: token.substring(2, token.length() - 1).split("\\+")) {
+		for (String addend: string.split("\\+")) {
 			double product = 1;
 			for (String factor: addend.split("\\*")) {
-				product *= parseRealValue(factor);
+				product *= factor.charAt(0) == '#'
+					? variables.get(Integer.parseInt(factor.substring(1)))
+					: Double.parseDouble(factor);
 			}
 			result += product;
 		}
 		return result;
-	}
-
-	/**
-	 * Parses the specified string as a double. Handles GCode variables (#%d).
-	 */
-	private double parseRealValue(String string) {
-		return string.charAt(0) == '#' ? variables.get(Integer.parseInt(string.substring(1)))
-		                               : Double.parseDouble(string);
 	}
 }
