@@ -58,5 +58,9 @@ my @imports = map {
 say for sort @imports;
 say "";
 
-s!;\n! $classname !;
+s!^(/\*.*?\*/)?\n!! and say $1;
+s!^\s*(public |protected | private )?(class|interface|enum)\K! $classname! or die;
+s!;! {! or die;
+s!\n\K(?=.)!\t!g;
+s!$!\n}!;
 

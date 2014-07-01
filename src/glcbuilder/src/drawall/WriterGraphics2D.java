@@ -26,29 +26,46 @@ import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.io.PrintStream;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 import org.apache.xmlgraphics.java2d.AbstractGraphics2D;
 import org.apache.xmlgraphics.java2d.GraphicContext;
 
-
+/* A Graphics2D object that writes to a stream. */
 public class WriterGraphics2D extends AbstractGraphics2D {
+
 	private final PrintStream out;
-	private String[] format;
 
 	private int flatness = -1;
 	private double[] coords = new double[6]; // buffer
+	private Stack<Area> areas = new Stack<>();
+	private Stack<Color> colors = new Stack<>();
+	private Map<Color, Area> colorMap = new HashMap<>();
 
-	public WriterGraphics2D(PrintStream out, String[] format) {
+	public static final String[] GLC = {
+		"G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G05 I% J% P% Q% X% Y%", "",
+		"", "M30"
+	};
+	public static final String[] SVG = {
+		"M %,%", "L %,%", "Q %,% %,%", "C %,% %,% %,%", "z",
+		"<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n" +
+			"<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' 'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n" +
+			"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300'>",
+		"</svg>"
+	};
+	private String[] format = SVG;
+
+	public WriterGraphics2D(PrintStream out) {
 		super(true);
 		this.gc = new GraphicContext();
 		this.out = out;
-		this.format = format;
 
 		out.println(format[5]);
 	}
 
 	public double computeSurface(Area a) {
-		PathIterator i = a.getPathIterator(null, 1);
+		PathIterator i = a.getPathIterator(null, 0);
 		double surface = 0.0;
 		double x = 0.0, y = 0.0, startX = 0.0, startY = 0.0, prevX, prevY;
 
@@ -57,8 +74,8 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 			prevY = y;
 			int segType = i.currentSegment(coords);
 			if (segType == PathIterator.SEG_MOVETO) {
-				startX = coords[0];
-				startY = coords[1];
+				x = startX = coords[0];
+				y = startY = coords[1];
 			} else {
 				boolean close = segType == PathIterator.SEG_CLOSE;
 				x = close ? startX : coords[0];
@@ -67,6 +84,14 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 			}
 		}
 		return Math.abs(surface) / 2;
+	}
+
+	private static int getPathLength(Area a) {
+		int result = 0;
+		for (PathIterator i = a.getPathIterator(null); !i.isDone(); i.next()) {
+			result++;
+		}
+		return result;
 	}
 
 	@Override
@@ -80,25 +105,26 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		if (gc.getClip() != null) {
 			a.intersect(new Area(gc.getClip()));
 		}
-		boolean huge = computeSurface(a) > 1000;
-		Random rng = new Random();
+		a.transform(gc.getTransform());
+		areas.push(a);
+		colors.push(gc.getColor());
+	}
 
-		PathIterator itr = flatness < 0 ? a.getPathIterator(gc.getTransform())
-			: a.getPathIterator(gc.getTransform(), flatness);
-		// out.format("<path style='fill:#%06x;stroke:none' d='", gc.getColor().getRGB() & 0xFFFFFF);
-		out.format("<path style='fill:#%06x;stroke:none;opacity:0.5' d='", gc.getColor().getRGB() & rng.nextInt());
-		// out.format("<path style='fill:none;stroke:%s' d='", huge ? "green" : "black");
+	protected void paintSVG(Area a, Color color) {
+		// Random rng = new Random();
+
+		PathIterator itr = flatness < 0 ? a.getPathIterator(null) : a.getPathIterator(null, flatness);
+
+		out.format("<path style='fill:#%06x;stroke:none' d='", color.getRGB() & 0xFFFFFF);
+		// out.format("<path style='fill:#%06x;stroke:none;opacity:0.5' d='", rng.nextInt() & 0xFFFFFF);
 		for (; !itr.isDone(); itr.next()) {
 			format(format[itr.currentSegment(coords)], coords);
 		}
 		out.print("'/>");
 	}
 
-	@Override
-	public void dispose() {
-		out.println(format[6]);
-		out.close();
-	}
+	// protected void paintGCode(ColoredArea a) {
+	// }
 
 	/** Replaces each '%' character in the input with an element from `args`. */
 	protected void format(String template, double[] args) {
@@ -114,6 +140,44 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 			}
 		}
 		out.println();
+	}
+
+	@Override
+	public void dispose() {
+		Area mask = new Area();
+
+		while (!areas.isEmpty()) {
+			Area a = areas.pop();
+			Color color = colors.pop();
+
+			a.subtract(mask); // XXX: this increases the filesize by >50%
+			if (a.isEmpty()) {
+				continue;
+			}
+			mask.add(a);
+
+			// Rectangle2D r = a.getBounds2D();
+			// double w = r.getWidth(), h = r.getHeight();
+			// double ratio = computeSurface(a) * 2 / (w * w + h * h);
+			// if (ratio > .2 && computeSurface(a) > 900) {
+				// System.err.println(ratio + ", " + computeSurface(a));
+				// continue;
+			// }
+			// color = ratio < .2 ? Color.RED : ratio < .4 ? Color.BLUE : new Color(rng.nextInt());
+
+			if (colorMap.containsKey(color)) {
+				colorMap.get(color).add(a);
+			} else {
+				colorMap.put(color, a);
+			}
+		}
+
+		for (Color color: colorMap.keySet()) {
+			paintSVG(colorMap.get(color), color);
+		}
+
+		out.println(format[6]);
+		out.close();
 	}
 
 	@Override

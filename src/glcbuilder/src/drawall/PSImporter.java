@@ -146,6 +146,8 @@ public class PSImporter implements Plugin {
 		while (scanner.hasNext()) {
 			accept(scanner.next());
 		}
+
+		g.dispose();
 	}
 
 	/** Process a single input token. */

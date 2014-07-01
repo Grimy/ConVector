@@ -23,6 +23,7 @@ import org.apache.fop.render.ps.EPSTranscoder;
 
 /** Uses Batik to convert SVG to PS. */
 public class SVGtoPS extends PipedInputStream {
+
 	public SVGtoPS(InputStream input) {
 		TranscoderInput tin = new TranscoderInput(input);
 		// XXX: is it really better to use a Thread?

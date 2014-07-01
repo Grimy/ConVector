@@ -13,7 +13,7 @@ bin/%.class: src/%.java
 
 # "make format": use format.pl to create .java files
 format: cache $(SOURCES)
-src/%.java: %
+src/%.java: % format.pl
 	perl format.pl $< $< > $@
 
 # "make cache": updates the class cache (not usually useful)
@@ -23,7 +23,8 @@ cache:
 
 # "make clean": remove generated files
 clean:
-	rm $(SOURCES) $(CLASSES)
+	find src -name '*.java' -delete
+	find bin -name '*.class' -delete
 
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
 run: build

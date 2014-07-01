@@ -40,10 +40,6 @@ public class GCodeImporter implements Plugin {
 	/** The current position, represented by an { X, Y, Z } array. */
 	private double[] pos = { 0.0, 0.0, 0.0 };
 
-	/** min/max values for each coordinate. Will be used to scale images to a predefined width/height. */
-	private double[] minPos = { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY };
-	private double[] maxPos = { Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
-
 	/** The scanner used to parse the input. XXX: could be made local. */
 	private Scanner scanner;
 
@@ -59,12 +55,11 @@ public class GCodeImporter implements Plugin {
 		scanner = new Scanner(input);
 
 		// Ignore whitespace and comments (regex ftw)
-		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)+");
-		// TODO: split tokens on (?=[a-zA-Z]), /then/ remove whitespace
+		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)*(?=[a-zA-Z=])");
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
-			String token = scanner.next();
+			String token = scanner.next().toUpperCase().replaceAll("\\s", "");
 			int code = Integer.parseInt(token.substring(1));
 
 			switch (token.charAt(0)) {
@@ -104,10 +99,7 @@ public class GCodeImporter implements Plugin {
 			return;
 		}
 		double val = value * (metric ? 1 : INCHES_TO_MILLIMETERS) + (relative ? 0 : getPos(axis));
-		int i = axis - 'X';
-		pos[i] = val;
-		minPos[i] = val < minPos[i] ? val : minPos[i];
-		maxPos[i] = val > maxPos[i] ? val : maxPos[i];
+		pos[axis - 'X'] = val;
 	}
 
 	/** Interprets a single G-code. */
@@ -197,6 +189,7 @@ public class GCodeImporter implements Plugin {
 			case 2:  // End program
 			case 30: // End program
 				g.draw(path);
+				g.dispose();
 				break;
 
 			case 0:  // Program pause

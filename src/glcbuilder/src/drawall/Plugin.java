@@ -17,6 +17,7 @@ import java.io.InputStream;
 
 /** Base interface for plugins. */
 public interface Plugin {
+
 	/** Interprets `input` and draws on `output`. */
 	public void process(InputStream input, Graphics2D output);
 }

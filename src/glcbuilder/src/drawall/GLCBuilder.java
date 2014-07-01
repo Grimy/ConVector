@@ -26,7 +26,6 @@ public class GLCBuilder extends Canvas {
 
 	/** How to output the parsed Instructions. */
 	private static String filetype = "";
-	private static String[] format = OutputFormat.SVG;
 	private static InputStream input = System.in;
 	private static PrintStream output = System.out;
 
@@ -38,9 +37,8 @@ public class GLCBuilder extends Canvas {
 		// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
 		// frame.setSize(new Dimension(500,500));
 		// frame.setVisible(true);
-		Graphics2D g = new WriterGraphics2D(output, format);
+		Graphics2D g = new WriterGraphics2D(output);
 		pickPlugin().process(input, g);
-		g.dispose();
 	}
 
 	@Override
@@ -71,7 +69,7 @@ public class GLCBuilder extends Canvas {
 			// TODO: move the body of this while to a method responsible for parsing a single argument
 			switch (args[i++]) {
 			case "-svg":
-				format = OutputFormat.SVG;
+				// format = OutputFormat.SVG;
 				break;
 			default:
 				System.err.println("Unknown option: " + args[i]);
