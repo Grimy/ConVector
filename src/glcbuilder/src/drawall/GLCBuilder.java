@@ -12,16 +12,12 @@
 
 package drawall;
 
-import java.awt.BorderLayout;
 import java.awt.Canvas;
-import java.awt.Dimension;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Locale;
-
-import javax.swing.JFrame;
 
 /** Main entry point. */
 public class GLCBuilder extends Canvas {
@@ -33,12 +29,12 @@ public class GLCBuilder extends Canvas {
 
 	/** Converts `input` to `format` and writes the result to `output`. */
 	public static void run() {
-//		 Output the parsed instructions
-		JFrame frame = new JFrame();
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
-		frame.setSize(new Dimension(500,500));
-		frame.setVisible(true);
+		// Output the parsed instructions
+		// JFrame frame = new JFrame();
+		// frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
+		// frame.setSize(new Dimension(500,500));
+		// frame.setVisible(true);
 		WriterGraphics2D g = new WriterGraphics2D();
 		pickPlugin().process(input, g);
 		g.done(new SVGOutput(output));

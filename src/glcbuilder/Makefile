@@ -1,4 +1,4 @@
-CLASSPATH = -classpath bin:/usr/share/java/junit-4.11.jar
+CLASSPATH = -classpath bin:lib:/usr/share/java/junit-4.11.jar
 IGNORE = nls,unqualifiedField,boxing,serial
 WARN = unusedLocal,resource
 JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:all -warn:-$(IGNORE) -err:all -err:-$(IGNORE),$(WARN) -source 1.8 -d bin -maxProblems 10
@@ -18,7 +18,7 @@ src/%.java: % format.pl
 
 # "make cache": updates the class cache (not usually useful)
 cache:
-	cd bin; find org -name '*.class' | perl -ple 's!bin/|\.class!!g' > ~/.vim/cache/java/glc
+	cd lib; find org -name '*.class' | perl -ple 's!bin/|\.class!!g' > ~/.vim/cache/java/glc
 	find drawall >> ~/.vim/cache/java/glc
 
 # "make clean": remove generated files

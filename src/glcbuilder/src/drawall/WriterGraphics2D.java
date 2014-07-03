@@ -27,13 +27,11 @@ import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.io.PrintStream;
-import java.text.AttributedCharacterIterator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-
-import org.apache.batik.ext.awt.g2d.AbstractGraphics2D;
-import org.apache.batik.ext.awt.g2d.GraphicContext;
+import org.apache.xmlgraphics.java2d.AbstractGraphics2D;
+import org.apache.xmlgraphics.java2d.GraphicContext;
 
 public class WriterGraphics2D extends AbstractGraphics2D {
 
@@ -202,12 +200,5 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 	@Override
 	public void setXORMode(Color color) {
 		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void drawString(AttributedCharacterIterator iterator, float x,
-			float y) {
-		// TODO Auto-generated method stub
-		
 	}
 }
