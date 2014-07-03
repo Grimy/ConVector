@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="javadoc">
+    <target name="javadoc">
+        <javadoc access="private" author="true" classpath="/home/natha/workspace/DraWall/src/org" destdir="/home/natha/Projets/DraWall/doc" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="drawall.test,drawall" source="1.7" sourcepath="/home/natha/workspace/DraWall/src" splitindex="true" use="true" version="true">
+            <link href="file:/home/natha/Projets/DraWall/doc/"/>
+        </javadoc>
+    </target>
+</project>
