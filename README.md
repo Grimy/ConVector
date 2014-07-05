@@ -41,7 +41,7 @@ Description des dossiers et fichiers du dépôt
 Contact et conditions d'utilisations
 ------------------------------------
 
-Contact : contact@drawbot.cc.
+Contact : contact@drawall.cc.
 
 Ce projet est libre : vous pouvez le redistribuer ou le modifier suivant les termes de la GNU GPLv3. L'ensemble du projet est publié sous cette licence, ce qui inclut les schémas électroniques, les schémas des pièces matérielles, la documentation utilisateur et développeur, ainsi que l'intégralité du code-source (incluant le programme chargé dans la puce, le simulateur et le logiciel PC). Pour plus de détails, consultez la [*GNU General Public License*][cop].
 
