@@ -33,13 +33,13 @@ import java.util.Stack;
 import org.apache.xmlgraphics.java2d.AbstractGraphics2D;
 import org.apache.xmlgraphics.java2d.GraphicContext;
 
-public class WriterGraphics2D extends AbstractGraphics2D {
+public abstract class WriterGraphics2D extends AbstractGraphics2D {
 
-	private int flatness = -1;
-	private double[] coords = new double[6]; // buffer
 	private Stack<Area> areas = new Stack<>();
 	private Stack<Color> colors = new Stack<>();
-	private Map<Color, Area> colorMap = new HashMap<>();
+	protected int flatness = -1;
+	protected double[] coords = new double[6]; // buffer
+	protected Map<Color, Area> colorMap = new HashMap<>();
 
 	public WriterGraphics2D() {
 		super(true);
@@ -101,7 +101,7 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		out.println();
 	}
 
-	public void done(Output out) {
+	public void done(PrintStream out) {
 		Area mask = new Area();
 
 		while (!areas.isEmpty()) {
@@ -131,17 +131,13 @@ public class WriterGraphics2D extends AbstractGraphics2D {
 		}
 
 		Rectangle bounds = mask.getBounds();
-		System.out.println(bounds);
 		double ratio = 65535.0 / Math.max(bounds.width, bounds.height);
-		System.out.println(ratio);
 		AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio, -bounds.x * ratio, -bounds.y * ratio);
 
-		out.start();
-		for (Color color: colorMap.keySet()) {
-			out.draw(colorMap.get(color), normalize, flatness, color);
-		}
-		out.end();
+		output(normalize, out);
 	}
+
+	protected abstract void output(AffineTransform transform, PrintStream out);
 
 	/******************************************\
 	|* ONLY BOILERPLATE CODE BEYOND THIS LINE *|

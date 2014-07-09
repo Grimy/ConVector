@@ -12,45 +12,37 @@
 
 package drawall;
 
-import java.awt.Color;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.PathIterator;
 import java.io.PrintStream;
 
 
-public class SVGOutput extends Output {
+public class SVGOutput extends WriterGraphics2D {
 
 	private static final String[] format = {"M %,%", "L %,%", "Q %,% %,%", "C %,% %,% %,%", "Z"};
 
-	private final PrintStream out;
-
-	public SVGOutput(PrintStream out) {
-		this.out = out;
-	}
-
 	@Override
-	public void start() {
+	protected void output(AffineTransform transform, PrintStream out) {
 		out.println("<?xml version='1.0' encoding='UTF-8' standalone='no'?>");
-		out.print("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' ");
-		out.println("'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
-		out.println("<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024' viewBox='0 0 65535 65535'>");
-	}
+		out.println("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' "
+				+ "'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
+		out.println("<svg xmlns='http://www.w3.org/2000/svg' "
+				+ "width='1024' height='1024' viewBox='0 0 65535 65535'>");
 
-	@Override
-	public void startPath(Color color) {
-		out.format("<path style='fill:#%06x;stroke:none' d='", color.getRGB() & 0xFFFFFF);
-	}
+		colorMap.forEach((color, area) -> {
+			out.format("<path style='fill:#%06x;stroke:none' d='",
+					color.getRGB() & 0xFFFFFF);
+			PathIterator itr = flatness < 0 ? area.getPathIterator(transform)
+			                                : area.getPathIterator(transform, flatness);
 
-	@Override
-	public void draw(int type, double[] coords) {
-		WriterGraphics2D.format(out, format[type], coords);
-	}
+			for (; !itr.isDone(); itr.next()) {
+				int type = itr.currentSegment(coords);
+				WriterGraphics2D.format(out, format[type], coords);
+			}
 
-	@Override
-	public void endPath() {
-		out.print("'/>");
-	}
+			out.print("'/>");
+		});
 
-	@Override
-	public void end() {
 		out.println("</svg>");
 	}
 }

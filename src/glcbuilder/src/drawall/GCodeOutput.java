@@ -12,25 +12,35 @@
 
 package drawall;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.PathIterator;
 import java.io.PrintStream;
 
 
-public class GCodeOutput extends Output {
+public class GCodeOutput extends WriterGraphics2D {
 
 	private static final String[] format = {"G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G05 I% J% P% Q% X% Y%"};
-	private final PrintStream out;
-
-	public GCodeOutput(PrintStream out) {
-		this.out = out;
-	}
 
 	@Override
-	public void draw(int type, double[] coords) {
-		WriterGraphics2D.format(out, format[type], coords);
-	}
+	protected void output(AffineTransform transform, PrintStream out) {
+		final double[] savedCoords = new double[2];
 
-	@Override
-	public void end() {
+		colorMap.forEach((color, area) -> {
+			PathIterator itr = flatness < 0 ? area.getPathIterator(transform)
+			                                : area.getPathIterator(transform, flatness);
+			for (; !itr.isDone(); itr.next()) {
+				int type = itr.currentSegment(coords);
+				if (type == 0) {
+					savedCoords[0] = coords[0];
+					savedCoords[1] = coords[1];
+				} else if (type == 4) {
+					coords[0] = savedCoords[0];
+					coords[1] = savedCoords[1];
+					type = 1;
+				}
+				WriterGraphics2D.format(out, format[type], coords);
+			}
+		});
 		out.println("M30");
 	}
 }

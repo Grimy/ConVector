@@ -13,6 +13,8 @@
 package drawall;
 
 import java.awt.Canvas;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -23,7 +25,8 @@ import java.util.Locale;
 public class GLCBuilder extends Canvas {
 
 	/** How to output the parsed Instructions. */
-	private static String filetype = "";
+	private static String inputFiletype = "";
+	private static String outputFiletype = "";
 	private static InputStream input = System.in;
 	private static PrintStream output = System.out;
 
@@ -35,18 +38,18 @@ public class GLCBuilder extends Canvas {
 		// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
 		// frame.setSize(new Dimension(500,500));
 		// frame.setVisible(true);
-		WriterGraphics2D g = new WriterGraphics2D();
+		WriterGraphics2D g = pickOutput();
 		pickPlugin().process(input, g);
-		g.done(new SVGOutput(output));
+		g.done(output);
 	}
 
-	// @Override
-	// public void paint(Graphics graphics) {
-		// super.paint(graphics);
-		// System.out.println(graphics);
-		// Graphics2D g = (Graphics2D) graphics;
-		// pickPlugin().process(input, g);
-	// }
+	@Override
+	public void paint(Graphics graphics) {
+		super.paint(graphics);
+		System.out.println(graphics);
+		Graphics2D g = (Graphics2D) graphics;
+		pickPlugin().process(input, g);
+	}
 
 	/** Shows an usage message and exits with code `returnCode`. */
 	private static void usage(int returnCode) {
@@ -56,7 +59,6 @@ public class GLCBuilder extends Canvas {
 
 	/** Parses command-line arguments, instantiates a GLCBuilder and runs it. */
 	public static void main(String... args) {
-		String filename = "";
 		int i = 0;
 
 		// This is necessary so that the decimal separator is "." everywhere.
@@ -79,11 +81,14 @@ public class GLCBuilder extends Canvas {
 		// Parse positional arguments (ditto)
 		try {
 			if (args.length > i) {
-				input = new FileInputStream(args[i++]);
-				filename = args[i - 1];
+				String filename = args[i++];
+				input = new FileInputStream(filename);
+				inputFiletype = filename.substring(filename.lastIndexOf('.') + 1);
 			}
 			if (args.length > i) {
-				output = new PrintStream(args[i++]);
+				String filename = args[i++];
+				output = new PrintStream(filename);
+				outputFiletype = filename.substring(filename.lastIndexOf('.') + 1);
 			}
 		} catch (FileNotFoundException e) {
 			System.err.println("Cannot open file " + args[i - 1]);
@@ -93,22 +98,20 @@ public class GLCBuilder extends Canvas {
 			System.err.println("Too many arguments.");
 			usage(1);
 		}
-		filetype = filename.substring(filename.lastIndexOf('.') + 1);
 
 		try {
 			run();
 		} catch (Exception e) {
 			e.printStackTrace(); // XXX this is for debugging only
-			System.err.println("Error while processing file " + filename);
 			System.exit(3);
 		}
 	}
 
-	/** Pick a plugin capable of interpreting the input’s filetype.
-	  * TODO: find a better way to detect filetype than the extension.
+	/** Pick a plugin capable of interpreting the input’s inputFiletype.
+	  * TODO: find a better way to detect inputFiletype than the extension.
 	  * Extensions technically mean nothing (easy to modify), and STDIN doesn’t have an extension. */
 	private static Plugin pickPlugin() {
-		switch (filetype) {
+		switch (inputFiletype) {
 		case "ngc":
 		case "glc":
 		case "gcode":
@@ -119,9 +122,25 @@ public class GLCBuilder extends Canvas {
 			return new PSImporter();
 
 		default:
-			System.err.println("Unsupported file type : " + filetype);
+			System.err.println("Unsupported file type : " + inputFiletype);
 			System.exit(3);
 			return null;
+		}
+	}
+
+	private static WriterGraphics2D pickOutput() {
+		switch (outputFiletype) {
+			case "ngc":
+			case "glc":
+			case "gcode":
+				return new GCodeOutput();
+			case "svg":
+				return new SVGOutput();
+
+			default:
+				System.err.println("Unsupported file type : " + outputFiletype);
+				System.exit(3);
+				return null;
 		}
 	}
 }
