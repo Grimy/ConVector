@@ -7,7 +7,8 @@
  * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details. You should have received a copy of the GNU
  * General Public License along with DraWall. If not, see <http://www.gnu.org/licenses/>.
- * Copyright (c) 2012-2014 Nathanaël Jourdane.
+ * © 2012–2014 Nathanaël Jourdane
+ * © 2014 Victor Adam
  */
 
 package drawall;
