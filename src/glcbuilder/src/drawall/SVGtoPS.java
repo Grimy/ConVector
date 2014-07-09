@@ -15,6 +15,7 @@ package drawall;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import org.apache.batik.transcoder.TranscoderException;
@@ -29,9 +30,8 @@ public class SVGtoPS extends PipedInputStream {
 		TranscoderInput tin = new TranscoderInput(input);
 		// XXX: is it really better to use a Thread?
 		new Thread(() -> {
-			try {
-				TranscoderOutput tout = new TranscoderOutput(new PipedOutputStream(SVGtoPS.this));
-				new EPSTranscoder().transcode(tin, tout);
+			try (OutputStream pout = new PipedOutputStream(SVGtoPS.this)) {
+				new EPSTranscoder().transcode(tin, new TranscoderOutput(pout));
 			} catch (IOException | TranscoderException e) {
 				throw new RuntimeException(e);
 			}
