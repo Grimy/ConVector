@@ -1,12 +1,13 @@
-# Fichiers générés
+# Generated files
 *.gch
 *.pyc
 documentation/doxygen/html
 
-# Divers
+# Eclipse IDE
+.metadata
+
+# Misc
 *~
 _*
 releases
-
-# Eclipse
-.metadata
+img_test
