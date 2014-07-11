@@ -1,0 +1,20 @@
+
+public class extends Canvas;
+
+// JFrame frame = new JFrame();
+// frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
+// frame.setSize(new Dimension(500,500));
+// frame.setVisible(true);
+public static void main(String... args) {
+	assert false;
+}
+
+@Override
+public void paint(Graphics graphics) {
+	super.paint(graphics);
+	System.out.println(graphics);
+	Graphics2D g = (Graphics2D) graphics;
+	pickPlugin().process(input, g);
+}
+

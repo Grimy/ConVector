@@ -1,0 +1,14 @@
+/** Uses Batik to convert SVG to PS. */
+public class extends PipedInputStream;
+
+public SVGtoPS(InputStream input) {
+	TranscoderInput tin = new TranscoderInput(input);
+	// XXX: is it really better to use a Thread?
+	new Thread(() -> {
+		try (OutputStream pout = new PipedOutputStream(SVGtoPS.this)) {
+			new EPSTranscoder().transcode(tin, new TranscoderOutput(pout));
+		} catch (IOException | TranscoderException e) {
+			throw new RuntimeException(e);
+		}
+	}).start();
+}
