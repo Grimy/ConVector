@@ -14,7 +14,6 @@
 package drawall.gui;
 
 import java.awt.Canvas;
-import java.awt.Graphics2D;
 import java.awt.Graphics;
 
 
@@ -32,9 +31,9 @@ public class GUI extends Canvas {
 	@Override
 	public void paint(Graphics graphics) {
 		super.paint(graphics);
-		System.out.println(graphics);
-		Graphics2D g = (Graphics2D) graphics;
-		pickPlugin().process(input, g);
+		/* System.out.println(graphics); */
+		/* Graphics2D g = (Graphics2D) graphics; */
+		/* pickPlugin().process(input, g); */
 	}
 
 }
