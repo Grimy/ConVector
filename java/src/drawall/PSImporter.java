@@ -50,7 +50,7 @@ public class PSImporter implements Plugin {
 	private int curlyDepth = 0;
 
 	/** The current code block, as a list of tokens. */
-	private final Vector<String> block = new Vector<>();
+	private Vector<String> block = new Vector<>();
 
 	/** Maps variable names to their values. */
 	private final Map<String, Runnable> vars = new HashMap<>();
@@ -116,6 +116,7 @@ public class PSImporter implements Plugin {
 		vars.put("setlinejoin", () -> ((MutableStroke) g.getStroke()).linejoin = popFlag());
 		vars.put("setlinewidth", () -> ((MutableStroke) g.getStroke()).linewidth = this.<Double>pop());
 		vars.put("setmiterlimit", () -> ((MutableStroke) g.getStroke()).miterLimit = this.<Double>pop());
+		vars.put("showpage", NOOP);
 
 		// Variables
 		vars.put("bind", NOOP);
@@ -157,16 +158,16 @@ public class PSImporter implements Plugin {
 	/** Process a single input token. */
 	private void accept(String token) {
 		char c = token.charAt(0);
-		System.out.println(curlyDepth + ": " + token);
 
 		if (curlyDepth > 0) {
 			curlyDepth += c == '{' ? 1 : c == '}' ? -1 : 0;
 			if (curlyDepth > 0) {
 				block.add(token);
 			} else {
-				Runnable code = () -> block.forEach(this::accept);
+				final Vector<String> copy = block;
+				Runnable code = () -> copy.forEach(this::accept);
 				stack.push(code);
-				block.clear();
+				block = new Vector<>();
 			}
 		} else if (c == '/') {
 			stack.push(token.substring(1));
