@@ -35,7 +35,8 @@ public class PSImporter implements Plugin {
 	// A runnable that does nothing, used for ignored instructions.
 	private static final Runnable NOOP = () -> {/* empty */};
 
-	/** Saved graphical state. */
+	/** Saved graphical state.
+	  * Acts as an intrusive stack; null represents an empty stack. */
 	private GraphicsSave gsave = null;
 
 	/** Main PostScript stack (aka operand stack). */
@@ -45,6 +46,12 @@ public class PSImporter implements Plugin {
 	  * A corresponding ']' pops the operand stack until the top '[' mark. */
 	private final Stack<Integer> marks = new Stack<>();
 
+	/** Number of '}' until the end of the outermost code block. */
+	private int curlyDepth = 0;
+
+	/** The current code block, as a list of tokens. */
+	private final Vector<String> block = new Vector<>();
+
 	/** Maps variable names to their values. */
 	private final Map<String, Runnable> vars = new HashMap<>();
 
@@ -52,7 +59,7 @@ public class PSImporter implements Plugin {
 	private Scanner scanner;
 
 	private Graphics2D g;
-	private Path2D path = new Path2D.Double();
+	private RelativePath path = new RelativePath();
 
 	/** Fills the `vars` dictionnary with built-in operators. */
 	public PSImporter() {
@@ -74,6 +81,7 @@ public class PSImporter implements Plugin {
 		vars.put("newpath", () -> path.reset());
 		vars.put("moveto", () -> path.moveTo(p(2), p()));
 		vars.put("lineto", () -> path.lineTo(p(2), p()));
+		vars.put("rlineto", () -> path.rLineTo(p(2), p()));
 		vars.put("curveto", () -> path.curveTo(p(6), p(), p(), p(), p(), p()));
 		vars.put("closepath", () -> path.closePath());
 		vars.put("stroke", () -> { g.draw(path); path.reset(); });
@@ -116,7 +124,6 @@ public class PSImporter implements Plugin {
 			Object value = stack.pop();
 			// Convert non-code objects to code pushing them on the stack
 			Runnable code = value instanceof Runnable ? (Runnable) value : () -> {
-				assert value != null;
 				stack.push(value);
 			};
 			String name = this.<String>pop();
@@ -150,21 +157,23 @@ public class PSImporter implements Plugin {
 	/** Process a single input token. */
 	private void accept(String token) {
 		char c = token.charAt(0);
-		if (c == '/') {
+		System.out.println(curlyDepth + ": " + token);
+
+		if (curlyDepth > 0) {
+			curlyDepth += c == '{' ? 1 : c == '}' ? -1 : 0;
+			if (curlyDepth > 0) {
+				block.add(token);
+			} else {
+				Runnable code = () -> block.forEach(this::accept);
+				stack.push(code);
+				block.clear();
+			}
+		} else if (c == '/') {
 			stack.push(token.substring(1));
 		} else if (c == '{') {
-			Vector<String> vector = new Vector<>();
-			int depth = 1;
-			for (;;) {
-				String s = scanner.next();
-				depth += s.equals("{") ? 1 : s.equals("}") ? -1 : 0;
-				if (depth == 0) {
-					break;
-				}
-				vector.add(s);
-			}
-			Runnable code = () -> vector.forEach(this::accept);
-			stack.push(code);
+			curlyDepth++;
+		} else if (c == '}') {
+			throw new RuntimeException("Unmatched }");
 		} else if (Character.isAlphabetic(c)) {
 			getVar(token).run();
 		} else if (c == '.' || c == '-' || Character.isDigit(c)) {
@@ -212,7 +221,7 @@ public class PSImporter implements Plugin {
 	/** Returns the value of the specified variable. */
 	private Runnable getVar(String name) {
 		Runnable value = vars.get(name);
-		// assert value != null;
+		assert value != null : "Undefined variable : " + name;
 		return value;
 	}
 
@@ -240,16 +249,16 @@ public class PSImporter implements Plugin {
 		final Stroke stroke;
 		final Color color;
 		final Shape clip;
-		final Path2D savedPath;
+		final RelativePath savedPath;
 		/** The previously saved graphical state. */
 		final GraphicsSave prev;
 
-		GraphicsSave(Graphics2D g, Path2D path, GraphicsSave prev) {
+		GraphicsSave(Graphics2D g, RelativePath path, GraphicsSave prev) {
 			ctm = g.getTransform();
 			stroke = ((MutableStroke) g.getStroke()).clone();
 			color = g.getColor();
 			clip = g.getClip();
-			savedPath = (Path2D) path.clone();
+			savedPath = (RelativePath) path.clone();
 			this.prev = prev;
 		}
 	}

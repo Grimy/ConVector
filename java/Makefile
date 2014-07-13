@@ -2,7 +2,7 @@ CLASSPATH = -classpath bin:lib/batik.jar:/usr/share/java/junit-4.11.jar
 IGNORE = nls,unqualifiedField,boxing,serial
 WARN = unusedLocal,resource
 JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:all -warn:-$(IGNORE) -err:all -err:-$(IGNORE),$(WARN) -source 1.8 -d bin -maxProblems 10
-JAVA = java $(CLASSPATH)
+JAVA = java -ea $(CLASSPATH)
 SOURCES = $(shell find drawall/* -type f | sed -r 's!^!src/!;s!$$!.java!')
 CLASSES = $(shell find drawall/* -type f | sed -r 's!^!bin/!;s!$$!.class!')
 

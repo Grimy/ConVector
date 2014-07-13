@@ -109,23 +109,23 @@ public class GLCBuilder {
 		default:
 			System.err.println("Unsupported file type : " + inputFiletype);
 			System.exit(3);
-			return null;
+			return null; // never reached, but makes the compiler happy
 		}
 	}
 
 	private static WriterGraphics2D pickOutput() {
 		switch (outputFiletype) {
-			case "ngc":
-			case "glc":
-			case "gcode":
-				return new GCodeOutput();
-			case "svg":
-				return new SVGOutput();
+		case "ngc":
+		case "glc":
+		case "gcode":
+			return new GCodeOutput();
+		case "svg":
+			return new SVGOutput();
 
-			default:
-				System.err.println("Unsupported file type : " + outputFiletype);
-				System.exit(3);
-				return null;
+		default:
+			System.err.println("Unsupported file type : " + outputFiletype);
+			System.exit(3);
+			return null; // never reached, but makes the compiler happy
 		}
 	}
 }
