@@ -3,8 +3,8 @@ IGNORE = nls,unqualifiedField,boxing,serial
 WARN = unusedLocal,resource
 JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:all -warn:-$(IGNORE) -err:all -err:-$(IGNORE),$(WARN) -source 1.8 -d bin -maxProblems 10
 JAVA = java -ea $(CLASSPATH)
-SOURCES = $(shell find drawall/* -type f | sed -r 's!^!src/!;s!$$!.java!')
-CLASSES = $(shell find drawall/* -type f | sed -r 's!^!bin/!;s!$$!.class!')
+SOURCES = $(shell find drawall/* -type f -not -name .gitignore | sed -r 's!^!src/!;s!$$!.java!')
+CLASSES = $(shell find drawall/* -type f -not -name .gitignore | sed -r 's!^!bin/!;s!$$!.class!')
 
 # "make build": use ecj to compile .java files into .class files
 build: format $(CLASSES)
