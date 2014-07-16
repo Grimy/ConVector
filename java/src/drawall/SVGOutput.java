@@ -27,7 +27,7 @@ public class SVGOutput extends WriterGraphics2D {
 		out.println("<?xml version='1.0' encoding='UTF-8' standalone='no'?>");
 		out.println("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' "
 				+ "'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>");
-		out.println("<svg xmlns='http://www.w3.org/2000/svg' transform='scale(1 -1) translate(0 65535)"
+		out.println("<svg xmlns='http://www.w3.org/2000/svg' transform='scale(1 -1) translate(0 65535)' "
 				+ "width='1024' height='1024' viewBox='0 0 65535 65535'>");
 
 		colorMap.forEach((color, area) -> {
