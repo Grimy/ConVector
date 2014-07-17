@@ -20,7 +20,9 @@ import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,25 +30,58 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 /** Plugin used to parse PostScript. */
 public class PSImporter implements Plugin {
+	/* PostScript® is a trademark of Adobe Systems Incorporated. */
 
-	// A runnable that does nothing, used for ignored instructions.
+	/** Conversion ratio for angles, from degrees to radians. */
+	private static final double DEGREES_TO_RADIANS = 3.1415926535897932 / 180;
+
+	/** A Runnable that does nothing, used for ignored instructions. */
 	private static final Runnable NOOP = () -> {/* empty */};
 
-	/** Saved graphical state. */
+	/* ==PATTERNS== */
+	private static final Pattern NUMBER = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
+
+	/* ==STACKS==
+	 * The PostScript interpreter manages several stacks. See PSLR 3.4: Stacks.
+	 * Here, some of those stacks are implemented by intrusive linked lists:
+	 * each item links to the item underneath it on the stack.
+	 * `null` represents an empty stack. */
+
+	/** Operand stack. */
+	// XXX: use a float[] instead for perf
+	//      Objects would be stored in a separate heap, using signaling NaNs as indexes, eg:
+	//      objects[~Float.floatToRawLongBits(x)] // First time I use the ~ operator for real!
+	//      but then we have to do our own refcounting and garbage collecting… blargh… */
+	private final Stack<Object> stack = new Stack<>();
+
+	/** Dictionary stack. */
+	// XXX: right now we only manage a single dictionary.
+	private final Map<String, Runnable> vars = new HashMap<>();
+
+	// TODO: execution stack
+
+	/** Graphics state stack. */
 	private GraphicsSave gsave = null;
 
-	/** Main PostScript stack (aka operand stack). */
-	private final Stack<Object> stack = new Stack<>();
+	// TODO: clipping path stack
+
+	public AffineTransform ctm = new AffineTransform();
 
 	/** Stack of '[' marks’ positions.
 	  * A corresponding ']' pops the operand stack until the top '[' mark. */
 	private final Stack<Integer> marks = new Stack<>();
 
-	/** Maps variable names to their values. */
-	private final Map<String, Runnable> vars = new HashMap<>();
+
+	/** Number of '}' until the end of the outermost code block. */
+	private int curlyDepth = 0;
+
+	/** The current code block, as a list of tokens. */
+	private Vector<String> block = new Vector<>();
+
 
 	/** The scanner used to parse the input. XXX: could be made local. */
 	private Scanner scanner;
@@ -58,11 +93,9 @@ public class PSImporter implements Plugin {
 	public PSImporter() {
 
 		// Fonts / colors
-		vars.put("setrgbcolor", () -> {
-			int blue = popColor(), green = popColor(), red = popColor();
-			g.setColor(new Color(red, green, blue));
-		});
-		vars.put("setgray", () -> g.setColor(new Color(65793 * popColor())));
+		vars.put("setrgbcolor", () -> g.setColor(new Color(
+				(int) (255 * p(3)), (int) (255 * p()), (int) (255 * p()))));
+		vars.put("setgray", () -> g.setColor(new Color((int) (0xFFFFFF * p(1)))));
 		vars.put("findfont", () -> {
 			stack.pop();
 			while (!scanner.nextLine().equals("%%EndProlog")) {
@@ -72,8 +105,10 @@ public class PSImporter implements Plugin {
 
 		// Paths
 		vars.put("newpath", () -> path.reset());
-		vars.put("moveto", () -> path.moveTo(p(2), p()));
-		vars.put("lineto", () -> path.lineTo(p(2), p()));
+		vars.put("moveto", () -> moveTo(p(2), p()));
+		vars.put("lineto", () -> lineTo(p(2), p()));
+		vars.put("rmoveto", () -> rMoveTo(p(2), p()));
+		vars.put("rlineto", () -> rLineTo(p(2), p()));
 		vars.put("curveto", () -> path.curveTo(p(6), p(), p(), p(), p(), p()));
 		vars.put("closepath", () -> path.closePath());
 		vars.put("stroke", () -> { g.draw(path); path.reset(); });
@@ -82,8 +117,15 @@ public class PSImporter implements Plugin {
 		vars.put("clip", () -> g.clip(path));
 
 		// Computations
-		vars.put("length", NOOP);
-		// TODO: mul, add, sub
+		vars.put("length", NOOP); // TODO
+		vars.put("add", () -> stack.push(p(2) + p()));
+		vars.put("sub", () -> stack.push(p(2) - p()));
+		vars.put("mul", () -> stack.push(p(2) * p()));
+
+		// Comparisons
+		vars.put("eq", () -> stack.push(p(2) == p()));
+		vars.put("ne", () -> stack.push(p(2) != p()));
+		vars.put("not", () -> stack.push(!this.<Boolean>pop()));
 
 		// Stack manipulation
 		vars.put("dup", () -> stack.push(stack.peek()));
@@ -94,20 +136,31 @@ public class PSImporter implements Plugin {
 			stack.push(fst);
 			stack.push(snd);
 		});
-		// TODO: roll
+		vars.put("roll", () -> {
+			int n = (int) p(2);
+			int r = (int) p();
+			Collections.rotate(stack.subList(stack.size() - n, stack.size()), r);
+		});
+		vars.put("[", () -> marks.push(stack.size()));
+		vars.put("]", () -> {
+			assert !marks.isEmpty() : "Unmatched ] mark";
+			stack.push(popN(stack.size() - marks.pop()));
+		});
 
 		// Transformations matrices
 		vars.put("matrix", () -> stack.push(new double[]{1.0, 0.0, 0.0, 1.0, 0.0, 0.0}));
-		vars.put("concat", () -> g.transform(new AffineTransform(this.<double[]>pop())));
-		// TODO: scale, translate, rotate
+		vars.put("concat", () -> ctm.concatenate(new AffineTransform(this.<double[]>pop())));
+		vars.put("rotate", () -> ctm.rotate(p(1) * DEGREES_TO_RADIANS));
+		// TODO: scale, translate
 
 		// Graphics
-		vars.put("gsave", () -> gsave = new GraphicsSave(g, path, gsave));
+		vars.put("gsave", () -> gsave = new GraphicsSave(g, ctm, path, gsave));
 		vars.put("grestore", this::restore);
 		vars.put("setlinecap", () -> ((MutableStroke) g.getStroke()).linecap = popFlag());
 		vars.put("setlinejoin", () -> ((MutableStroke) g.getStroke()).linejoin = popFlag());
-		vars.put("setlinewidth", () -> ((MutableStroke) g.getStroke()).linewidth = this.<Double>pop());
-		vars.put("setmiterlimit", () -> ((MutableStroke) g.getStroke()).miterLimit = this.<Double>pop());
+		vars.put("setlinewidth", () -> ((MutableStroke) g.getStroke()).linewidth = p(1));
+		vars.put("setmiterlimit", () -> ((MutableStroke) g.getStroke()).miterLimit = p(1));
+		vars.put("showpage", NOOP);
 
 		// Variables
 		vars.put("bind", NOOP);
@@ -116,7 +169,6 @@ public class PSImporter implements Plugin {
 			Object value = stack.pop();
 			// Convert non-code objects to code pushing them on the stack
 			Runnable code = value instanceof Runnable ? (Runnable) value : () -> {
-				assert value != null;
 				stack.push(value);
 			};
 			String name = this.<String>pop();
@@ -126,12 +178,16 @@ public class PSImporter implements Plugin {
 		// Flow control
 		vars.put("if", () -> {
 			Runnable code = this.<Runnable>pop();
-			boolean condition = (boolean) stack.pop();
-			if (condition) {
+			if ((boolean) stack.pop()) {
 				code.run();
 			}
 		});
 		// TODO: ifelse, for, foreach
+
+		// Unhandled
+		vars.put("show", null);
+		vars.put("ashow", null);
+		vars.put("setcmykcolor", null);
 	}
 
 	@Override
@@ -147,40 +203,45 @@ public class PSImporter implements Plugin {
 		}
 	}
 
+	// private Object tokenToObject(String token) {
+	// }
+
+	// private void execute(Object object) {
+		// if (curlyDepth == 0 && object instanceof Runnable) {
+			// object.run();
+		// } else {
+			// stack.push(object);
+		// }
+	// }
+
 	/** Process a single input token. */
 	private void accept(String token) {
 		char c = token.charAt(0);
-		if (c == '/') {
+
+		if (curlyDepth > 0) {
+			curlyDepth += c == '{' ? 1 : c == '}' ? -1 : 0;
+			if (curlyDepth > 0) {
+				block.add(token);
+			} else {
+				final Vector<String> copy = block;
+				Runnable code = () -> copy.forEach(this::accept);
+				stack.push(code);
+				block = new Vector<>();
+			}
+		} else if (c == '/') {
 			stack.push(token.substring(1));
 		} else if (c == '{') {
-			Vector<String> vector = new Vector<>();
-			int depth = 1;
-			for (;;) {
-				String s = scanner.next();
-				depth += s.equals("{") ? 1 : s.equals("}") ? -1 : 0;
-				if (depth == 0) {
-					break;
-				}
-				vector.add(s);
-			}
-			Runnable code = () -> vector.forEach(this::accept);
-			stack.push(code);
-		} else if (Character.isAlphabetic(c)) {
-			getVar(token).run();
-		} else if (c == '.' || c == '-' || Character.isDigit(c)) {
+			curlyDepth++;
+		} else if (c == '}') {
+			throw new RuntimeException("Unmatched }");
+		} else if (NUMBER.matcher(token).matches()) {
 			stack.push(Double.parseDouble(token));
-		} else if (c == '[') {
-			marks.push(stack.size());
-		} else if (c == ']') {
-			assert !marks.isEmpty() : "Unmatched ] mark";
-			stack.push(popN(stack.size() - marks.pop()));
 		} else {
-			throw new RuntimeException("Unknown token : " + token);
+			getVar(token).run();
 		}
 	}
 
 	private Iterator<Object> itr;
-
 	private double p(int n) {
 		itr = new Vector<>(stack.subList(stack.size() - n, stack.size())).iterator();
 		stack.setSize(stack.size() - n);
@@ -211,16 +272,8 @@ public class PSImporter implements Plugin {
 
 	/** Returns the value of the specified variable. */
 	private Runnable getVar(String name) {
-		Runnable value = vars.get(name);
-		// assert value != null;
-		return value;
-	}
-
-	/** Pops a specific type from the stack. XXX: generify this */
-	private int popColor() {
-		double val = this.<Double>pop();
-		assert val >= 0 && val <= 1;
-		return (int) (val * 255);
+		assert vars.containsKey(name) : "Undefined variable : " + name;
+		return vars.get(name);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -228,6 +281,7 @@ public class PSImporter implements Plugin {
 		return (T) stack.pop();
 	}
 
+	// TODO: checking the range should be the responsibility of MutableStroke
 	private int popFlag() {
 		double val = this.<Double>pop();
 		assert val >= 0 && val <= 2;
@@ -236,19 +290,19 @@ public class PSImporter implements Plugin {
 
 	private class GraphicsSave {
 		/** Current Transformation Matrix. */
-		final AffineTransform ctm;
 		final Stroke stroke;
 		final Color color;
 		final Shape clip;
+		final AffineTransform savedCtm;
 		final Path2D savedPath;
 		/** The previously saved graphical state. */
 		final GraphicsSave prev;
 
-		GraphicsSave(Graphics2D g, Path2D path, GraphicsSave prev) {
-			ctm = g.getTransform();
+		GraphicsSave(Graphics2D g, AffineTransform ctm, Path2D path, GraphicsSave prev) {
 			stroke = ((MutableStroke) g.getStroke()).clone();
 			color = g.getColor();
 			clip = g.getClip();
+			savedCtm = ctm;
 			savedPath = (Path2D) path.clone();
 			this.prev = prev;
 		}
@@ -295,11 +349,42 @@ public class PSImporter implements Plugin {
 	}
 
 	void restore() {
-		g.setTransform(gsave.ctm);
 		g.setStroke(gsave.stroke);
 		g.setColor(gsave.color);
 		g.setClip(gsave.clip);
+		ctm = gsave.savedCtm;
 		path = gsave.savedPath;
 		gsave = gsave.prev;
+	}
+
+	// XXX move those to an helper class (RelativePath ?)
+	public void moveTo(double x, double y) {
+		path.moveTo(x(x, y), y());
+	}
+
+	public void lineTo(double x, double y) {
+		path.lineTo(x(x, y), y());
+	}
+
+	public void rMoveTo(double x, double y) {
+		Point2D p = path.getCurrentPoint();
+		assert p != null;
+		path.moveTo(p.getX() + x(x, y), p.getY() + y());
+	}
+
+	public void rLineTo(double x, double y) {
+		Point2D p = path.getCurrentPoint();
+		assert p != null;
+		path.lineTo(p.getX() + x(x, y), p.getY() + y());
+	}
+
+	private Point2D transformed = new Point2D.Double();
+	private double x(double x, double y) {
+		ctm.transform(new Point2D.Double(x, y), transformed);
+		return transformed.getX();
+	}
+
+	private double y() {
+		return transformed.getY();
 	}
 }

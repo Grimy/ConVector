@@ -13,9 +13,6 @@
 
 package drawall;
 
-import java.awt.Canvas;
-import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -23,7 +20,7 @@ import java.io.PrintStream;
 import java.util.Locale;
 
 /** Main entry point. */
-public class GLCBuilder extends Canvas {
+public class GLCBuilder {
 
 	/** How to output the parsed Instructions. */
 	private static String inputFiletype = "";
@@ -34,22 +31,9 @@ public class GLCBuilder extends Canvas {
 	/** Converts `input` to `format` and writes the result to `output`. */
 	public static void run() {
 		// Output the parsed instructions
-		// JFrame frame = new JFrame();
-		// frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		// frame.getContentPane().add(BorderLayout.CENTER, new GLCBuilder());
-		// frame.setSize(new Dimension(500,500));
-		// frame.setVisible(true);
 		WriterGraphics2D g = pickOutput();
 		pickPlugin().process(input, g);
 		g.done(output);
-	}
-
-	@Override
-	public void paint(Graphics graphics) {
-		super.paint(graphics);
-		System.out.println(graphics);
-		Graphics2D g = (Graphics2D) graphics;
-		pickPlugin().process(input, g);
 	}
 
 	/** Shows an usage message and exits with code `returnCode`. */
@@ -125,23 +109,23 @@ public class GLCBuilder extends Canvas {
 		default:
 			System.err.println("Unsupported file type : " + inputFiletype);
 			System.exit(3);
-			return null;
+			return null; // never reached, but makes the compiler happy
 		}
 	}
 
 	private static WriterGraphics2D pickOutput() {
 		switch (outputFiletype) {
-			case "ngc":
-			case "glc":
-			case "gcode":
-				return new GCodeOutput();
-			case "svg":
-				return new SVGOutput();
+		case "ngc":
+		case "glc":
+		case "gcode":
+			return new GCodeOutput();
+		case "svg":
+			return new SVGOutput();
 
-			default:
-				System.err.println("Unsupported file type : " + outputFiletype);
-				System.exit(3);
-				return null;
+		default:
+			System.err.println("Unsupported file type : " + outputFiletype);
+			System.exit(3);
+			return null; // never reached, but makes the compiler happy
 		}
 	}
 }
