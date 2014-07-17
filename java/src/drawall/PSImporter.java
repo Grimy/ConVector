@@ -21,6 +21,7 @@ import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -31,20 +32,43 @@ import java.util.Vector;
 
 /** Plugin used to parse PostScript. */
 public class PSImporter implements Plugin {
+	/* PostScript® is a trademark of Adobe Systems Incorporated. */
 
-	// A runnable that does nothing, used for ignored instructions.
+	/** Conversion ratio for angles, from degrees to radians. */
+	private static final double DEGREES_TO_RADIANS = 3.1415926535897932 / 180;
+
+	/** A Runnable that does nothing, used for ignored instructions. */
 	private static final Runnable NOOP = () -> {/* empty */};
 
-	/** Saved graphical state.
-	  * Acts as an intrusive stack; null represents an empty stack. */
+
+	/* ==STACKS==
+	 * The PostScript interpreter manages several stacks. See PSLR 3.4: Stacks.
+	 * Here, some of those stacks are implemented by intrusive linked lists:
+	 * each item links to the item underneath it on the stack.
+	 * `null` represents an empty stack. */
+
+	/** Operand stack. */
+	// XXX: use a float[] instead for perf
+	//      Objects would be stored in a separate heap, using signaling NaNs as indexes, eg:
+	//      objects[~Float.floatToRawLongBits(x)] // First time I use the ~ operator for real!
+	//      but then we have to do our own refcounting and garbage collecting… blargh… */
+	private final Stack<Object> stack = new Stack<>();
+
+	/** Dictionary stack. */
+	// XXX: right now we only manage a single dictionary.
+	private final Map<String, Runnable> vars = new HashMap<>();
+
+	// TODO: execution stack
+
+	/** Graphics state stack. */
 	private GraphicsSave gsave = null;
 
-	/** Main PostScript stack (aka operand stack). */
-	private final Stack<Object> stack = new Stack<>();
+	// TODO: clipping path stack
 
 	/** Stack of '[' marks’ positions.
 	  * A corresponding ']' pops the operand stack until the top '[' mark. */
 	private final Stack<Integer> marks = new Stack<>();
+
 
 	/** Number of '}' until the end of the outermost code block. */
 	private int curlyDepth = 0;
@@ -52,8 +76,6 @@ public class PSImporter implements Plugin {
 	/** The current code block, as a list of tokens. */
 	private Vector<String> block = new Vector<>();
 
-	/** Maps variable names to their values. */
-	private final Map<String, Runnable> vars = new HashMap<>();
 
 	/** The scanner used to parse the input. XXX: could be made local. */
 	private Scanner scanner;
@@ -65,11 +87,9 @@ public class PSImporter implements Plugin {
 	public PSImporter() {
 
 		// Fonts / colors
-		vars.put("setrgbcolor", () -> {
-			int blue = popColor(), green = popColor(), red = popColor();
-			g.setColor(new Color(red, green, blue));
-		});
-		vars.put("setgray", () -> g.setColor(new Color(65793 * popColor())));
+		vars.put("setrgbcolor", () -> g.setColor(new Color(
+				(int) (255 * p(3)), (int) (255 * p()), (int) (255 * p()))));
+		vars.put("setgray", () -> g.setColor(new Color((int) (0xFFFFFF * p(1)))));
 		vars.put("findfont", () -> {
 			stack.pop();
 			while (!scanner.nextLine().equals("%%EndProlog")) {
@@ -90,8 +110,15 @@ public class PSImporter implements Plugin {
 		vars.put("clip", () -> g.clip(path));
 
 		// Computations
-		vars.put("length", NOOP);
-		// TODO: mul, add, sub
+		vars.put("length", NOOP); // TODO
+		vars.put("add", () -> stack.push(p(2) + p()));
+		vars.put("sub", () -> stack.push(p(2) - p()));
+		vars.put("mul", () -> stack.push(p(2) * p()));
+
+		// Comparisons
+		vars.put("eq", () -> stack.push(p(2) == p()));
+		vars.put("ne", () -> stack.push(p(2) != p()));
+		vars.put("not", () -> stack.push(!this.<Boolean>pop()));
 
 		// Stack manipulation
 		vars.put("dup", () -> stack.push(stack.peek()));
@@ -102,20 +129,30 @@ public class PSImporter implements Plugin {
 			stack.push(fst);
 			stack.push(snd);
 		});
-		// TODO: roll
+		vars.put("roll", () -> {
+			int n = (int) p(2);
+			int r = (int) p();
+			Collections.rotate(stack.subList(stack.size() - n, stack.size()), r);
+		});
+		vars.put("[", () -> marks.push(stack.size()));
+		vars.put("]", () -> {
+			assert !marks.isEmpty() : "Unmatched ] mark";
+			stack.push(popN(stack.size() - marks.pop()));
+		});
 
 		// Transformations matrices
 		vars.put("matrix", () -> stack.push(new double[]{1.0, 0.0, 0.0, 1.0, 0.0, 0.0}));
-		vars.put("concat", () -> g.transform(new AffineTransform(this.<double[]>pop())));
-		// TODO: scale, translate, rotate
+		vars.put("concat", () -> path.ctm.concatenate(new AffineTransform(this.<double[]>pop())));
+		vars.put("rotate", () -> path.ctm.rotate(p(1) * DEGREES_TO_RADIANS));
+		// TODO: scale, translate
 
 		// Graphics
 		vars.put("gsave", () -> gsave = new GraphicsSave(g, path, gsave));
 		vars.put("grestore", this::restore);
 		vars.put("setlinecap", () -> ((MutableStroke) g.getStroke()).linecap = popFlag());
 		vars.put("setlinejoin", () -> ((MutableStroke) g.getStroke()).linejoin = popFlag());
-		vars.put("setlinewidth", () -> ((MutableStroke) g.getStroke()).linewidth = this.<Double>pop());
-		vars.put("setmiterlimit", () -> ((MutableStroke) g.getStroke()).miterLimit = this.<Double>pop());
+		vars.put("setlinewidth", () -> ((MutableStroke) g.getStroke()).linewidth = p(1));
+		vars.put("setmiterlimit", () -> ((MutableStroke) g.getStroke()).miterLimit = p(1));
 		vars.put("showpage", NOOP);
 
 		// Variables
@@ -134,8 +171,7 @@ public class PSImporter implements Plugin {
 		// Flow control
 		vars.put("if", () -> {
 			Runnable code = this.<Runnable>pop();
-			boolean condition = (boolean) stack.pop();
-			if (condition) {
+			if ((boolean) stack.pop()) {
 				code.run();
 			}
 		});
@@ -175,22 +211,14 @@ public class PSImporter implements Plugin {
 			curlyDepth++;
 		} else if (c == '}') {
 			throw new RuntimeException("Unmatched }");
-		} else if (Character.isAlphabetic(c)) {
-			getVar(token).run();
-		} else if (c == '.' || c == '-' || Character.isDigit(c)) {
+		} else if (new Scanner(token).hasNextDouble()) {
 			stack.push(Double.parseDouble(token));
-		} else if (c == '[') {
-			marks.push(stack.size());
-		} else if (c == ']') {
-			assert !marks.isEmpty() : "Unmatched ] mark";
-			stack.push(popN(stack.size() - marks.pop()));
 		} else {
-			throw new RuntimeException("Unknown token : " + token);
+			getVar(token).run();
 		}
 	}
 
 	private Iterator<Object> itr;
-
 	private double p(int n) {
 		itr = new Vector<>(stack.subList(stack.size() - n, stack.size())).iterator();
 		stack.setSize(stack.size() - n);
@@ -221,16 +249,8 @@ public class PSImporter implements Plugin {
 
 	/** Returns the value of the specified variable. */
 	private Runnable getVar(String name) {
-		Runnable value = vars.get(name);
-		assert value != null : "Undefined variable : " + name;
-		return value;
-	}
-
-	/** Pops a specific type from the stack. XXX: generify this */
-	private int popColor() {
-		double val = this.<Double>pop();
-		assert val >= 0 && val <= 1;
-		return (int) (val * 255);
+		assert vars.containsKey(name) : "Undefined variable : " + name;
+		return vars.get(name);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -238,6 +258,7 @@ public class PSImporter implements Plugin {
 		return (T) stack.pop();
 	}
 
+	// TODO: checking the range should be the responsibility of MutableStroke
 	private int popFlag() {
 		double val = this.<Double>pop();
 		assert val >= 0 && val <= 2;
@@ -246,7 +267,6 @@ public class PSImporter implements Plugin {
 
 	private class GraphicsSave {
 		/** Current Transformation Matrix. */
-		final AffineTransform ctm;
 		final Stroke stroke;
 		final Color color;
 		final Shape clip;
@@ -255,7 +275,6 @@ public class PSImporter implements Plugin {
 		final GraphicsSave prev;
 
 		GraphicsSave(Graphics2D g, RelativePath path, GraphicsSave prev) {
-			ctm = g.getTransform();
 			stroke = ((MutableStroke) g.getStroke()).clone();
 			color = g.getColor();
 			clip = g.getClip();
@@ -305,7 +324,6 @@ public class PSImporter implements Plugin {
 	}
 
 	void restore() {
-		g.setTransform(gsave.ctm);
 		g.setStroke(gsave.stroke);
 		g.setColor(gsave.color);
 		g.setClip(gsave.clip);

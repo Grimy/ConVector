@@ -13,15 +13,29 @@
 
 package drawall;
 
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 
 /** Adds method for relative movement to Sun's Path. */
 public class RelativePath extends Path2D.Double {
 
+	public AffineTransform ctm = new AffineTransform();
+
 	public void rLineTo(double x, double y) {
 		Point2D p = getCurrentPoint();
+		assert p != null;
 		System.out.println("lineto: " + (p.getX() + x) + ", " + (p.getY() + y));
-		lineTo(p.getX() + x, p.getY() + y);
+		lineTo(p.getX() + x(x, y), p.getY() + y());
+	}
+
+	private Point2D transformed = new Point2D.Double();
+	private double x(double x, double y) {
+		ctm.transform(new Point2D.Double(x, y), transformed);
+		return transformed.getX();
+	}
+
+	private double y() {
+		return transformed.getY();
 	}
 }
