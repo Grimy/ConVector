@@ -109,7 +109,7 @@ public class PSImporter implements Plugin {
 		vars.put("lineto", () -> lineTo(p(2), p()));
 		vars.put("rmoveto", () -> rMoveTo(p(2), p()));
 		vars.put("rlineto", () -> rLineTo(p(2), p()));
-		vars.put("curveto", () -> path.curveTo(p(6), p(), p(), p(), p(), p()));
+		vars.put("curveto", () -> curveTo(p(6), p(), p(), p(), p(), p()));
 		vars.put("closepath", () -> path.closePath());
 		vars.put("stroke", () -> { g.draw(path); path.reset(); });
 		vars.put("fill", () -> fill(Path2D.WIND_NON_ZERO));
@@ -302,7 +302,7 @@ public class PSImporter implements Plugin {
 			stroke = ((MutableStroke) g.getStroke()).clone();
 			color = g.getColor();
 			clip = g.getClip();
-			savedCtm = ctm;
+			savedCtm = (AffineTransform) ctm.clone();
 			savedPath = (Path2D) path.clone();
 			this.prev = prev;
 		}
@@ -364,6 +364,10 @@ public class PSImporter implements Plugin {
 
 	public void lineTo(double x, double y) {
 		path.lineTo(x(x, y), y());
+	}
+
+	public void curveTo(double x1, double y1, double x2, double y2, double x3, double y3) {
+		path.curveTo(x(x1, y1), y(), x(x2, y2), y(), x(x3, y3), y());
 	}
 
 	public void rMoveTo(double x, double y) {
