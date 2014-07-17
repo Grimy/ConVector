@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 /** Plugin used to parse PostScript. */
 public class PSImporter implements Plugin {
@@ -40,6 +41,8 @@ public class PSImporter implements Plugin {
 	/** A Runnable that does nothing, used for ignored instructions. */
 	private static final Runnable NOOP = () -> {/* empty */};
 
+	/* ==PATTERNS== */
+	private static final Pattern NUMBER = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
 
 	/* ==STACKS==
 	 * The PostScript interpreter manages several stacks. See PSLR 3.4: Stacks.
@@ -211,7 +214,7 @@ public class PSImporter implements Plugin {
 			curlyDepth++;
 		} else if (c == '}') {
 			throw new RuntimeException("Unmatched }");
-		} else if (new Scanner(token).hasNextDouble()) {
+		} else if (NUMBER.matcher(token).matches()) {
 			stack.push(Double.parseDouble(token));
 		} else {
 			getVar(token).run();

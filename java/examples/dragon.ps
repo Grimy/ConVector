@@ -1,8 +1,8 @@
 %!PS
 
-/rec { exch 1 sub dup 0 eq not 3 -1 roll if 1 add } def
+/rec { exch 1 sub dup 0 ne 3 -1 roll if 1 add } def
 
-/F { 2 0 rlineto } def
+/F { 1 0 rlineto } def
 /+ {  90 rotate } def
 /- { -90 rotate } def
 

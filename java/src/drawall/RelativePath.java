@@ -25,7 +25,6 @@ public class RelativePath extends Path2D.Double {
 	public void rLineTo(double x, double y) {
 		Point2D p = getCurrentPoint();
 		assert p != null;
-		System.out.println("lineto: " + (p.getX() + x) + ", " + (p.getY() + y));
 		lineTo(p.getX() + x(x, y), p.getY() + y());
 	}
 
