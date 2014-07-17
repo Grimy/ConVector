@@ -20,6 +20,7 @@ import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,6 +69,8 @@ public class PSImporter implements Plugin {
 
 	// TODO: clipping path stack
 
+	public AffineTransform ctm = new AffineTransform();
+
 	/** Stack of '[' marks’ positions.
 	  * A corresponding ']' pops the operand stack until the top '[' mark. */
 	private final Stack<Integer> marks = new Stack<>();
@@ -84,7 +87,7 @@ public class PSImporter implements Plugin {
 	private Scanner scanner;
 
 	private Graphics2D g;
-	private RelativePath path = new RelativePath();
+	private Path2D path = new Path2D.Double();
 
 	/** Fills the `vars` dictionnary with built-in operators. */
 	public PSImporter() {
@@ -102,9 +105,10 @@ public class PSImporter implements Plugin {
 
 		// Paths
 		vars.put("newpath", () -> path.reset());
-		vars.put("moveto", () -> path.moveTo(p(2), p()));
-		vars.put("lineto", () -> path.lineTo(p(2), p()));
-		vars.put("rlineto", () -> path.rLineTo(p(2), p()));
+		vars.put("moveto", () -> moveTo(p(2), p()));
+		vars.put("lineto", () -> lineTo(p(2), p()));
+		vars.put("rmoveto", () -> rMoveTo(p(2), p()));
+		vars.put("rlineto", () -> rLineTo(p(2), p()));
 		vars.put("curveto", () -> path.curveTo(p(6), p(), p(), p(), p(), p()));
 		vars.put("closepath", () -> path.closePath());
 		vars.put("stroke", () -> { g.draw(path); path.reset(); });
@@ -145,12 +149,12 @@ public class PSImporter implements Plugin {
 
 		// Transformations matrices
 		vars.put("matrix", () -> stack.push(new double[]{1.0, 0.0, 0.0, 1.0, 0.0, 0.0}));
-		vars.put("concat", () -> path.ctm.concatenate(new AffineTransform(this.<double[]>pop())));
-		vars.put("rotate", () -> path.ctm.rotate(p(1) * DEGREES_TO_RADIANS));
+		vars.put("concat", () -> ctm.concatenate(new AffineTransform(this.<double[]>pop())));
+		vars.put("rotate", () -> ctm.rotate(p(1) * DEGREES_TO_RADIANS));
 		// TODO: scale, translate
 
 		// Graphics
-		vars.put("gsave", () -> gsave = new GraphicsSave(g, path, gsave));
+		vars.put("gsave", () -> gsave = new GraphicsSave(g, ctm, path, gsave));
 		vars.put("grestore", this::restore);
 		vars.put("setlinecap", () -> ((MutableStroke) g.getStroke()).linecap = popFlag());
 		vars.put("setlinejoin", () -> ((MutableStroke) g.getStroke()).linejoin = popFlag());
@@ -179,6 +183,11 @@ public class PSImporter implements Plugin {
 			}
 		});
 		// TODO: ifelse, for, foreach
+
+		// Unhandled
+		vars.put("show", null);
+		vars.put("ashow", null);
+		vars.put("setcmykcolor", null);
 	}
 
 	@Override
@@ -193,6 +202,17 @@ public class PSImporter implements Plugin {
 			accept(scanner.next());
 		}
 	}
+
+	// private Object tokenToObject(String token) {
+	// }
+
+	// private void execute(Object object) {
+		// if (curlyDepth == 0 && object instanceof Runnable) {
+			// object.run();
+		// } else {
+			// stack.push(object);
+		// }
+	// }
 
 	/** Process a single input token. */
 	private void accept(String token) {
@@ -273,15 +293,17 @@ public class PSImporter implements Plugin {
 		final Stroke stroke;
 		final Color color;
 		final Shape clip;
-		final RelativePath savedPath;
+		final AffineTransform savedCtm;
+		final Path2D savedPath;
 		/** The previously saved graphical state. */
 		final GraphicsSave prev;
 
-		GraphicsSave(Graphics2D g, RelativePath path, GraphicsSave prev) {
+		GraphicsSave(Graphics2D g, AffineTransform ctm, Path2D path, GraphicsSave prev) {
 			stroke = ((MutableStroke) g.getStroke()).clone();
 			color = g.getColor();
 			clip = g.getClip();
-			savedPath = (RelativePath) path.clone();
+			savedCtm = ctm;
+			savedPath = (Path2D) path.clone();
 			this.prev = prev;
 		}
 	}
@@ -330,7 +352,39 @@ public class PSImporter implements Plugin {
 		g.setStroke(gsave.stroke);
 		g.setColor(gsave.color);
 		g.setClip(gsave.clip);
+		ctm = gsave.savedCtm;
 		path = gsave.savedPath;
 		gsave = gsave.prev;
+	}
+
+	// XXX move those to an helper class (RelativePath ?)
+	public void moveTo(double x, double y) {
+		path.moveTo(x(x, y), y());
+	}
+
+	public void lineTo(double x, double y) {
+		path.lineTo(x(x, y), y());
+	}
+
+	public void rMoveTo(double x, double y) {
+		Point2D p = path.getCurrentPoint();
+		assert p != null;
+		path.moveTo(p.getX() + x(x, y), p.getY() + y());
+	}
+
+	public void rLineTo(double x, double y) {
+		Point2D p = path.getCurrentPoint();
+		assert p != null;
+		path.lineTo(p.getX() + x(x, y), p.getY() + y());
+	}
+
+	private Point2D transformed = new Point2D.Double();
+	private double x(double x, double y) {
+		ctm.transform(new Point2D.Double(x, y), transformed);
+		return transformed.getX();
+	}
+
+	private double y() {
+		return transformed.getY();
 	}
 }
