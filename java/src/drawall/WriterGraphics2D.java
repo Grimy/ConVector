@@ -38,7 +38,7 @@ public abstract class WriterGraphics2D extends AbstractGraphics2D {
 
 	private Stack<Area> areas = new Stack<>();
 	private Stack<Color> colors = new Stack<>();
-	protected int flatness = -1;
+	protected int flatness = 1;
 	protected double[] coords = new double[6]; // buffer
 	protected Map<Color, Area> colorMap = new HashMap<>();
 
