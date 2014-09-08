@@ -16,21 +16,24 @@ package drawall;
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.Path2D;
 import java.io.PrintWriter;
 import java.util.Map;
 
+public class PDFOutput implements Output {
 
-public class GCodeOutput implements Output {
-
-	private static final String[] format = {"G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G05 I% J% P% Q% X% Y%"};
+	private static final String[] format = {"% % m", "% % l", null, "% % % % % % c", "h"};
 
 	@Override
 	public void output(Map<Color, Area> colorMap, AffineTransform transform, PrintWriter out) {
-		out.println("G21");
-		for (Path2D path: Utils.optimize(colorMap)) {
-			Utils.eachSegment(path, transform, (coords, type) -> Utils.format(out, format[type], coords));
-		}
-		out.println("M30");
+		out.println("%PDF-1");
+		out.println("1 0 obj<</Pages 1 0 R/Kids[2 0 R]/Count 1>>endobj");
+		out.println("2 0 obj<</Contents 3 0 R/MediaBox[0 0 300 300]>>endobj");
+		out.println("3 0 obj<</Length 0>>stream");
+		colorMap.forEach((color, area) -> {
+			out.format("%f %f %f rg\n", color.getRed() / 255.0, color.getGreen() / 255.0, color.getBlue() / 255.0);
+			Utils.eachSegment(area, null, (coords, type) -> Utils.format(out, format[type], coords));
+			out.println("h f");
+		});
+		out.println("endstream endobj trailer<</Size 0/Root 1 0 R>>");
 	}
 }

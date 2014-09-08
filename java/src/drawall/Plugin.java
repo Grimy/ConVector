@@ -14,11 +14,11 @@
 package drawall;
 
 import java.awt.Graphics2D;
-import java.io.InputStream;
+import java.io.Reader;
 
 /** Base interface for plugins. */
 public interface Plugin {
 
 	/** Interprets `input` and draws on `output`. */
-	public void process(InputStream input, Graphics2D output);
+	public void process(Reader input, Graphics2D output);
 }

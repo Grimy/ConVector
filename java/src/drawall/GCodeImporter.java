@@ -16,8 +16,8 @@ package drawall;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Path2D;
-import java.io.InputStream;
+import java.awt.geom.AffineTransform;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -28,39 +28,33 @@ public class GCodeImporter implements Plugin {
 	/* Convertion ratio. */
 	private static final double INCHES_TO_MILLIMETERS = 25.4;
 
+	/* Whether to use millimeters. Set by G20 / G21 */
+	private static final AffineTransform ctm = new AffineTransform();
+
 	/* Default mode for lines without an instruction. Set by G0 / G1. */
 	private boolean write = false;
-
-	/* Whether to use millimeters. Set by G20 / G21 */
-	private boolean metric = false;
 
 	/* Whether to compute coordinates relative to the current point. Set by G20 / G21 */
 	private boolean relative = false;
 
-	/** The axis used by arc motions. Set by G17 / G18 / G19. Ignored. */
-	// private char axis = 'Z';
-
-	/** The current position, represented by an { X, Y, Z } array. */
-	private double[] pos = { 0.0, 0.0, 0.0 };
-
-	/** The scanner used to parse the input. XXX: could be made local. */
+	/** The scanner used to parse the input. */
 	private Scanner scanner;
 
-	/* Maps GCode variable names to their values. XXX: use a SparseArray for performance. */
+	/* Maps GCode variable names to their values. */
 	private Map<Integer, Double> variables = new HashMap<>();
 
 	private Graphics2D g;
-	private Path2D.Double path = new Path2D.Double();
+	private RelativePath path = new RelativePath(ctm);
 
 	@Override
-	public void process(InputStream input, Graphics2D output) {
+	public void process(Reader input, Graphics2D output) {
 		g = output;
-		path.moveTo(0, 0);
+		path.moveTo(false, 0, 0);
 		g.setStroke(new BasicStroke(1));
 		g.setColor(Color.BLACK);
 		scanner = new Scanner(input);
 
-		// Ignore whitespace and comments (regex ftw)
+		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
 
 		// Main loop: iterate over tokens
@@ -76,7 +70,7 @@ public class GCodeImporter implements Plugin {
 				parseM((int) arg);
 				break;
 			case '#':
-				variables.put((int) arg, readArg('=', false));
+				variables.put((int) arg, readArg('='));
 				break;
 
 			// Ignored codes
@@ -87,26 +81,12 @@ public class GCodeImporter implements Plugin {
 				break;
 
 			case 'o': // Control flow
-				throw new UnsupportedOperationException("Unimplemented GCode : G" + token);
+				throw new UnsupportedOperationException("Flow control isn’t implemented");
 
 			default:
 				throw new IllegalArgumentException("Invalid GCode: " + token);
 			}
 		}
-	}
-
-	/** Returns the current position along the specified axis ('X', 'Y' or 'Z'). */
-	private double getPos(char axis) {
-		return pos[axis - 'X'];
-	}
-
-	/** Sets the current position along the specified axis ('X', 'Y' or 'Z'). */
-	private void setPos(char axis, double value) {
-		if (Double.isNaN(value)) {
-			return;
-		}
-		double val = value * (metric ? 1 : INCHES_TO_MILLIMETERS) + (relative ? getPos(axis) : 0);
-		pos[axis - 'X'] = val;
 	}
 
 	/** Interprets a single G-code. */
@@ -115,25 +95,30 @@ public class GCodeImporter implements Plugin {
 		case 0:  // Linear motion without writing
 		case 1:  // Linear motion
 			write = code == 1;
-			setPos('X', readArg('X', true));
-			setPos('Y', readArg('Y', true));
-			setPos('Z', readArg('Z', true));
+			double x = scanner.hasNext("X.*") ? readArg('X') :
+				relative ? 0 : Double.NaN; // path.getCurrentPoint().getX();
+			double y = scanner.hasNext("Y.*") ? readArg('Y') :
+				relative ? 0 : Double.NaN; // path.getCurrentPoint().getY();
 			if (write) {
-				path.lineTo(getPos('X'), getPos('Y'));
+				path.lineTo(relative, x, y);
 			} else {
 				g.draw(path);
-				path = new Path2D.Double();
-				path.moveTo(getPos('X'), getPos('Y'));
+				path = new RelativePath(ctm);
+				path.moveTo(relative, x, y);
 			}
 			break;
 
-		case 4:  // Dwell
-			readArg('P', false); // TODO
+		case 5:  // Cubic spline
+			path.curveTo(relative, readArg('I'), readArg('J'), readArg('P'), readArg('Q'),
+					readArg('X'), readArg('Y'));
 			break;
 
 		case 20: // Switch to inches
+			ctm.setToScale(INCHES_TO_MILLIMETERS, INCHES_TO_MILLIMETERS);
+			break;
+
 		case 21: // Switch to millimeters
-			metric = code == 21;
+			ctm.setToScale(1, 1);
 			break;
 
 		case 90: // Switch to absolute mode
@@ -144,10 +129,11 @@ public class GCodeImporter implements Plugin {
 		case 17: // Select XY plane
 		case 18: // Select XZ plane
 		case 19: // Select YZ plane
-			// axis = (char) ('Z' - (code - 17));
+			// XXX: die if plane != XY ?
 			break;
 
 		// Silently ignored codes
+		case 4:  // Dwell
 		case 33: // Spindle-synchronized motion
 		case 40: // Cancel cutter radius compensation
 		case 41: // Start cutter radius compensation left
@@ -169,15 +155,13 @@ public class GCodeImporter implements Plugin {
 		case 95: // Units per revolution
 		case 96: // CSS mode (Constant Surface Speed)
 		case 97: // RPM mode
-		case 98: // Retract to previous postion
+		case 98: // Retract to previous position
 		case 99: // Retract to R
-			scanner.nextLine();
 			break;
 
 		// Unsupported codes (TODO)
 		case 2:  // Helical motion, CW
 		case 3:  // Helical motion, CCW
-		case 5:  // Cubic spline
 		case 7:  // Diameter mode
 		case 8:  // Radius mode
 		case 28: // Return to or set reference point 1
@@ -188,6 +172,8 @@ public class GCodeImporter implements Plugin {
 		default:
 			throw new UnsupportedOperationException("Invalid GCode : G" + code);
 		}
+
+		scanner.nextLine();
 	}
 
 	/** Interprets a single M-code. */
@@ -199,7 +185,6 @@ public class GCodeImporter implements Plugin {
 				break;
 
 			case 0:  // Program pause
-				// TODO
 				break;
 
 			// Silently ignored codes
@@ -227,16 +212,12 @@ public class GCodeImporter implements Plugin {
 
 	/**
 	 * Reads a named argument from the file.
-	 * Throws an exception when a mandatory argument isn’t found.
-	 * Returns NaN when an optional argument isn’t found.
 	 * Examples: given the input "X4.2", readArg('X') returns 4.2.
+	 * @throws AssertionError when a mandatory argument isn’t found.
 	 */
-	private double readArg(char arg, boolean optional) {
-		if (optional && !scanner.hasNext(arg + ".*")) {
-			return Double.NaN;
-		}
+	private double readArg(char arg) {
 		String token = scanner.next();
-		assert optional || token.charAt(0) != arg : "Required: " + arg + ", found: " + token;
+		assert token.charAt(0) == arg : "Required: " + arg + ", found: " + token;
 		return parseDouble(token.substring(1));
 	}
 

@@ -13,28 +13,27 @@
 
 package drawall;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.awt.Graphics2D;
+import java.io.ByteArrayOutputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.fop.render.ps.EPSTranscoder;
 
 /** Uses Batik to convert SVG to PS. */
-public class SVGtoPS extends PipedInputStream {
+public class SVGImporter implements Plugin {
 
-	public SVGtoPS(InputStream input) {
-		TranscoderInput tin = new TranscoderInput(input);
-		// XXX: is it really better to use a Thread?
-		new Thread(() -> {
-			try (OutputStream pout = new PipedOutputStream(SVGtoPS.this)) {
-				new EPSTranscoder().transcode(tin, new TranscoderOutput(pout));
-			} catch (IOException | TranscoderException e) {
-				throw new RuntimeException(e);
-			}
-		}).start();
+	@Override
+	public void process(Reader input, Graphics2D g) {
+		// XXX this is terrible performance-wise
+		ByteArrayOutputStream charOutput = new ByteArrayOutputStream();
+		try {
+			new EPSTranscoder().transcode(new TranscoderInput(input), new TranscoderOutput(charOutput));
+		} catch (TranscoderException e) {
+			throw new RuntimeException(e);
+		}
+		new PSImporter().process(new StringReader(charOutput.toString()), g);
 	}
 }

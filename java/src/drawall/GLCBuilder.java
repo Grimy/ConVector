@@ -13,27 +13,22 @@
 
 package drawall;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
 import java.util.Locale;
 
 /** Main entry point. */
 public class GLCBuilder {
 
-	/** How to output the parsed Instructions. */
-	private static String inputFiletype = "";
-	private static String outputFiletype = "";
-	private static InputStream input = System.in;
-	private static PrintStream output = System.out;
-
-	/** Converts `input` to `format` and writes the result to `output`. */
-	public static void run() {
+	public static void run(Reader input, PrintWriter output,
+			Filetype inputFiletype, Filetype outputFiletype) {
 		// Output the parsed instructions
-		WriterGraphics2D g = pickOutput();
-		pickPlugin().process(input, g);
-		g.done(output);
+		WriterGraphics2D g = new WriterGraphics2D();
+		inputFiletype.input().process(input, g);
+		outputFiletype.output().output(g.getColorMap(), g.getNormalizingTransform(), output);
+		output.flush();
 	}
 
 	/** Shows an usage message and exits with code `returnCode`. */
@@ -44,15 +39,15 @@ public class GLCBuilder {
 
 	/** Parses command-line arguments, instantiates a GLCBuilder and runs it. */
 	public static void main(String... args) {
-		int i = 0;
-
 		// This is necessary so that the decimal separator is "." everywhere.
 		// It might become a problem if we want to internationalize the interface.
 		Locale.setDefault(Locale.US);
 
+		String inputFilename = "-", outputFilename = "-";
+		int i = 0;
+
 		// Parse named arguments (how I wish Java had a GetOpts)
 		while (i < args.length && args[i].charAt(0) == '-') {
-			// TODO: move the body of this while to a method responsible for parsing a single argument
 			switch (args[i++]) {
 			case "-svg":
 				// format = OutputFormat.SVG;
@@ -64,68 +59,26 @@ public class GLCBuilder {
 		}
 
 		// Parse positional arguments (ditto)
-		try {
-			if (args.length > i) {
-				String filename = args[i++];
-				input = new FileInputStream(filename);
-				inputFiletype = filename.substring(filename.lastIndexOf('.') + 1);
-			}
-			if (args.length > i) {
-				String filename = args[i++];
-				output = new PrintStream(filename);
-				outputFiletype = filename.substring(filename.lastIndexOf('.') + 1);
-			}
-		} catch (FileNotFoundException e) {
-			System.err.println("Cannot open file " + args[i - 1]);
-			System.exit(2);
+		if (args.length > i) {
+			inputFilename = args[i++];
+		}
+		if (args.length > i) {
+			outputFilename = args[i++];
 		}
 		if (args.length > i) {
 			System.err.println("Too many arguments.");
 			usage(1);
 		}
 
-		try {
-			run();
+		try (Reader input = inputFilename.equals("-") ?
+				new InputStreamReader(System.in) : new FileReader(inputFilename);
+				PrintWriter output = outputFilename.equals("-") ?
+				new PrintWriter(System.out) : new PrintWriter(outputFilename)) {
+			run(input, output, Filetype.fromFilename(inputFilename),
+					Filetype.fromFilename(outputFilename));
 		} catch (Exception e) {
 			e.printStackTrace(); // XXX this is for debugging only
 			System.exit(3);
-		}
-	}
-
-	/** Pick a plugin capable of interpreting the input’s inputFiletype.
-	  * TODO: find a better way to detect inputFiletype than the extension.
-	  * Extensions technically mean nothing (easy to modify), and STDIN doesn’t have an extension. */
-	private static Plugin pickPlugin() {
-		switch (inputFiletype) {
-		case "ngc":
-		case "glc":
-		case "gcode":
-			return new GCodeImporter();
-		case "svg":
-			input = new SVGtoPS(input); // $FALL-THROUGH$
-		case "ps":
-			return new PSImporter();
-
-		default:
-			System.err.println("Unsupported file type : " + inputFiletype);
-			System.exit(3);
-			return null; // never reached, but makes the compiler happy
-		}
-	}
-
-	private static WriterGraphics2D pickOutput() {
-		switch (outputFiletype) {
-		case "ngc":
-		case "glc":
-		case "gcode":
-			return new GCodeOutput();
-		case "svg":
-			return new SVGOutput();
-
-		default:
-			System.err.println("Unsupported file type : " + outputFiletype);
-			System.exit(3);
-			return null; // never reached, but makes the compiler happy
 		}
 	}
 }

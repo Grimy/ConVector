@@ -23,50 +23,33 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.PathIterator;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
-import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 import org.apache.xmlgraphics.java2d.AbstractGraphics2D;
 import org.apache.xmlgraphics.java2d.GraphicContext;
 
-public abstract class WriterGraphics2D extends AbstractGraphics2D {
+public class WriterGraphics2D extends AbstractGraphics2D {
 
 	private Stack<Area> areas = new Stack<>();
 	private Stack<Color> colors = new Stack<>();
-	protected int flatness = 1;
-	protected double[] coords = new double[6]; // buffer
-	protected Map<Color, Area> colorMap = new HashMap<>();
+	private Area mask;
 
-	public WriterGraphics2D() {
+	protected WriterGraphics2D(GraphicContext gc) {
 		super(true);
-		this.gc = new GraphicContext();
+		this.gc = gc;
 	}
 
-	public double computeSurface(Area a) {
-		PathIterator i = a.getPathIterator(null, 0);
-		double surface = 0.0;
-		double x = 0.0, y = 0.0, startX = 0.0, startY = 0.0, prevX, prevY;
+	public WriterGraphics2D() {
+		this(new GraphicContext());
+	}
 
-		for (; !i.isDone(); i.next()) {
-			prevX = x;
-			prevY = y;
-			int segType = i.currentSegment(coords);
-			if (segType == PathIterator.SEG_MOVETO) {
-				x = startX = coords[0];
-				y = startY = coords[1];
-			} else {
-				boolean close = segType == PathIterator.SEG_CLOSE;
-				x = close ? startX : coords[0];
-				y = close ? startY : coords[1];
-				surface += prevX * y - x * prevY;
-			}
-		}
-		return Math.abs(surface) / 2;
+	@Override
+	public Graphics create() {
+		return new WriterGraphics2D((GraphicContext) gc.clone());
 	}
 
 	@Override
@@ -85,30 +68,15 @@ public abstract class WriterGraphics2D extends AbstractGraphics2D {
 		colors.push(gc.getColor());
 	}
 
-	// TODO: move this to an util class
-	/** Replaces each '%' character in the input with an element from `args`. */
-	public static void format(PrintStream out, String template, double[] args) {
-		// Irritatingly, String.format treats a double[] as a single Object.
-		// Converting to a Double[] works, but is cumbersome and terrible for perf.
-		// That’s why we have our own implementation of this.
-		int i = 0;
-		for (char c: template.toCharArray()) {
-			if (c == '%') {
-				out.print((int) args[i++]);
-			} else {
-				out.print(c);
-			}
-		}
-		out.println();
-	}
-
-	public void done(PrintStream out) {
-		Area mask = new Area();
+	// Clip, merge, split, normalize, optimize
+	public Map<Color, Area> getColorMap() {
+		mask = new Area();
+		Map<Color, Area> colorMap = new HashMap<>();
 
 		while (!areas.isEmpty()) {
+			System.out.println(areas.size());
 			Area a = areas.pop();
 			Color color = colors.pop();
-
 			a.subtract(mask); // XXX: this increases the filesize by >50%
 			if (a.isEmpty()) {
 				continue;
@@ -117,7 +85,7 @@ public abstract class WriterGraphics2D extends AbstractGraphics2D {
 
 			// Rectangle2D r = a.getBounds2D();
 			// double w = r.getWidth(), h = r.getHeight();
-			// double ratio = computeSurface(a) * 2 / (w * w + h * h);
+			// double ratio = computeSurface(a) * 2 / (w * w );
 			// if (ratio > .2 && computeSurface(a) > 900) {
 			// System.err.println(ratio + ", " + computeSurface(a));
 			// continue;
@@ -131,14 +99,14 @@ public abstract class WriterGraphics2D extends AbstractGraphics2D {
 			}
 		}
 
-		Rectangle bounds = mask.getBounds();
-		double ratio = 65535.0 / Math.max(bounds.width, bounds.height);
-		AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio, -bounds.x * ratio, -bounds.y * ratio);
-
-		output(normalize, out);
+		return colorMap;
 	}
 
-	protected abstract void output(AffineTransform transform, PrintStream out);
+	public AffineTransform getNormalizingTransform() {
+		Rectangle bounds = mask.getBounds();
+		double ratio = 65535.0 / Math.max(bounds.width, bounds.height);
+		return new AffineTransform(ratio, 0, 0, ratio, -bounds.x * ratio, -bounds.y * ratio);
+	}
 
 	/******************************************\
 	|* ONLY BOILERPLATE CODE BEYOND THIS LINE *|
@@ -150,12 +118,12 @@ public abstract class WriterGraphics2D extends AbstractGraphics2D {
 	}
 
 	@Override
-	public void copyArea(int x, int y, int width, int height, int dx, int dy) {
-		throw new UnsupportedOperationException();
+	public void drawString(String str, float x, float y) {
+		drawGlyphVector(getFont().createGlyphVector(getFontRenderContext(), str), x, y);
 	}
 
 	@Override
-	public Graphics create() {
+	public void copyArea(int x, int y, int width, int height, int dx, int dy) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -176,11 +144,6 @@ public abstract class WriterGraphics2D extends AbstractGraphics2D {
 
 	@Override
 	public void drawRenderedImage(RenderedImage image, AffineTransform transform) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void drawString(String str, float x, float y) {
 		throw new UnsupportedOperationException();
 	}
 

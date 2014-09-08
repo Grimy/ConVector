@@ -1,8 +1,9 @@
+
+GLC Specifications (Deprecated)
+==================
+
 GLCBuilder generates a strict subset of GCode, called GLC (or Glucose for short). GLC is what the
 DrawBot is (or will be) able to interpret and execute.
-
-GLC Specifications
-==================
 
 Each line consists of one *operation code* followed by any number of *arguments*, separated by
 single spaces. The arguments’ names must match exactly those required by the operationc code.
@@ -25,7 +26,7 @@ M00†           Pause
 ASK: do we really need a Z argument?
 
 Notable differences from GCode
-==============================
+------------------------------
 
 * No variables
 * No mathematical expressions
@@ -36,6 +37,7 @@ Notable differences from GCode
 context of DrawBot, i.e. drilling)
 * Single digit version of the codes (i.e. G0) are not allowed (use G00)
 * All coordinate are always absolute
+
 
 Modules
 =======
@@ -52,12 +54,28 @@ glcbuilder --shaky blah.png  # Uses the ShakyLines module
 glcbuilder blah.png          # Uses some reasonable default for png files (Vectorizer?)
 
 
+Guidelines
+----------
+
+When creating a module, Postel’s law applies: *Be conservative in what you
+send, be liberal in what you accept*.
+
+In this regard, standards are more like guidelines. Being fully ISO or W3C or
+IILAR compliant may give warm fuzzy feelings, but will achieve nothing in
+practice. What really matters is correct communication with other applications,
+*even* if they are not standards-compliant.
+
+More specifically:
+* Input modules should, as much as possible, correctly process files generated
+by common applications;
+* Output modules should generate files that can be read by common applications.
+
 
 DOV Specifications
 ==================
 
 Rationale
-=========
+---------
 
 DOV (Drawall Optimized Vector) is a binary vectorial image format. It is based
 on the following design rationales:
@@ -81,7 +99,7 @@ allow drawing anything that can be drawn with other vector formats
 while being extremely easy to parse.
 
 Drawing model
-=============
+-------------
 
 Images are represented as *a set of non-overlapping areas*. This avoids the
 complexities of clipping, stroke style, line joins, alpha blending, XOR mode
@@ -100,7 +118,7 @@ and cubic Béziers curves, and uses a format allowing possible future additions.
 Likewise, DOV only supports flat colors, but adding gradients will be easy.
 
 Details
-=======
+-------
 
 For consistency, 16-bits unsigned integers are used for *everything*. This
 allows treating the entire file a single uint16 array, which simplifies
@@ -154,7 +172,7 @@ can still be represented by Béziers curves with all points aligned.
 At the end of the file, a CRC16 checksum can optionally be appended.
 
 Formal grammar (EBNF)
-====================
+--------------------
 
 DOV file ::= header, { instruction }, footer;
 header ::= magic number, reserved, width, height, original width, original height;

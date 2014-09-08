@@ -13,7 +13,7 @@ my %fqcn;
 sub prio {
 	for (@_) {
 		return -1 if not defined;
-		return 4*/^$package$/ + 2*/^java\.util/ + /^java\./;
+		return 4*/^$package$/ + 2*/^java\.util/ + /^java/;
 	}
 }
 

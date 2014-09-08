@@ -1,7 +1,9 @@
-CLASSPATH = -classpath bin:lib/batik.jar:/usr/share/java/junit-4.11.jar
-IGNORE = nls,unqualifiedField,boxing,serial
-WARN = unusedLocal,resource
-JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:all -warn:-$(IGNORE) -err:all -err:-$(IGNORE),$(WARN) -source 1.8 -d bin -maxProblems 10
+CLASSPATH = -classpath bin:lib/batik.jar
+
+ERR = assertIdentifier,charConcat,compareIdentical,conditionAssign,constructorName,deadCode,deprecation,discouraged,emptyBlock,enumIdentifier,enumSwitch,enumSwitchPedantic,fallthrough,fieldHiding,finalBound,finally,forbidden,hashCode,includeAssertNull,indirectStatic,inheritNullAnnot,intfAnnotation,intfNonInherited,intfRedundant,invalidJavadoc,invalidJavadocTag,invalidJavadocTagDep,invalidJavadocTagNotVisible,maskedCatchBlock,noEffectAssign,null,nullAnnotConflict,nullAnnotRedundant,nullDereference,paramAssign,pkgDefaultMethod,raw,resource,semicolon,specialParamHiding,staticReceiver,suppress,switchDefault,syncOverride,syntheticAccess,typeHiding,unavoidableGenericProblems,unchecked,unnecessaryElse,unusedAllocation,unusedImport,unusedLabel,unusedLocal,unusedParamOverriding,unusedParamImplementing,unusedParamIncludeDoc,unusedPrivate,unusedThrown,unusedThrownWhenOverriding,unusedThrownIncludeDocComment,unusedThrownExemptExceptionThrowable,unusedTypeArgs,uselessTypeCheck,varargsCast,warningToken,static-method,static-access
+# TEMPORARILY DISABLED = super
+# IGNORE = -nls,-unqualifiedField,-boxing,-serial,-hiding,-local
+JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:-serial -err:$(ERR) -source 1.8 -d bin -maxProblems 10
 JAVA = java -ea $(CLASSPATH)
 SOURCES = $(shell find drawall/* -type f -not -name .gitignore | sed -r 's!^!src/!;s!$$!.java!')
 CLASSES = $(shell find drawall/* -type f -not -name .gitignore | sed -r 's!^!bin/!;s!$$!.class!')
@@ -28,11 +30,14 @@ clean:
 
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
 run: build
-	$(JAVA) drawall.GLCBuilder $(ARGS)
+	$(JAVA) drawall.GLCBuilder $(ARGS) #| perl -pe 's!^\s+at (drawall.*?)\.[^.]+\(.*?:(\d+)\)$!$2p src.$1/java!&&y!./!/.! && s!^!`sed -n $_`!e && s!^\s+!!'
 
-# "make test": runs tests (unused right now)
-test: test/GCodeCleanerTest.class
-	$(JAVA) test.GCodeCleanerTest
+# "make bench": runs benchmarks
+bench:
+	$(JAVA) -Xprof drawall.GLCBuilder examples/dragon.ps examples/dragon.svg
+
+gui: build
+	$(JAVA) drawall.gui.GUI
 
 .SECONDARY:
-.PHONY: all cache format build clean run test
+.PHONY: all cache format build clean run test bench gui
