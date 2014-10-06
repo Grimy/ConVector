@@ -11,26 +11,15 @@
  * © 2014 Victor Adam
  */
 
-package drawall;
+package cc.drawall;
 
-import java.awt.Color;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.awt.geom.Path2D;
-import java.io.PrintWriter;
-import java.util.Map;
+import java.io.InputStream;
 
+/** Base interface for plugins. */
+@FunctionalInterface
 
-public class GCodeOutput implements Output {
+public interface Importer {
 
-	private static final String[] format = {"G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G05 I% J% P% Q% X% Y%"};
-
-	@Override
-	public void output(Map<Color, Area> colorMap, AffineTransform transform, PrintWriter out) {
-		out.println("G21");
-		for (Path2D path: Utils.optimize(colorMap)) {
-			Utils.eachSegment(path, transform, (coords, type) -> Utils.format(out, format[type], coords));
-		}
-		out.println("M30");
-	}
+	/** Interprets `input` and draws on `output`. */
+	public void process(final InputStream input, final WriterGraphics2D output);
 }

@@ -1,13 +1,11 @@
-# Generated files
-*.gch
-*.pyc
-documentation/doxygen/html
-
-# Eclipse IDE
 .metadata
-
-# Misc
 *~
 _*
 releases
 img_test
+javadoc.xml
+*.class
+.sonar
+blah*
+drawall.jar
+examples

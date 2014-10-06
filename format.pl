@@ -3,8 +3,7 @@
 use v5.20;
 use warnings;
 my ($package, $classname) = pop =~ /(.*)\/(.*)/;
-$package =~ s!/!.!g;
-$package =~ s!^plj!drawall!;
+$package =~ y!/!.!;
 my $type = qr/(?:enum|class|interface) (\w+)/;
 
 my @fqcn = split /\n/, `cat ~/.vim/cache/java/*`;
@@ -13,7 +12,7 @@ my %fqcn;
 sub prio {
 	for (@_) {
 		return -1 if not defined;
-		return 4*/^$package$/ + 2*/^java\.util/ + /^java/;
+		return 65536 */^$package$/ + 8 * /^org.xml.sax/ + 2*/^java\.util/ + /^java/;
 	}
 }
 
@@ -28,6 +27,9 @@ for (@fqcn) {
 	my $pkg = $1;
 	$fqcn{$_} = $pkg if prio($pkg) > prio($fqcn{$_});
 }
+
+# Insert logger declaration
+/\blog\./ and !/Logger/ and s!;\n\K!private static Logger log = Logger.getLogger($classname.class.getName());\n!;
 
 # Ignore strings and comments
 my $cleaned = s!"(?:[^"\\]|\\.)*"!!gr =~ s!//.*!!gr =~ s!/\*(?:[^*]|\*[^/])*\*/!!gsrx;
@@ -50,6 +52,7 @@ say <<'LICENSE';
  */
 LICENSE
 
+
 say "package $package;";
 say "";
 my @imports = map {
@@ -60,9 +63,22 @@ say for sort @imports;
 say "";
 
 s!^(/\*.*?\*/)?\n!! and say $1;
+say $& while s/^@.*\n//;
 s!^\s*(public |protected | private )?((abstract )?class|interface|enum)\K! $classname! or die "Cannot find class: $_";
-s!;! {! or die;
+s!;(?=[;\n])! {! or die;
 s!\n\K(?=.)!\t!g;
 s!$!\n}!;
-s!\$syso!System.out.println!g;
 
+s{
+	(?<!class\s)
+	(?<!implements\s)
+	(?<!extends\s)
+	(?<!new\s)
+	(?<![.@<])
+	\K\b
+	(([A-Z]\w*[a-z]\w*(?:<[\w\s,<>]*?>)?|int|char|long|float|double|short|byte)
+		(?:\[\])*(?:\.{3})?)
+	(?=\s+[a-zA-Z]\w++[^(])
+	(?=(?:[^\n"]|"[^"]*")*[{;}]\n)
+}{final $1}gx;
+s/mutable final //g;
