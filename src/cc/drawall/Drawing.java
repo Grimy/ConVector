@@ -25,8 +25,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class Drawing implements Iterable<Drawing.Splash> {
+	private static final Logger log = Logger.getLogger(Drawing.class.getName());
 
 	private static double[] coords = new double[6]; // buffer
 
@@ -166,5 +168,24 @@ public class Drawing implements Iterable<Drawing.Splash> {
 			}
 		}
 		return Math.abs(surface) / 2;
+	}
+
+	public boolean looksLike(final Drawing that) {
+		log.warning("Entering looksLike");
+		if (this.splashes.size() != that.splashes.size()) {
+			log.warning(this.splashes.size() + " != " + that.splashes.size());
+			return false;
+		}
+		for (int i = 0; i < splashes.size(); i++) {
+			final Area xor = new Area(this.splashes.get(i).shape);
+			final double totalSize = computeSurface(xor);
+			xor.exclusiveOr((Area) that.splashes.get(i).shape);
+			final double ratio = computeSurface(xor) / totalSize;
+			log.warning("ratio: " + ratio);
+			if (ratio > 1E-4) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
