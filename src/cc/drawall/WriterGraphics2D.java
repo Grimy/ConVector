@@ -90,14 +90,61 @@ public class WriterGraphics2D {
 	}
 
 	public void arcTo(boolean relative, Point2D radius, float xAxisRotation,
-			boolean largeArc, boolean sweep, final float... points) {
+			boolean largeArcFlag, boolean sweepFlag, final float... points) {
 		transform(relative, points, 1);
 		ctm.deltaTransform(radius, radius);
-		Arc2D arc = computeArc(
-			getCurrentPoint().getX(), getCurrentPoint().getY(),
-			radius.getX(), radius.getY(),
-			xAxisRotation, largeArc, sweep,
-			points[0], points[1]);
+		final double x0 = getCurrentPoint().getX();
+		final double y0 = getCurrentPoint().getY();
+		double rx = Math.abs(radius.getX());
+		double ry = Math.abs(radius.getY());
+		final double angle = Math.toRadians(xAxisRotation % 360.0);
+		double x = points[0];
+		double y = points[1];
+
+		// Based on w3c’s SVG specification, Appendix F.6.5
+		// Step 1 : Compute (x1, y1)
+		final double dx2 = (x0 - x) / 2.0;
+		final double dy2 = (y0 - y) / 2.0;
+		final double cosAngle = Math.cos(angle);
+		final double sinAngle = Math.sin(angle);
+		final double x1 = cosAngle * dx2 + sinAngle * dy2;
+		final double y1 = -sinAngle * dx2 + cosAngle * dy2;
+
+		// Ensure radii are large enough
+		final double radiiCheck = x1 * x1 / (rx * rx) + y1 * y1 / (ry * ry);
+		if (radiiCheck > 1) {
+			rx *= Math.sqrt(radiiCheck);
+			ry *= Math.sqrt(radiiCheck);
+		}
+
+		// Step 2 : Compute (cx1, cy1)
+		// final double sq = (rx*rx*ry*ry - rx*rx*y1*y1 - ry*ry*x1*x1) / (rx*rx*y1*y1 + ry*ry*x1*x1);
+		final double sq = (rx*rx*(ry*ry-y1*y1) - ry*ry*x1*x1) / (rx*rx*y1*y1 + ry*ry*x1*x1);
+		final double coef = (largeArcFlag == sweepFlag ? -1 : 1) * Math.sqrt(Math.max(sq, 0));
+		final double cx1 = coef * rx * y1 / ry;
+		final double cy1 = coef * -ry * x1 / rx;
+
+		// Step 3 : Compute (cx, cy) from (cx1, cy1)
+		final double cx = (x0 + x) / 2.0 + cosAngle * cx1 - sinAngle * cy1;
+		final double cy = (y0 + y) / 2.0 + sinAngle * cx1 + cosAngle * cy1;
+
+		// Step 4 : Compute the angleStart (angle1) and the angleExtent (dangle)
+		final double ux = (x1 - cx1) / rx;
+		final double uy = (y1 - cy1) / ry;
+		double n = Math.sqrt(ux * ux + uy * uy);
+		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d) * Math.acos(ux / n));
+
+		// Compute the angle extent
+		final double vx = (-x1 - cx1) / rx;
+		final double vy = (-y1 - cy1) / ry;
+		n = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
+		double p = ux * vx + uy * vy;
+		double angleExtent = (Math.toDegrees((ux * vy < uy * vx ? -1.0 : 1.0) * Math.acos(p / n))
+				+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
+
+		// We can now build the resulting Arc2D in double precision
+		Arc2D.Double arc = new Arc2D.Double(cx - rx, cy - ry, rx * 2.0, ry * 2.0,
+				-angleStart, -angleExtent, Arc2D.OPEN);
 		AffineTransform rotate = AffineTransform.getRotateInstance(
 				Math.toRadians(xAxisRotation), arc.getCenterX(), arc.getCenterY());
 		path.append(rotate.createTransformedShape(arc), true);
@@ -269,116 +316,4 @@ public class WriterGraphics2D {
 		this.path.reset();
 		this.path.append(that.path, false);
 	}
-
-	/**
-	 * Copy-pasted from http://svn.apache.org/repos/asf/xmlgraphics/batik/
-	 * branches/svg11/sources/org/apache/batik/ext/awt/geom/ExtendedGeneralPath.java
-	 * This constructs an unrotated Arc2D from the SVG specification of an
-	 * Elliptical arc.  To get the final arc you need to apply a rotation
-	 * transform such as:
-	 *
-	 * AffineTransform.getRotateInstance
-	 *     (angle, arc.getX()+arc.getWidth()/2, arc.getY()+arc.getHeight()/2);
-	 */
-	public static Arc2D computeArc(double x0, double y0,
-								   double $rx, double $ry,
-								   double $angle,
-								   boolean largeArcFlag,
-								   boolean sweepFlag,
-								   double x, double y) {
-		double rx = $rx;
-		double ry = $ry;
-		double angle = $angle;
-		//
-		// Elliptical arc implementation based on the SVG specification notes
-		//
-
-		// Compute the half distance between the current and the final point
-		final double dx2 = (x0 - x) / 2.0;
-		final double dy2 = (y0 - y) / 2.0;
-		// Convert angle from degrees to radians
-		angle = Math.toRadians(angle % 360.0);
-		final double cosAngle = Math.cos(angle);
-		final double sinAngle = Math.sin(angle);
-
-		//
-		// Step 1 : Compute (x1, y1)
-		//
-		final double x1 = (cosAngle * dx2 + sinAngle * dy2);
-		final double y1 = (-sinAngle * dx2 + cosAngle * dy2);
-		// Ensure radii are large enough
-		rx = Math.abs(rx);
-		ry = Math.abs(ry);
-		double prx = rx * rx;
-		double pry = ry * ry;
-		final double px1 = x1 * x1;
-		final double py1 = y1 * y1;
-		// check that radii are large enough
-		final double radiiCheck = px1/prx + py1/pry;
-		if (radiiCheck > 1) {
-			rx = Math.sqrt(radiiCheck) * rx;
-			ry = Math.sqrt(radiiCheck) * ry;
-			prx = rx * rx;
-			pry = ry * ry;
-		}
-
-		//
-		// Step 2 : Compute (cx1, cy1)
-		//
-		double sign = (largeArcFlag == sweepFlag) ? -1 : 1;
-		double sq = ((prx*pry)-(prx*py1)-(pry*px1)) / ((prx*py1)+(pry*px1));
-		sq = (sq < 0) ? 0 : sq;
-		final double coef = (sign * Math.sqrt(sq));
-		final double cx1 = coef * ((rx * y1) / ry);
-		final double cy1 = coef * -((ry * x1) / rx);
-
-		//
-		// Step 3 : Compute (cx, cy) from (cx1, cy1)
-		//
-		final double sx2 = (x0 + x) / 2.0;
-		final double sy2 = (y0 + y) / 2.0;
-		final double cx = sx2 + (cosAngle * cx1 - sinAngle * cy1);
-		final double cy = sy2 + (sinAngle * cx1 + cosAngle * cy1);
-
-		//
-		// Step 4 : Compute the angleStart (angle1) and the angleExtent (dangle)
-		//
-		final double ux = (x1 - cx1) / rx;
-		final double uy = (y1 - cy1) / ry;
-		final double vx = (-x1 - cx1) / rx;
-		final double vy = (-y1 - cy1) / ry;
-		double p, n;
-		// Compute the angle start
-		n = Math.sqrt((ux * ux) + (uy * uy));
-		p = ux; // (1 * ux) + (0 * uy)
-		sign = (uy < 0) ? -1d : 1d;
-		double angleStart = Math.toDegrees(sign * Math.acos(p / n));
-
-		// Compute the angle extent
-		n = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
-		p = ux * vx + uy * vy;
-		sign = (ux * vy - uy * vx < 0) ? -1d : 1d;
-		double angleExtent = Math.toDegrees(sign * Math.acos(p / n));
-		if(!sweepFlag && angleExtent > 0) {
-			angleExtent -= 360f;
-		} else if (sweepFlag && angleExtent < 0) {
-			angleExtent += 360f;
-		}
-		angleExtent %= 360f;
-		angleStart %= 360f;
-
-		//
-		// We can now build the resulting Arc2D in double precision
-		//
-		Arc2D.Double arc = new Arc2D.Double(Arc2D.OPEN);
-		arc.x = cx - rx;
-		arc.y = cy - ry;
-		arc.width = rx * 2.0;
-		arc.height = ry * 2.0;
-		arc.start = -angleStart;
-		arc.extent = -angleExtent;
-
-		return arc;
-	}
-
 }
