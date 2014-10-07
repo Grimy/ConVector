@@ -1,4 +1,5 @@
 CLASSPATH = -classpath bin
+TESTCP = -classpath bin:/usr/share/java/*:test
 
 ERR = assertIdentifier,charConcat,compareIdentical,conditionAssign,constructorName,deadCode,deprecation,discouraged,emptyBlock,enumIdentifier,enumSwitch,enumSwitchPedantic,fallthrough,fieldHiding,finalBound,finally,forbidden,hashCode,includeAssertNull,indirectStatic,inheritNullAnnot,intfAnnotation,intfNonInherited,intfRedundant,invalidJavadoc,invalidJavadocTag,invalidJavadocTagDep,invalidJavadocTagNotVisible,maskedCatchBlock,noEffectAssign,null,nullAnnotConflict,nullAnnotRedundant,nullDereference,paramAssign,pkgDefaultMethod,raw,resource,semicolon,specialParamHiding,staticReceiver,suppress,switchDefault,syncOverride,syntheticAccess,typeHiding,unavoidableGenericProblems,unchecked,unnecessaryElse,unusedAllocation,unusedImport,unusedLabel,unusedLocal,unusedParamOverriding,unusedParamImplementing,unusedParamIncludeDoc,unusedPrivate,unusedThrown,unusedThrownWhenOverriding,unusedThrownIncludeDocComment,unusedThrownExemptExceptionThrowable,unusedTypeArgs,uselessTypeCheck,varargsCast,warningToken,static-method,static-access
 # TEMPORARILY DISABLED = super
@@ -44,8 +45,11 @@ run:
 bench:
 	$(JAVA) -Xprof cc.drawall.GLCBuilder examples/lyra.svg blah.pdf
 
+test:
+	javac $(TESTCP) test/cc/drawall/SVGTest.java && java $(TESTCP) org.junit.runner.JUnitCore cc.drawall.SVGTest
+
 deps:
 	jdeps -v -p cc.drawall bin/cc/drawall/*.class | grep -v '^ '
 
 .SECONDARY:
-.PHONY: all cache format build clean run test bench
+.PHONY: all cache test format build clean run test bench
