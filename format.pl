@@ -75,10 +75,13 @@ s{
 	(?<!extends\s)
 	(?<!new\s)
 	(?<![.@<])
-	\K\b
-	(([A-Z]\w*[a-z]\w*(?:<[\w\s,<>]*?>)?|int|char|long|float|double|short|byte)
-		(?:\[\])*(?:\.{3})?)
-	(?=\s+[a-zA-Z]\w++[^(])
-	(?=(?:[^\n"]|"[^"]*")*[{;}]\n)
+	\K\b(
+		(?:([A-Z]\w*[a-z]\w*(?:<[\w\s,<>]*?>)?|boolean|int|char|long|float|double|short|byte)
+			(?:\[\])*(?:\.{3})?)
+			(?=\s+[a-zA-Z]\w++[^(])
+		|
+		(?:(?<=\()[\w\s|]+\ e\))
+	)
+	(?=(?:[^\n"]|"[^"]*")*[{;,}]\n)
 }{final $1}gx;
 s/mutable final //g;

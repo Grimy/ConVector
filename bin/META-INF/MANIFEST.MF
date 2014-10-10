@@ -1,2 +1,2 @@
-Main-Class: cc.drawall.GLCBuilder
+Main-Class: cc.drawall.ui.Main
 

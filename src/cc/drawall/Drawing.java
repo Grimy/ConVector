@@ -65,7 +65,6 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	/** Splits each Area into disjoint subpaths. */
 	private void split() {
 		final double[] start = {0, 0};
-		final double[] coords = new double[6];
 		final List<Splash> splitted = new ArrayList<>();
 		forEach(splash -> {
 			Path2D path = new Path2D.Double();
@@ -161,7 +160,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 				x = startX = coords[0];
 				y = startY = coords[1];
 			} else {
-				boolean close = segType == PathIterator.SEG_CLOSE;
+				final boolean close = segType == PathIterator.SEG_CLOSE;
 				x = close ? startX : coords[0];
 				y = close ? startY : coords[1];
 				surface += prevX * y - x * prevY;
@@ -173,7 +172,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	public boolean looksLike(final Drawing that) {
 		log.warning("Entering looksLike");
 		if (this.splashes.size() != that.splashes.size()) {
-			log.warning(this.splashes.size() + " != " + that.splashes.size());
+			log.warning("Sizes differ");
 			return false;
 		}
 		for (int i = 0; i < splashes.size(); i++) {

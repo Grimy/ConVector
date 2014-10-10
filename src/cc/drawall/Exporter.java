@@ -37,7 +37,7 @@ public abstract class Exporter {
 		normalize = writeHeader(drawing);
 		for (Drawing.Splash splash: drawing) {
 			writeColor(splash.color);
-			for (final PathIterator itr = splash.shape.getPathIterator(normalize); !itr.isDone(); itr.next()) {
+			for (final PathIterator itr = splash.getPathIterator(normalize); !itr.isDone(); itr.next()) {
 				writeSegment(itr.currentSegment(coords), coords);
 			}
 		}

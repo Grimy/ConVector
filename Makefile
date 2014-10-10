@@ -12,7 +12,6 @@ PACKAGE = cc/drawall/
 
 # "make build": use ecj to compile .java files into .class files
 build: format $(CLASSES)
-	$(JAVAC) src/cc/drawall/GLCBuilder.java
 
 # "make format": use format.pl to create .java files
 format: cache $(SOURCES)
@@ -38,7 +37,7 @@ clean:
 
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
 run:
-	$(JAVA) cc.drawall.GLCBuilder $(ARGS)
+	$(JAVA) cc.drawall.ui.Main $(ARGS)
 	#| perl -pe 's!^\s+at (drawall.*?)\.[^.]+\(.*?:(\d+)\)$!$2p src.$1/java!&&y!./!/.! && s!^!`sed -n $_`!e && s!^\s+!!'
 
 # "make bench": runs benchmarks
@@ -51,5 +50,9 @@ test:
 deps:
 	jdeps -v -p cc.drawall bin/cc/drawall/*.class | grep -v '^ '
 
+sonar:
+	sonar-runner
+	xdg-open .sonar/issues-report/issues-report-light.html
+
 .SECONDARY:
-.PHONY: all cache test format build clean run test bench
+.PHONY: all cache test format build clean run test bench sonar

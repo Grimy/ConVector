@@ -11,7 +11,7 @@
  * © 2014 Victor Adam
  */
 
-package cc.drawall.gui;
+package cc.drawall.ui;
 
 import java.util.HashMap;
 import java.util.Map;

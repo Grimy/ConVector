@@ -62,9 +62,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop -> handleAttr(
 				prop.split(":")[0], prop.split(":")[1])));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(Float.parseFloat(v.replace("px", ""))));
-		attrHandlers.put("stroke-linecap", v -> g.setStrokeCap(Caps.valueOf(v.toUpperCase()).ordinal()));
-		attrHandlers.put("stroke-linejoin", v -> g.setStrokeJoin(Joins.valueOf(v.toUpperCase()).ordinal()));
-		attrHandlers.put("stroke-miterlimit", v -> g.setStrokeMiterLimit(Float.parseFloat(v)));
+		attrHandlers.put("stroke-linecap", v -> g.setLineCap(Caps.valueOf(v.toUpperCase()).ordinal()));
+		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(Joins.valueOf(v.toUpperCase()).ordinal()));
+		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(Float.parseFloat(v)));
 	}
 
 	private void handleAttr(final String name, final String value) {
@@ -77,9 +77,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		this.g = output;
 		try {
 			SAXParserFactory.newInstance().newSAXParser().parse(input, this);
-		} catch (ParserConfigurationException | IOException e) {
+		} catch (final ParserConfigurationException | IOException e) {
 			assert false : "XML error : " + e;
-		} catch (SAXException e) {
+		} catch (final SAXException e) {
 			log.severe("Input is not a valid SVG");
 			log.finer(e.toString());
 		}
@@ -91,7 +91,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	@Override
-	public void startElement(final String namespace, final String local, final String name, final Attributes attr) {
+	public void startElement(final String namespace, final String local,
+			final String name, final Attributes attr) {
 		g.save();
 		for (int i = 0; i < attr.getLength(); i++) {
 			handleAttr(attr.getLocalName(i), attr.getValue(i));
@@ -127,7 +128,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				cmd = scanner.next(SVG_COMMAND).charAt(0);
 			}
 			log.finest("cmd: " + cmd);
-			boolean relative = Character.isLowerCase(cmd);
+			final boolean relative = Character.isLowerCase(cmd);
 			if (relative && g.getCurrentPoint() == null) {
 				g.moveTo(false, 0, 0);
 			}

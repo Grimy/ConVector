@@ -182,8 +182,8 @@ public class PSImporter implements Importer {
 		builtin("readonly", NOOP);
 
 		// File operators
-		builtin("==", () -> System.out.println(stack.pop()));
-		builtin("stack", () -> stack.stream().forEach(System.out::println));
+		builtin("==", () -> log.info(stack.pop().toString()));
+		builtin("stack", () -> stack.stream().forEach(o -> log.info(o.toString())));
 
 		// Miscellaneous
 		builtin("bind", () -> stack.push(Arrays.stream((Object[]) stack.pop()).map(
@@ -193,10 +193,10 @@ public class PSImporter implements Importer {
 		// Graphics State
 		builtin("gsave", () -> g.save());
 		builtin("grestore", () -> g.restore());
-		builtin("setlinecap",    () -> g.setStrokeCap(popFlag()));
-		builtin("setlinejoin",   () -> g.setStrokeJoin(popFlag()));
+		builtin("setlinecap",    () -> g.setLineCap(popFlag()));
+		builtin("setlinejoin",   () -> g.setLineJoin(popFlag()));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
-		builtin("setmiterlimit", () -> g.setStrokeMiterLimit(p(1)));
+		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
 		builtin("setdash",       () -> g.setStrokeDash(popArray(), p(1)));
 		builtin("showpage", NOOP);
 		builtin("setrgbcolor", () -> g.setColor(new Color(p(3), p(), p())));

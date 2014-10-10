@@ -27,12 +27,13 @@ public class GCodeExporter extends Exporter {
 
 	@Override
 	protected AffineTransform writeHeader(final Drawing drawing) throws IOException {
-		// drawing.flatten();
+		// TODO : return flags requiring optimization and flattening
 		drawing.optimize();
 		final Rectangle bounds = drawing.getBounds();
 		final double ratio = 25000.0 / Math.max(bounds.width, bounds.height);
 		out.writeBytes("G21\n");
-		return new AffineTransform(ratio, 0, 0, -ratio, -bounds.x * ratio, (bounds.height + bounds.y) * ratio);
+		return new AffineTransform(ratio, 0, 0, -ratio,
+				-bounds.x * ratio, (bounds.height + bounds.y) * ratio);
 	}
 
 	@Override

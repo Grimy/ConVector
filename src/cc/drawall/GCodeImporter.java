@@ -16,6 +16,7 @@ package cc.drawall;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.InputMismatchException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -88,7 +89,7 @@ public class GCodeImporter implements Importer {
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
-			final String token = scanner.next().toUpperCase().replaceAll("\\s", "");
+			final String token = scanner.next().toUpperCase(Locale.US).replaceAll("\\s", "");
 			final float arg = parseFloat(token.substring(1));
 
 			switch (token.charAt(0)) {

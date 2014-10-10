@@ -38,17 +38,17 @@ public class WriterGraphics2D {
 	static {
 		try {
 			// TODO generalize this for other fonts
-			Font font = Font.createFont(Font.TYPE1_FONT,
-					PSImporter.class.getResourceAsStream("fonts/Palatino"));
-			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
-		} catch (IOException | FontFormatException e) {
+			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(
+				Font.createFont(Font.TYPE1_FONT,
+					PSImporter.class.getResourceAsStream("fonts/Palatino")));
+		} catch (final IOException | FontFormatException e) {
 			// Fallback to another font
 			log.warning("Cannot load font Palatino: " + e);
 		}
 	}
 
 	private final AffineTransform ctm = new AffineTransform();
-	private Area clippath = new Area(new Rectangle2D.Float(Float.MIN_VALUE, Float.MIN_VALUE,
+	private final Area clippath = new Area(new Rectangle2D.Float(Float.MIN_VALUE, Float.MIN_VALUE,
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private final Path2D path = new Path2D.Float();
 
@@ -69,42 +69,43 @@ public class WriterGraphics2D {
 	// Path construction //
 	///////////////////////
 
-	public void moveTo(boolean relative, final float... points) {
+	public void moveTo(final boolean relative, final float... points) {
 		transform(relative, points, 1);
 		path.moveTo(points[0], points[1]);
 	}
 
-	public void lineTo(boolean relative, final float... points) {
+	public void lineTo(final boolean relative, final float... points) {
 		transform(relative, points, 1);
 		path.lineTo(points[0], points[1]);
 	}
 
-	public void quadTo(boolean relative, final float... points) {
+	public void quadTo(final boolean relative, final float... points) {
 		transform(relative, points, 2);
 		path.quadTo(points[0], points[1], points[2], points[3]);
 	}
 
-	public void curveTo(boolean relative, final float... points) {
+	public void curveTo(final boolean relative, final float... points) {
 		transform(relative, points, 3);
 		path.curveTo(points[0], points[1], points[2], points[3], points[4], points[5]);
 	}
 
-	public void arcTo(boolean relative, Point2D radius, float xAxisRotation,
-			boolean largeArcFlag, boolean sweepFlag, final float... points) {
+	public void arcTo(final boolean relative, final Point2D radius, final float xAxisRotation,
+			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
 		transform(relative, points, 1);
 		ctm.deltaTransform(radius, radius);
-		final double x0 = getCurrentPoint().getX();
-		final double y0 = getCurrentPoint().getY();
+		final Point2D p0 = getCurrentPoint();
+		final double x0 = p0.getX();
+		final double y0 = p0.getY();
 		double rx = Math.abs(radius.getX());
 		double ry = Math.abs(radius.getY());
 		final double angle = Math.toRadians(xAxisRotation % 360.0);
-		double x = points[0];
-		double y = points[1];
+		final double x2 = points[0];
+		final double y2 = points[1];
 
 		// Based on w3c’s SVG specification, Appendix F.6.5
 		// Step 1 : Compute (x1, y1)
-		final double dx2 = (x0 - x) / 2.0;
-		final double dy2 = (y0 - y) / 2.0;
+		final double dx2 = (x0 - x2) / 2.0;
+		final double dy2 = (y0 - y2) / 2.0;
 		final double cosAngle = Math.cos(angle);
 		final double sinAngle = Math.sin(angle);
 		final double x1 = cosAngle * dx2 + sinAngle * dy2;
@@ -118,36 +119,32 @@ public class WriterGraphics2D {
 		}
 
 		// Step 2 : Compute (cx1, cy1)
-		// final double sq = (rx*rx*ry*ry - rx*rx*y1*y1 - ry*ry*x1*x1) / (rx*rx*y1*y1 + ry*ry*x1*x1);
-		final double sq = (rx*rx*(ry*ry-y1*y1) - ry*ry*x1*x1) / (rx*rx*y1*y1 + ry*ry*x1*x1);
+		final double sq = (rx*rx * (ry*ry - y1*y1) - ry*ry * x1*x1) / (rx*rx * y1*y1 + ry*ry * x1*x1);
 		final double coef = (largeArcFlag == sweepFlag ? -1 : 1) * Math.sqrt(Math.max(sq, 0));
 		final double cx1 = coef * rx * y1 / ry;
 		final double cy1 = coef * -ry * x1 / rx;
 
 		// Step 3 : Compute (cx, cy) from (cx1, cy1)
-		final double cx = (x0 + x) / 2.0 + cosAngle * cx1 - sinAngle * cy1;
-		final double cy = (y0 + y) / 2.0 + sinAngle * cx1 + cosAngle * cy1;
+		final double cx = (x0 + x2) / 2.0 + cosAngle * cx1 - sinAngle * cy1;
+		final double cy = (y0 + y2) / 2.0 + sinAngle * cx1 + cosAngle * cy1;
 
-		// Step 4 : Compute the angleStart (angle1) and the angleExtent (dangle)
+		// Step 4 : Compute the angleStart and the angleExtent
+		// TODO use atan2 or AffineTransform
 		final double ux = (x1 - cx1) / rx;
 		final double uy = (y1 - cy1) / ry;
 		double n = Math.sqrt(ux * ux + uy * uy);
 		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d) * Math.acos(ux / n));
-
-		// Compute the angle extent
 		final double vx = (-x1 - cx1) / rx;
 		final double vy = (-y1 - cy1) / ry;
 		n = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
-		double p = ux * vx + uy * vy;
-		double angleExtent = (Math.toDegrees((ux * vy < uy * vx ? -1.0 : 1.0) * Math.acos(p / n))
-				+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
+		final double p = ux * vx + uy * vy;
+		final double angleExtent = (Math.toDegrees((ux * vy < uy * vx ? -1.0 : 1.0)
+				* Math.acos(p / n)) + (sweepFlag ? 360.0 : -360.0)) % 360.0;
 
 		// We can now build the resulting Arc2D in double precision
-		Arc2D.Double arc = new Arc2D.Double(cx - rx, cy - ry, rx * 2.0, ry * 2.0,
-				-angleStart, -angleExtent, Arc2D.OPEN);
-		AffineTransform rotate = AffineTransform.getRotateInstance(
-				Math.toRadians(xAxisRotation), arc.getCenterX(), arc.getCenterY());
-		path.append(rotate.createTransformedShape(arc), true);
+		path.append(AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(
+			new Arc2D.Double(cx - rx, cy - ry, rx * 2.0, ry * 2.0,
+				-angleStart, -angleExtent, Arc2D.OPEN)), true);
 	}
 
 	public void closePath() {
@@ -176,23 +173,23 @@ public class WriterGraphics2D {
 
 	public void charpath(final String str) {
 		assert font != null : "Undefined font";
-		Point2D p = getCurrentPoint();
-		assert p != null : "No current point";
+		final Point2D point = getCurrentPoint();
+		assert point != null : "No current point";
 		path.append(font.createGlyphVector(new FontRenderContext(ctm, true, false), str)
-			.getOutline((float) p.getX(), (float) p.getY()), false);
+			.getOutline((float) point.getX(), (float) point.getY()), false);
 	}
 
-	private void transform(boolean relative, final float[] points, final int nbPoints) {
+	private void transform(final boolean relative, final float[] points, final int nbPoints) {
 		assert points.length == 2 * nbPoints : "Expected: " + 2 * nbPoints + "Got: " + points.length;
 		log.finer(Arrays.toString(points));
-		Point2D p = path.getCurrentPoint();
+		final Point2D point = path.getCurrentPoint();
 		(relative ? new AffineTransform(
 				ctm.getScaleX(), ctm.getShearY(), ctm.getShearX(), ctm.getScaleY(),
-				p.getX(), p.getY()) : ctm).transform(points, 0, points, 0, nbPoints);
-		if (p != null) {
+				point.getX(), point.getY()) : ctm).transform(points, 0, points, 0, nbPoints);
+		if (point != null) {
 			// TODO this is GCode specific; move it away?
-			points[0] = Float.isNaN(points[0]) ? (float) p.getX() : points[0];
-			points[1] = Float.isNaN(points[1]) ? (float) p.getY() : points[1];
+			points[0] = Float.isNaN(points[0]) ? (float) point.getX() : points[0];
+			points[1] = Float.isNaN(points[1]) ? (float) point.getY() : points[1];
 		}
 	}
 
@@ -211,7 +208,7 @@ public class WriterGraphics2D {
 				final Shape inverse = ctm.createInverse().createTransformedShape(path);
 				final Shape stroked = stroke.createStrokedShape(inverse);
 				paintArea(color, new Area(ctm.createTransformedShape(stroked)));
-			} catch (NoninvertibleTransformException e) {
+			} catch (final NoninvertibleTransformException e) {
 				// Non-invertible transforms squash any shape to empty areas
 				log.finer(e.toString());
 			}
@@ -245,21 +242,21 @@ public class WriterGraphics2D {
 		setStroke("width", width);
 	}
 
-	public void setStrokeCap(final int cap) {
-		setStroke("cap", cap);
-	}
-
-	public void setStrokeJoin(final int join) {
-		setStroke("join", join);
-	}
-
-	public void setStrokeMiterLimit(final float limit) {
-		setStroke("miterlimit", limit);
-	}
-
 	public void setStrokeDash(final float[] dash, final float phase) {
 		setStroke("dash", dash);
 		setStroke("phase", phase);
+	}
+
+	public void setLineCap(final int cap) {
+		setStroke("cap", cap);
+	}
+
+	public void setLineJoin(final int join) {
+		setStroke("join", join);
+	}
+
+	public void setMiterLimit(final float limit) {
+		setStroke("miterlimit", limit);
 	}
 
 	private void setStroke(final String fieldName, final Object value) {
@@ -267,7 +264,7 @@ public class WriterGraphics2D {
 			final Field field = BasicStroke.class.getDeclaredField(fieldName);
 			field.setAccessible(true);
 			field.set(stroke, value);
-		} catch (IllegalAccessException | NoSuchFieldException e) {
+		} catch (final IllegalAccessException | NoSuchFieldException e) {
 			throw new IllegalArgumentException("No such field: " + fieldName, e);
 		}
 	}
