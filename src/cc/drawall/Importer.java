@@ -21,5 +21,5 @@ import java.io.InputStream;
 public interface Importer {
 
 	/** Interprets `input` and draws on `output`. */
-	public void process(final InputStream input, final WriterGraphics2D output);
+	void process(final InputStream input, final WriterGraphics2D output);
 }

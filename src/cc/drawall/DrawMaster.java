@@ -33,7 +33,7 @@ public enum DrawMaster {;
 	public static void exportStream(final OutputStream output, final String filetype,
 			final Drawing drawing) throws IOException {
 		StreamSupport.stream(ServiceLoader.load(Exporter.class).spliterator(), false).filter(
-			o -> o.getClass().getSimpleName().replace("Importer", "").equalsIgnoreCase(filetype)
+			o -> o.getClass().getSimpleName().replace("Exporter", "").equalsIgnoreCase(filetype)
 		).findAny().get().output(drawing, output);
 		output.flush();
 	}

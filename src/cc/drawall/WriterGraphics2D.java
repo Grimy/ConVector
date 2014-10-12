@@ -35,26 +35,16 @@ import java.util.logging.Logger;
 public class WriterGraphics2D {
 	private static final Logger log = Logger.getLogger(WriterGraphics2D.class.getName());
 
-	static {
-		try {
-			// TODO generalize this for other fonts
-			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(
-				Font.createFont(Font.TYPE1_FONT,
-					PSImporter.class.getResourceAsStream("fonts/Palatino")));
-		} catch (final IOException | FontFormatException e) {
-			// Fallback to another font
-			log.warning("Cannot load font Palatino: " + e);
-		}
-	}
-
 	private final AffineTransform ctm = new AffineTransform();
-	private final Area clippath = new Area(new Rectangle2D.Float(Float.MIN_VALUE, Float.MIN_VALUE,
+	private Area clippath = new Area(new Rectangle2D.Float(
+				-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private final Path2D path = new Path2D.Float();
 
 	private Color color = Color.BLACK;
 	private Color fillColor = null;
 	private Font font = null;
+	private float fontSize = 1;
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
 	private Drawing drawing = new Drawing();
 
@@ -93,7 +83,7 @@ public class WriterGraphics2D {
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
 		transform(relative, points, 1);
 		ctm.deltaTransform(radius, radius);
-		final Point2D p0 = getCurrentPoint();
+		final Point2D p0 = path.getCurrentPoint();
 		final double x0 = p0.getX();
 		final double y0 = p0.getY();
 		double rx = Math.abs(radius.getX());
@@ -173,21 +163,23 @@ public class WriterGraphics2D {
 
 	public void charpath(final String str) {
 		assert font != null : "Undefined font";
-		final Point2D point = getCurrentPoint();
+		path.append(relativeTransform().createTransformedShape(font.createGlyphVector(
+			new FontRenderContext(null, true, false), str).getOutline()), false);
+	}
+
+	private AffineTransform relativeTransform() {
+		final Point2D point = path.getCurrentPoint();
 		assert point != null : "No current point";
-		path.append(font.createGlyphVector(new FontRenderContext(ctm, true, false), str)
-			.getOutline((float) point.getX(), (float) point.getY()), false);
+		return new AffineTransform(ctm.getScaleX(), ctm.getShearY(),
+			ctm.getShearX(), ctm.getScaleY(), point.getX(), point.getY());
 	}
 
 	private void transform(final boolean relative, final float[] points, final int nbPoints) {
 		assert points.length == 2 * nbPoints : "Expected: " + 2 * nbPoints + "Got: " + points.length;
-		log.finer(Arrays.toString(points));
+		log.finest(Arrays.toString(points));
+		(relative ? relativeTransform() : ctm).transform(points, 0, points, 0, nbPoints);
 		final Point2D point = path.getCurrentPoint();
-		(relative ? new AffineTransform(
-				ctm.getScaleX(), ctm.getShearY(), ctm.getShearX(), ctm.getScaleY(),
-				point.getX(), point.getY()) : ctm).transform(points, 0, points, 0, nbPoints);
 		if (point != null) {
-			// TODO this is GCode specific; move it away?
 			points[0] = Float.isNaN(points[0]) ? (float) point.getX() : points[0];
 			points[1] = Float.isNaN(points[1]) ? (float) point.getY() : points[1];
 		}
@@ -198,7 +190,6 @@ public class WriterGraphics2D {
 	////////////////////////
 
 	public void draw() {
-		log.warning(fillColor + " ; " + color);
 		if (fillColor != null) {
 			path.closePath();
 			paintArea(fillColor, new Area(path));
@@ -223,15 +214,14 @@ public class WriterGraphics2D {
 		path.reset();
 	}
 
+	public void drawString(final String str) {
+		charpath(str);
+		fill(Path2D.WIND_EVEN_ODD);
+	}
+
 	private void paintArea(final Color color, final Area area) {
 		area.intersect(clippath);
 		drawing.paint(color, area);
-	}
-
-	public void drawString(final String str) {
-		// TODO: preserve previous path?
-		charpath(str);
-		fill(Path2D.WIND_EVEN_ODD);
 	}
 
 	///////////////////////
@@ -285,8 +275,28 @@ public class WriterGraphics2D {
 		return clippath;
 	}
 
-	public void setFont(final Font font) {
-		this.font = font;
+	public void setFont(final String fontDescriptor) {
+		final String fontName = fontDescriptor.split(" ")[0];
+		final GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		if (!Arrays.asList(env.getAvailableFontFamilyNames()).contains(fontName)) {
+			try {
+				log.info("Loading font " + fontDescriptor);
+				env.registerFont(Font.createFont(Font.TYPE1_FONT,
+					getClass().getResourceAsStream("fonts/" + fontName)));
+			} catch (final IOException | FontFormatException e) {
+				// Fallback to another font
+				log.warning("Cannot load font " + fontName + ": " + e);
+			}
+		}
+		font = new Font(fontDescriptor, 0, (int) fontSize)
+			.deriveFont(AffineTransform.getScaleInstance(1, -1));
+	}
+
+	public void setFontSize(final float fontSize) {
+		this.fontSize = fontSize;
+		// final AffineTransform modified = font.getTransform();
+		// modified.concatenate(transform);
+		// font = font.deriveFont(modified);
 	}
 
 	public void save() {
@@ -301,7 +311,7 @@ public class WriterGraphics2D {
 
 	private void copy(final WriterGraphics2D that) {
 		this.ctm.setTransform(that.ctm);
-		this.clippath.intersect(that.clippath);
+		this.clippath = (Area) that.clippath.clone();
 		this.color = that.color;
 		this.fillColor = that.fillColor;
 		this.font = that.font;

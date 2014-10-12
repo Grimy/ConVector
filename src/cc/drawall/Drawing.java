@@ -126,7 +126,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	}
 
 	public static class Splash {
-		private static final Integer flatness = Integer.getInteger("flatness", 1);
+		private static final Integer flatness = Integer.getInteger("flatness");
 		public final Color color;
 		public final Shape shape;
 		public Splash(final Color color, final Shape shape) {

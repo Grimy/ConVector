@@ -14,7 +14,6 @@
 package cc.drawall;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -27,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.InputMismatchException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +105,7 @@ public class PSImporter implements Importer {
 		// Array
 		// array
 		vars.put("[", MARK);
-		builtin("]", () -> stack.push(popTo(MARK)));
+		builtin("]", () -> stack.push(literal(popTo(MARK))));
 		builtin("astore", () -> {
 			final Object[] array = (Object[]) stack.pop();
 			stack.push(substack(array.length).toArray(array));
@@ -128,7 +128,7 @@ public class PSImporter implements Importer {
 		builtin("where", () -> stack.push(Boolean.FALSE));
 		builtin("cleardictstack", NOOP);
 
-		// String (TODO?)
+		// String
 
 		// Relational, boolean and bitwise
 		builtin("eq", () -> stack.push(p(2) == p())); // use .equals instead?
@@ -170,9 +170,16 @@ public class PSImporter implements Importer {
 		});
 		builtin("forall", () -> {
 			final Object code = stack.pop();
-			for (Object o: stack.peek() instanceof Font ? new Object[0] : (Object[]) stack.pop()) {
-				stack.push(o);
-				execute(code);
+			if (stack.peek() instanceof String) {
+				((String) stack.pop()).chars().forEach(c -> {
+					stack.push(c);
+					execute(code);
+				});
+			} else {
+				for (Object o: (Object[]) stack.pop()) {
+					stack.push(o);
+					execute(code);
+				}
 			}
 		});
 		// exec
@@ -212,10 +219,10 @@ public class PSImporter implements Importer {
 		});
 		builtin("pathbbox", () -> {
 			Rectangle2D r = g.getBounds();
-			stack.push(r.getMinX());
-			stack.push(r.getMinY());
-			stack.push(r.getMaxX());
-			stack.push(r.getMaxY());
+			stack.push((float) r.getMinX());
+			stack.push((float) r.getMinY());
+			stack.push((float) r.getMaxX());
+			stack.push((float) r.getMaxY());
 		});
 
 		// Coordinate systems
@@ -237,8 +244,8 @@ public class PSImporter implements Importer {
 		builtin("closepath", () -> g.closePath());
 		builtin("currentpoint", () -> {
 			final Point2D point = g.getCurrentPoint();
-			stack.push(point.getX());
-			stack.push(point.getY());
+			stack.push((float) point.getX());
+			stack.push((float) point.getY());
 		});
 
 		// Painting
@@ -247,23 +254,13 @@ public class PSImporter implements Importer {
 		builtin("eofill", () -> g.fill(Path2D.WIND_EVEN_ODD));
 		builtin("clip", () -> g.clip());
 
-		// Insideness-testing (TODO?)
+		// Insideness-testing
 
 		// Glyph and font
 		builtin("definefont", () -> vars.put(pop2(), stack.peek()));
-		builtin("findfont", () -> stack.push(new Font(
-				((String) stack.pop()).replace('-', ' '), 0, 1)));
-		builtin("scalefont", () -> {
-			final float scale = p(1);
-			final Font font = (Font) stack.pop();
-			final AffineTransform transform = font.getTransform();
-			transform.scale(scale, scale);
-			stack.push(font.deriveFont(transform));
-		});
-		builtin("setfont", () -> {
-			log.fine("Setting font : " + stack.peek());
-			g.setFont((Font) stack.pop());
-		});
+		builtin("findfont", () -> stack.push(((String) stack.pop()).replace('-', ' ')));
+		builtin("scalefont", () -> g.setFontSize(p(1)));
+		builtin("setfont", () -> g.setFont((String) stack.pop()));
 		builtin("show", () -> g.drawString((String) stack.pop()));
 		builtin("ashow", () -> {
 			g.drawString((String) stack.pop());
@@ -291,8 +288,7 @@ public class PSImporter implements Importer {
 		final Scanner scanner = new Scanner(input, "ascii");
 		g = out;
 		g.getClip().intersect(new Area(new Rectangle2D.Float(0, 0, 612, 792)));
-		g.getTransform().scale(1, -1);
-		g.getTransform().translate(0, -792);
+		log.info(g.getTransform().toString());
 
 		// See PLRM 3.1: Syntax
 		final String delimiters = "[(){}<>\\[\\]/]";
@@ -309,6 +305,7 @@ public class PSImporter implements Importer {
 	}
 
 	private void execute(final Object object) {
+		log.finest("Executing: " + object);
 		if (literals.containsKey(object)) {
 			stack.push(object);
 		} else if (object instanceof Runnable) {      // built-in operator
@@ -359,7 +356,9 @@ public class PSImporter implements Importer {
 	}
 
 	private Object getVar(final Object key) {
-		assert vars.containsKey(key) : "Unknown variable : " + key;
+		if (!vars.containsKey(key)) {
+		   throw new InputMismatchException("Unknown variable : " + key);
+		}
 		return vars.get(key);
 	}
 

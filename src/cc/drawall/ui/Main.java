@@ -39,7 +39,7 @@ public class Main extends Canvas {
 	static {
 		// Ensure the decimal separator is "." everywhere.
 		Locale.setDefault(Locale.Category.FORMAT, Locale.US);
-		System.setProperty("java.util.logging.config.file", "bin/cc/drawall/log.properties");
+		System.setProperty("java.util.logging.config.file", "bin/log.properties");
 	}
 	private static final Logger log = Logger.getLogger("drawall.GLCBuilder");
 

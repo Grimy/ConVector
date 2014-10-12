@@ -36,7 +36,7 @@ clean:
 	find bin -name '*.class' -delete
 
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
-run:
+run: build
 	$(JAVA) cc.drawall.ui.Main $(ARGS)
 	#| perl -pe 's!^\s+at (drawall.*?)\.[^.]+\(.*?:(\d+)\)$!$2p src.$1/java!&&y!./!/.! && s!^!`sed -n $_`!e && s!^\s+!!'
 
@@ -50,9 +50,9 @@ test:
 deps:
 	jdeps -v -p cc.drawall bin/cc/drawall/*.class | grep -v '^ '
 
-sonar:
+sonar: build
 	sonar-runner
-	xdg-open .sonar/issues-report/issues-report-light.html
+	DISPLAY=:0 xdg-open .sonar/issues-report/issues-report-light.html
 
 .SECONDARY:
 .PHONY: all cache test format build clean run test bench sonar

@@ -25,7 +25,6 @@ public abstract class Exporter {
 	private static double[] coords = new double[6]; // buffer
 
 	protected DataOutputStream out;
-	private AffineTransform normalize;
 	private final String[] format;
 
 	protected Exporter(final String... format) {
@@ -34,8 +33,8 @@ public abstract class Exporter {
 
 	public final void output(final Drawing drawing, final OutputStream out) throws IOException {
 		this.out = new DataOutputStream(out);
-		normalize = writeHeader(drawing);
-		for (Drawing.Splash splash: drawing) {
+		final AffineTransform normalize = writeHeader(drawing);
+		for (final Drawing.Splash splash: drawing) {
 			writeColor(splash.color);
 			for (final PathIterator itr = splash.getPathIterator(normalize); !itr.isDone(); itr.next()) {
 				writeSegment(itr.currentSegment(coords), coords);
@@ -51,9 +50,9 @@ public abstract class Exporter {
 
 	protected void writeSegment(final int type, final double[] coords) throws IOException {
 		int i = 0;
-		for (Character c: format[type].toCharArray()) {
-			out.writeBytes(c == '%' ? Integer.toString((int) coords[i++])
-				: Character.toString(c));
+		for (final Character chr: format[type].toCharArray()) {
+			out.writeBytes(chr == '%' ? Integer.toString((int) coords[i++])
+				: Character.toString(chr));
 		}
 		out.write('\n');
 	}
