@@ -18,7 +18,6 @@ import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 
-
 public class GCodeExporter extends Exporter {
 
 	public GCodeExporter() {

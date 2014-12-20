@@ -34,6 +34,7 @@ import java.util.Scanner;
 import java.util.Stack;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
 import javax.xml.bind.DatatypeConverter;
 
 /** Importer used to parse PostScript. */
@@ -59,7 +60,7 @@ public class PSImporter implements Importer {
 	/* ==PATTERNS== */
 	private static final Pattern NUMBER = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
 	private static final Pattern STRING = Pattern.compile("(?:\\\\.|[^()])*");
-	private static final Pattern HEX_STRING = Pattern.compile("[0-9a-fA-F\000\t\r\n\f ]*");
+	private static final Pattern HEX_STRING = Pattern.compile("[0-9a-fA-F\0\t\r\n\f ]*");
 
 	/* ==STACKS==
 	 * The PostScript interpreter manages several stacks. See PLRM 3.4: Stacks.

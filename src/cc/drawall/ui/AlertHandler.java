@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
 import javax.swing.JOptionPane;
 
 /** A log handler that displays the logs in an alert box. */

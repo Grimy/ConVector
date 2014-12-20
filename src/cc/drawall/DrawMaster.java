@@ -19,9 +19,11 @@ import java.io.OutputStream;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
-
+/** Responsible for loading plugins and invoking the correct one for a given filetype. */
 public enum DrawMaster {;
 
+	/** Parses the specified InputStream using a plugin appropriate for the specified
+	  * filetype, and returns the resulting Drawing. */
 	public static Drawing importStream(final InputStream input, final String filetype) {
 		WriterGraphics2D g = new WriterGraphics2D();
 		StreamSupport.stream(ServiceLoader.load(Importer.class).spliterator(), false).filter(
@@ -30,6 +32,7 @@ public enum DrawMaster {;
 		return g.getDrawing();
 	}
 
+	/** Writes a drawing to a stream, using a plugin appropriate for the specified filetype. */
 	public static void exportStream(final OutputStream output, final String filetype,
 			final Drawing drawing) throws IOException {
 		StreamSupport.stream(ServiceLoader.load(Exporter.class).spliterator(), false).filter(

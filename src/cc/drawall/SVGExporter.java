@@ -18,7 +18,6 @@ import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 
-
 public class SVGExporter extends Exporter {
 
 	public SVGExporter() {

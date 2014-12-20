@@ -282,21 +282,19 @@ public class WriterGraphics2D {
 			try {
 				log.info("Loading font " + fontDescriptor);
 				env.registerFont(Font.createFont(Font.TYPE1_FONT,
-					getClass().getResourceAsStream("fonts/" + fontName)));
+					getClass().getResourceAsStream("/fonts/" + fontName)));
 			} catch (final IOException | FontFormatException e) {
 				// Fallback to another font
 				log.warning("Cannot load font " + fontName + ": " + e);
 			}
 		}
+		// TODO: revert font only when necessary
 		font = new Font(fontDescriptor, 0, (int) fontSize)
 			.deriveFont(AffineTransform.getScaleInstance(1, -1));
 	}
 
 	public void setFontSize(final float fontSize) {
 		this.fontSize = fontSize;
-		// final AffineTransform modified = font.getTransform();
-		// modified.concatenate(transform);
-		// font = font.deriveFont(modified);
 	}
 
 	public void save() {

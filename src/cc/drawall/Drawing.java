@@ -27,21 +27,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+/** An in-memory representation of a vector image.
+  * A Drawing is an ordered list of colored areas. Those areas are rendered
+  * so that the latter ones can hide the first ones by drawing over them. */
 public class Drawing implements Iterable<Drawing.Splash> {
 	private static final Logger log = Logger.getLogger(Drawing.class.getName());
 
-	private static double[] coords = new double[6]; // buffer
+	/* Buffer used for temporary storage of coordinates. */
+	private static final double[] coords = new double[6];
 
+	/* The bounding rectangle of this Drawing (initially empty). */
 	private Rectangle bounds = new Rectangle(0, 0, -1, -1);
 
+	/* The splashes composing this Drawing. */
 	private List<Splash> splashes = new ArrayList<>();
 
+	/* Adds the specified shape, filled with the specified color, to this Drawing. */
 	void paint(final Color color, final Shape shape) {
 		bounds = bounds.union(shape.getBounds());
 		splashes.add(new Splash(color, shape));
 	}
 
-	/** Clips Areas according to their z-order. */
+	/* Changes the list of areas so that they can be rendered correctly in any order.
+	 * This implies removing from the lower splashes parts that would be hidden by higher splashes. */
 	void flatten() {
 		final Area mask = new Area();
 		final Map<Color, Area> colorMap = new HashMap<>();
@@ -117,10 +125,12 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		}
 	}
 
+	/** Returns the bounding box of this Drawing. */
 	public Rectangle getBounds() {
 		return bounds;
 	}
 
+	@Override
 	public Iterator<Splash> iterator() {
 		return splashes.iterator();
 	}
@@ -149,6 +159,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		return (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
 	}
 
+	/** Returns the surface of the specified area. */
 	public static double computeSurface(final Area area) {
 		double surface = 0.0;
 		double x = 0.0, y = 0.0, startX = 0.0, startY = 0.0, prevX, prevY;
@@ -169,6 +180,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		return Math.abs(surface) / 2;
 	}
 
+	/** Returns true iff the specified Drawing is identical to this one. */
 	public boolean looksLike(final Drawing that) {
 		log.warning("Entering looksLike");
 		if (this.splashes.size() != that.splashes.size()) {

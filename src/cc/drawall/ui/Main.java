@@ -13,12 +13,10 @@
 
 package cc.drawall.ui;
 
-import cc.drawall.DrawMaster;
-import cc.drawall.Drawing;
 import java.awt.BorderLayout;
 import java.awt.Canvas;
-import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,11 +26,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
 import java.util.logging.Logger;
+
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import cc.drawall.DrawMaster;
+import cc.drawall.Drawing;
 
 /** User interface. */
 public class Main extends Canvas {

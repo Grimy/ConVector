@@ -19,6 +19,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.io.IOException;
 
+/** An Exporter for the DOV format. */
 public class DOVExporter extends Exporter {
 
 	@Override
