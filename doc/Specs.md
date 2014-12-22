@@ -1,76 +1,3 @@
-
-GLC Specifications (Deprecated)
-==================
-
-GLCBuilder generates a strict subset of GCode, called GLC (or Glucose for short). GLC is what the
-DrawBot is (or will be) able to interpret and execute.
-
-Each line consists of one *operation code* followed by any number of *arguments*, separated by
-single spaces. The arguments’ names must match exactly those required by the operationc code.
-
-An *argument* is a single uppercase letter (its *name*) followed by a the decimal representation
-of a floating point number.
-
-An *operation code* is one of the following:
-
-Code Arguments Meaning
-G00  X Y Z     Move in a line without drawing
-G01  X Y Z     Draw a line
-G02† X Y I J   Draw an arc, clockwise
-G03† X Y I J   Draw an arc, counterclockwise
-G04  P         Wait P seconds
-M30            End the program
-M00†           Pause
-
-† Those codes are not yet understood by the DrawBot.
-ASK: do we really need a Z argument?
-
-Notable differences from GCode
-------------------------------
-
-* No variables
-* No mathematical expressions
-* No optional arguments
-* No implicit motion mode
-* No comments or excessive whitespace
-* Most operations are forbidden (usually because they don’t make sense in the
-context of DrawBot, i.e. drilling)
-* Single digit version of the codes (i.e. G0) are not allowed (use G00)
-* All coordinate are always absolute
-
-
-Modules
-=======
-
-GCodeBuilder can create GLC from a large variety of files, including GCode and images. Each module
-accepts can convert some file types to a common internal representation, which is then converted
-to GLC by the GCodeBuilder itself. The correct module is automatically determined based on the
-type of the input file. When several modules are available for a file, the user has to choose
-which one to use with command line-options.
-
-Examples:
-glcbuilder blah.gcode        # Uses the GCodeImporter module
-glcbuilder --shaky blah.png  # Uses the ShakyLines module
-glcbuilder blah.png          # Uses some reasonable default for png files (Vectorizer?)
-
-
-Guidelines
-----------
-
-When creating a module, Postel’s law applies: *Be conservative in what you
-send, be liberal in what you accept*.
-
-In this regard, standards are more like guidelines. Being fully ISO or W3C or
-IILAR compliant may give warm fuzzy feelings, but will achieve nothing in
-practice. What really matters is correct communication with other applications,
-*even* if they are not standards-compliant.
-
-More specifically:
-* Input modules should, as much as possible, correctly process files generated
-by common applications;
-* Output modules should generate files that can be read by common applications.
-
-
 DOV Specifications
 ==================
 
@@ -113,25 +40,23 @@ Only two questions remain: how to delimit areas, and how to color them.
 
 Arbitrary curves are not useful in practice. NURBS are very nice, but slightly
 too complex for our purpose. As a compromise, DOV allows straight lines
-and cubic Béziers curves, and uses a format allowing possible future additions.
+but uses a format allowing possible future additions.
 
-Likewise, DOV only supports flat colors, but adding gradients will be easy.
+Likewise, DOV only supports flat colors, but adding gradients would be easy.
 
 Details
 -------
 
-For consistency, 16-bits unsigned integers are used for *everything*. This
-allows treating the entire file a single uint16 array, which simplifies
+For consistency, pairs of 16-bits unsigned integers are used for *everything*.
+This allows treating the entire file a single array, which simplifies
 implementation and should give better cache performance. This is way more
 important than shaving a byte here and there.
 
-A DOV file starts with a 12-bytes header, containing the following fields:
-* Magic number 14847 (0x39FF), used to identify the DOV format
-* Reserved field. Should contain 0 (0x0000). May be used in a future version.
-* Width
-* Height
-* Original image’s width
-* Original image’s height
+A DOV file starts with a 16-bytes header, containing the following fields:
+* Magic number (0x2339, 0xFFAF), used to identify the DOV format
+* Reserved field. Should contain only 0 (0x0000, 0x0000). May be used in a future version.
+* Dimensions of the image (width, height)
+* Dimension of the original image (width, height)
 
 For maximal accuracy, DOV images should make use of the full range of possible
 uint16 values, meaning that either “Width” or “Height” should be 65535.
@@ -142,59 +67,68 @@ not arbitrary (e.g. GCode), the dimensions of the original image can be stored.
 To keep the header size fixed, those original dimensions are not optional. When
 they are unknown or meaningless, the fields should contain 0.
 
-Following the header are instructions. Each instruction is followed by arguments.
-Number and meaning of arguments depend on the instruction.
+Following the header is a sequence of instructions. Each instruction is can be either:
+* A point (x, y), with x ≠ 0xFFFF and y ≠ 0xFFFF
+* A drawing directive (0xFFFF, code), with code ≠ 0xFFFF.
 
-Defined instructions are:
-Number | Meaning     | Arguments
-0x0001 | Linear Area | 2 + 2n (see below)
-0x0003 | Cubic Area  | 8 + 6n (see below)
-0xC010 | Set Color   | 2 (a 32-bit RGBA color code, split in two uint16)
-0xFFFF | End         | 0
+At present, only the following instruction codes are defined:
+Number | Meaning
+0x0001 | Move       (move to the next point without drawing)
+0xC010 | Set Color  (interpret the next instruction as an RGBA color)
+
 Codes not defined here are reserved for future extensions.
 
-Areas are filled using the most recently set color.
-The arguments to area instructions describe a list of points. Each point is
-given by a pair of coordinates: (x, y). The number of points in an area is not
-known in advance: the interpreter should keep on reading points until the area
-is closed (i.e. until the last point read is the same as the first point read).
-
-A linear area is simply a polygon whose corners are the given points.
-
-Cubic areas are bounded by Bézier splines. The first four points describe the
-first Bézier curve (start point, control points, end point, in this order). For
-subsequent curves, only control and end points are given: the start point is
-implicitly the same as the end point of the previous curve.
-
-Note that this doesn’t allow mixing straight lines and Bézier curves. Straight lines
-can still be represented by Béziers curves with all points aligned.
-
-At the end of the file, a CRC16 checksum can optionally be appended.
+Lines are drawn using the most recently set color.
 
 Formal grammar (EBNF)
 --------------------
 
-DOV file ::= header, { instruction }, footer;
-header ::= magic number, reserved, width, height, original width, original height;
-magic number ::= "\x39FF";
-reserved ::= "\x0000";
-width ::= uint16;
-height ::= uint16;
+DOV file ::= header, { instruction };
+header ::= magic number, reserved, dimensions, dimensions;
+magic number ::= "\x2339", "\xFFAF";
+reserved ::= "\x0000", "\x0000";
+dimesions ::= uint16, uint16;
 uint16 ::= ? any 16-bit unsigned integer ?;
 
-instruction ::= set color | linear area | cubic area;
+instruction ::= point | "\xFFFF", directive
+directive ::= move | set color
 
-set color ::= "C010", red green, blue alpha;
+point ::= abscissa, ordinate;
+abscissa ::= ? a 16-bit unsigned integer other than 0xFFFF ?
+ordinate ::= ? a 16-bit unsigned integer other than 0xFFFF ?
+
+move ::= "\x0001"
+set color ::= "\xC010", red green, blue alpha;
 red green ::= uint16;
 blue alpha ::= uint16;
 
-linear area ::= "\x0001", point, { point };
-cubic area ::= "\x0003", point, { point, point, point };
-point ::= abscissa, ordinate;
-abscissa ::= uint16;
-ordinate ::= uint16;
+Modules
+=======
 
-footer ::= end marker, [ CRC ];
-end marker ::= "\xFFFF";
-CRC ::= uint16;
+GCodeBuilder can create GLC from a large variety of files, including GCode and images. Each module
+accepts can convert some file types to a common internal representation, which is then converted
+to GLC by the GCodeBuilder itself. The correct module is automatically determined based on the
+type of the input file. When several modules are available for a file, the user has to choose
+which one to use with command line-options.
 
+Examples:
+glcbuilder blah.gcode        # Uses the GCodeImporter module
+	glcbuilder --shaky blah.png  # Uses the ShakyLines module
+glcbuilder blah.png          # Uses some reasonable default for png files (Vectorizer?)
+
+
+	Guidelines
+	----------
+
+	When creating a module, Postel’s law applies: *Be conservative in what you
+	send, be liberal in what you accept*.
+
+	In this regard, standards are more like guidelines. Being fully ISO or W3C or
+	IILAR compliant may give warm fuzzy feelings, but will achieve nothing in
+	practice. What really matters is correct communication with other applications,
+	*even* if they are not standards-compliant.
+
+	More specifically:
+	* Input modules should, as much as possible, correctly process files generated
+	by common applications;
+	* Output modules should generate files that can be read by common applications.
