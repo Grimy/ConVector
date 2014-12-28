@@ -49,7 +49,7 @@ public class PSImporter implements Importer {
 	  * Integer     Float
 	  * Boolean     Boolean
 	  * Array       Object[]
-	  * Dictionary  Map<Object, Object>
+	  * Dictionary  PSDict
 	  * Name        String
 	  * String      String
 	  **/
@@ -60,7 +60,8 @@ public class PSImporter implements Importer {
 	/* ==PATTERNS== */
 	private static final Pattern NUMBER = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
 	private static final Pattern STRING = Pattern.compile("(?:\\\\.|[^()])*");
-	private static final Pattern HEX_STRING = Pattern.compile("[0-9a-fA-F\0\t\r\n\f ]*");
+	private static final String WHITESPACE = "[\0\t\r\n\f ]";
+	private static final Pattern HEX_STRING = Pattern.compile("(?:[0-9a-fA-F]|" + WHITESPACE + ")*");
 
 	/* ==STACKS==
 	 * The PostScript interpreter manages several stacks. See PLRM 3.4: Stacks.
@@ -79,17 +80,24 @@ public class PSImporter implements Importer {
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
 	private Iterator<Object> itr;
 
-	/** Dictionary stack. */
-	private final Map<Object, Object> vars = new HashMap<>(); {
+	/** Main dictionary. */
+	private final PSDict vars = new PSDict(); {
 		// The categories and their order are from PLRM3 8.1: Operator Summary
 		// Stack manipulation
 		builtin("pop", () -> stack.pop());
 		builtin("exch", () -> Collections.rotate(substack(2), 1));
 		builtin("dup", () -> stack.push(stack.peek()));
-		// copy
-		builtin("index", () -> stack.push(stack.get(stack.size() - (int) p(1))));
+		builtin("copy", () -> {
+			if (stack.peek() instanceof Double) {
+				stack.addAll(new ArrayList<>(substack((int) p(1))));
+			} else {
+				pop2();
+			}
+		});
+		builtin("index", () -> stack.push(stack.get(-(int) p(1) + stack.size())));
 		builtin("roll", () -> Collections.rotate(substack((int) p(2)), (int) p()));
 		builtin("clear", () -> stack.clear());
+		builtin("cleartomark", () -> popTo(MARK));
 		// count, mark, cleartomark, counttomark (not in PDF)
 
 		// Math
@@ -104,46 +112,90 @@ public class PSImporter implements Importer {
 		// rand, srand, rrand
 
 		// Array
-		// array
+		builtin("array", () -> stack.push(literal(new Object[(int) p(1)])));
 		vars.put("[", MARK);
 		builtin("]", () -> stack.push(literal(popTo(MARK))));
 		builtin("astore", () -> {
 			final Object[] array = (Object[]) stack.pop();
 			stack.push(substack(array.length).toArray(array));
 		});
-		builtin("length", () -> stack.push(stack.pop() instanceof Map ? 0.0f : 0.0f));
+		builtin("length", () -> {
+			Object o = stack.pop();
+			stack.push(o instanceof Object[] ? ((Object[])o).length : 0f);
+		});
 
 		// Dictionary
+		vars.put("$error", vars);
+		vars.put("errordict", vars);
+		vars.put("userdict", vars);
+		vars.put("statusdict", vars);
 		vars.put("systemdict", vars);
 		vars.put("currentdict", vars);
-		builtin("dict", () -> stack.set(0, vars));
+		vars.put("currentsystemparams", vars);
+		builtin("countdictstack", () -> stack.push(1f));
+		builtin("dictstack", () -> ((Object[]) stack.peek())[0] = vars);
+
+		builtin("dict", () -> {stack.pop(); stack.push(vars);});
 		builtin("begin", () -> stack.pop());
 		builtin("end", NOOP);
 		builtin("load", () -> stack.push(getVar(stack.pop())));
 		builtin("def", () -> vars.put(pop2(), stack.pop()));
 		builtin("get", () -> {
 			Object o = pop2();
-			stack.push(o instanceof Map ? ((Map<?, ?>) o).get(stack.pop()) : ((Object[]) o)[(int) p(1)]);
+			stack.push(o instanceof PSDict ? ((PSDict) o).get(stack.pop()) :
+					o instanceof Object[] ? ((Object[]) o)[(int) p(1)] :
+					((String) o).codePointAt((int) p(1)));
 		});
-		builtin("known", () -> stack.push(((Map<?, ?>) pop2()).containsKey(stack.pop())));
-		builtin("where", () -> stack.push(Boolean.FALSE));
+		builtin("put", () -> {
+			Object value = stack.pop();
+			Object o = pop2();
+			if (o instanceof PSDict) {
+				((PSDict) o).put(stack.pop(), value);
+			} else {
+				((Object[]) o)[(int) p(1)] = value;
+			}
+		});
+		builtin("known", () -> stack.push(((PSDict) pop2()).containsKey(stack.pop())));
+		builtin("where", () -> {
+			boolean exists = vars.containsKey(stack.pop());
+			if (exists) {
+				stack.push(vars);
+			}
+			stack.push(exists);
+		});
 		builtin("cleardictstack", NOOP);
 
 		// String
+		builtin("string", () -> stack.push(new String(new char[(int) p(1)])));
 
 		// Relational, boolean and bitwise
-		builtin("eq", () -> stack.push(p(2) == p())); // use .equals instead?
-		builtin("ne", () -> stack.push(p(2) != p()));
+		builtin("eq", () -> stack.push(stack.pop().equals(stack.pop())));
+		builtin("ne", () -> stack.push(!stack.pop().equals(stack.pop())));
 		builtin("gt", () -> stack.push(compare() < 0));
 		builtin("lt", () -> stack.push(compare() > 0));
-		// ge, lt, le, and, or, xor
-		builtin("not", () -> stack.push(!(Boolean) stack.pop()));
+		builtin("ge", () -> stack.push(compare() <= 0));
+		builtin("le", () -> stack.push(compare() >= 0));
+		builtin("and", () -> stack.push(popBool() & popBool()));
+		builtin("or",  () -> stack.push(popBool() | popBool()));
+		builtin("xor", () -> stack.push(popBool() ^ popBool()));
+		builtin("not", () -> stack.push(!popBool()));
 		// bitshift
 		vars.put("true", Boolean.TRUE);
 		vars.put("false", Boolean.FALSE);
+		vars.put("null", null);
 
 		// Flow control
 		builtin("exec", () -> execute(stack.pop()));
+		builtin("stopped", () -> {
+			// try {
+				// execute(stack.pop());
+			// } catch (Exception e) {
+				// stack.push(true);
+				// return;
+			// }
+			stack.pop();
+			stack.push(true);
+		});
 		builtin("quit", NOOP);
 		builtin("if", () -> {
 			final Object code = stack.pop();
@@ -186,14 +238,24 @@ public class PSImporter implements Importer {
 		// exec
 
 		// Type, attributes and conversion operators
-		// cvi, cvr
+		builtin("type", () -> {stack.pop(); stack.push("nametype");});
+		// cvi
+		builtin("cvx", NOOP);
+		builtin("cvr", NOOP);
+		builtin("cvlit", () -> stack.push(literal(stack.peek())));
+		builtin("rcheck", () -> {stack.pop(); stack.push(true);});
+		builtin("wcheck", () -> {stack.pop(); stack.push(true);});
+		builtin("xcheck", () -> {stack.pop(); stack.push(true);});
 		builtin("readonly", NOOP);
+		builtin("executeonly", NOOP);
 
 		// File operators
 		builtin("==", () -> log.info(stack.pop().toString()));
 		builtin("stack", () -> stack.stream().forEach(o -> log.info(o.toString())));
 
 		// Miscellaneous
+		vars.put("ps_level", 1f);
+		builtin("currentglobal", () -> stack.push(false));
 		builtin("bind", () -> stack.push(Arrays.stream((Object[]) stack.pop()).map(
 			o -> vars.containsKey(o) ? vars.get(o) : o
 		).toArray()));
@@ -201,6 +263,7 @@ public class PSImporter implements Importer {
 		// Graphics State
 		builtin("gsave", () -> g.save());
 		builtin("grestore", () -> g.restore());
+		builtin("grestoreall", () -> g.restore());
 		builtin("setlinecap",    () -> g.setLineCap(popFlag()));
 		builtin("setlinejoin",   () -> g.setLineJoin(popFlag()));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
@@ -225,6 +288,13 @@ public class PSImporter implements Importer {
 			stack.push((float) r.getMaxX());
 			stack.push((float) r.getMaxY());
 		});
+
+		builtin("currentcolortransfer", () -> stack.push(NOOP));
+		builtin("currentblackgeneration", () -> stack.push(NOOP));
+		builtin("currentundercolorremoval", () -> stack.push(NOOP));
+		builtin("currentflat", () -> stack.push(0f));
+		builtin("currentsmoothness", () -> stack.push(0f));
+		builtin("setoverprint", () -> popBool());
 
 		// Coordinate systems
 		builtin("matrix", () -> stack.push(new float[]{1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f}));
@@ -273,6 +343,21 @@ public class PSImporter implements Importer {
 			g.charpath((String) stack.pop());
 		});
 
+		// Unhandled but ignored
+		builtin("defineresource", () -> {
+			stack.pop();
+			vars.put(pop2(), stack.peek());
+		});
+		builtin("findresource", () -> {
+			pop2(); //category
+			stack.push(vars.get(stack.pop())); // instance
+		});
+		builtin("currentscreen", () -> {
+			stack.push(0f); //frequency
+			stack.push(0f); //angle
+			stack.push(0f); //halftone
+		});
+		builtin("setglobal", () -> stack.pop());
 		builtin("save", () -> stack.push(null));
 		builtin("restore", () -> stack.pop());
 	}
@@ -292,17 +377,22 @@ public class PSImporter implements Importer {
 		log.info(g.getTransform().toString());
 
 		// See PLRM 3.1: Syntax
-		final String delimiters = "[(){}<>\\[\\]/]";
-		scanner.useDelimiter("([\000\t\r\n\f ]|(?=" + delimiters + ")|(?<=" + delimiters + ")|%.*+)+");
-		while (scanner.hasNext()) {
-			final Object obj = tokenize(scanner.next(), scanner);
-			if (stack.contains(CURLY_MARK)) {
-				// Deferred execution mode
-				stack.push(obj);
-			} else {
-				execute(obj);
+		scanner.useDelimiter(String.format("(%1$s|(?=%2$s)|(?<=%2$s)|%%.*+)+",
+					WHITESPACE, "[(){}<>\\[\\]/]"));
+			while (scanner.hasNext()) {
+				final Object obj = tokenize(scanner.next(), scanner);
+				if (stack.contains(CURLY_MARK)) {
+					// Deferred execution mode
+					stack.push(obj);
+				} else {
+					try {
+						execute(obj);
+					} catch (Exception e) {
+						log.severe(stack.toString());
+						throw e;
+					}
+				}
 			}
-		}
 	}
 
 	private void execute(final Object object) {
@@ -328,9 +418,9 @@ public class PSImporter implements Importer {
 			scanner.next();
 			return literal(string.replaceAll("\\\\(?!\\\\)", ""));
 		case '<':
-			final String hexString = scanner.findWithinHorizon(HEX_STRING, 0).replaceAll("[\r\n ]", "");
+			final String hexString = scanner.findWithinHorizon(HEX_STRING, 0);
 			scanner.next();
-			return literal(DatatypeConverter.parseHexBinary(hexString));
+			return literal(DatatypeConverter.parseHexBinary(hexString.replaceAll(WHITESPACE, "")));
 		case '{':
 			return CURLY_MARK;
 		case '}':
@@ -384,6 +474,10 @@ public class PSImporter implements Importer {
 		return snd;
 	}
 
+	private boolean popBool() {
+		return (Boolean) stack.pop();
+	}
+
 	/** Pops n items from the stack and returns them as an array. */
 	private Object[] popTo(final Object mark) {
 		int n = stack.lastIndexOf(mark);
@@ -418,5 +512,17 @@ public class PSImporter implements Importer {
 		final float[] matrix = popArray();
 		assert matrix.length == 6;
 		return new AffineTransform(matrix);
+	}
+
+	private static final class PSDict extends HashMap<Object, Object> {
+		@Override
+		public boolean equals(Object that) {
+			return this == that;
+		}
+
+		@Override
+		public int hashCode() {
+			return 0;
+		}
 	}
 }
