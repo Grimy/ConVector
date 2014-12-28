@@ -1,11 +1,8 @@
 CLASSPATH = -classpath bin
 TESTCP = -classpath bin:/usr/share/java/*:test
 
-ERR = assertIdentifier,charConcat,compareIdentical,conditionAssign,constructorName,deadCode,deprecation,discouraged,emptyBlock,enumIdentifier,enumSwitch,enumSwitchPedantic,fallthrough,fieldHiding,finalBound,finally,forbidden,hashCode,includeAssertNull,indirectStatic,inheritNullAnnot,intfAnnotation,intfNonInherited,intfRedundant,invalidJavadoc,invalidJavadocTag,invalidJavadocTagDep,invalidJavadocTagNotVisible,maskedCatchBlock,noEffectAssign,null,nullAnnotConflict,nullAnnotRedundant,nullDereference,paramAssign,pkgDefaultMethod,raw,resource,semicolon,specialParamHiding,staticReceiver,suppress,switchDefault,syncOverride,syntheticAccess,typeHiding,unavoidableGenericProblems,unchecked,unnecessaryElse,unusedAllocation,unusedImport,unusedLabel,unusedLocal,unusedParamOverriding,unusedParamImplementing,unusedParamIncludeDoc,unusedPrivate,unusedThrown,unusedThrownWhenOverriding,unusedThrownIncludeDocComment,unusedThrownExemptExceptionThrowable,unusedTypeArgs,uselessTypeCheck,varargsCast,warningToken,static-method,static-access
-# TEMPORARILY DISABLED = super
-# IGNORE = -nls,-unqualifiedField,-boxing,-serial,-hiding,-local
-JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:-serial -err:$(ERR) -source 1.8 -d bin -maxProblems 10
-JAVA = java -ea $(CLASSPATH) $(JAVA_ARGS)
+JAVAC = javac $(CLASSPATH) -sourcepath src -source 1.8 -d bin
+JAVA = java -ea $(CLASSPATH) -Xss228m $(JAVA_ARGS)
 CLASSES = $(shell find src -name *.java | sed -r 's!src!bin!;s!java$$!class!')
 PACKAGE = cc/drawall/
 
@@ -25,7 +22,6 @@ clean:
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
 run: build
 	$(JAVA) cc.drawall.ui.Main $(ARGS)
-	#| perl -pe 's!^\s+at (drawall.*?)\.[^.]+\(.*?:(\d+)\)$!$2p src.$1/java!&&y!./!/.! && s!^!`sed -n $_`!e && s!^\s+!!'
 
 # "make bench": runs benchmarks
 bench:
