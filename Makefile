@@ -6,33 +6,20 @@ ERR = assertIdentifier,charConcat,compareIdentical,conditionAssign,constructorNa
 # IGNORE = -nls,-unqualifiedField,-boxing,-serial,-hiding,-local
 JAVAC = ecj $(CLASSPATH) -sourcepath src -warn:-serial -err:$(ERR) -source 1.8 -d bin -maxProblems 10
 JAVA = java -ea $(CLASSPATH) $(JAVA_ARGS)
-SOURCES = $(shell find cc/drawall/* -type f | sed -r 's!^!src/!;s!$$!.java!')
-CLASSES = $(shell find cc/drawall/* -type f | sed -r 's!^!bin/!;s!$$!.class!')
+CLASSES = $(shell find src -name *.java | sed -r 's!src!bin!;s!java$$!class!')
 PACKAGE = cc/drawall/
 
 # "make build": use ecj to compile .java files into .class files
-build: format $(CLASSES)
-
-# "make format": use format.pl to create .java files
-format: cache $(SOURCES)
+build: $(CLASSES)
 
 bin/%.class: src/%.java
 	$(JAVAC) $<
 
-src/%.java: % format.pl
-	@mkdir -p $$(dirname $@)
-	perl format.pl $< $< > $@
-
-# "make cache": updates the class cache (not usually useful)
-cache:
-	find cc/drawall > ~/.vim/cache/java/drawall
-
-jar:
+jar: build
 	cd bin; zip -r drawall.jar *
 
 # "make clean": remove generated files
 clean:
-	find src -name '*.java' -delete
 	find bin -name '*.class' -delete
 
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
