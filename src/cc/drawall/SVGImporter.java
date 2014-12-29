@@ -85,7 +85,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	public float getFloat(final Attributes attr, final String name, final float def) {
 		final String value = attr.getValue(name);
-		return value != null ? Float.parseFloat(value) : def;
+		return value != null ? Float.parseFloat(value.replace("px", "")) : def;
 	}
 
 	@Override
