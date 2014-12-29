@@ -108,9 +108,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1")
 			 + " L " + attr.getValue("x2") + "," + attr.getValue("y2");
 			break;
+		case "circle":
 		case "ellipse":
-			float rx = getFloat(attr, "rx", 0f);
-			float ry = getFloat(attr, "ry", 0f);
+			float rx = getFloat(attr, "rx", getFloat(attr, "r", 0f));
+			float ry = getFloat(attr, "ry", getFloat(attr, "r", 0f));
 			float cx = getFloat(attr, "cx", 0f);
 			float cy = getFloat(attr, "cy", 0f);
 			d = "M " + (cx - rx) + "," + (cy - ry)
@@ -121,7 +122,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			d = "M" + attr.getValue("points").replace(' ', 'L');
 			break;
 		case "rect":
-		case "circle":
 		case "polyline":
 			log.severe("Unhandled basic shape: " + name);
 			break;
