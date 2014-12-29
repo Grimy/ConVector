@@ -30,7 +30,7 @@ public class SVGExporter extends Exporter {
 		out.writeBytes("<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n");
 		out.writeBytes("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' ");
 		out.writeBytes("'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n");
-		out.writeBytes("<svg xmlns='http://www.w3.org/2000/svg'>\n<metadata id='");
+		out.writeBytes("<svg xmlns='http://www.w3.org/2000/svg'>\n<metadata id='ConVector");
 		return new AffineTransform(1, 0, 0, 1, -bounds.x, -bounds.y);
 	}
 
