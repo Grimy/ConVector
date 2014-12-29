@@ -51,7 +51,7 @@ public abstract class Exporter {
 	protected void writeSegment(final int type, final double[] coords) throws IOException {
 		int i = 0;
 		for (final Character chr: format[type].toCharArray()) {
-			out.writeBytes(chr == '%' ? Integer.toString((int) coords[i++])
+			out.writeBytes(chr == '%' ? Double.toString(coords[i++])
 				: Character.toString(chr));
 		}
 		out.write('\n');
