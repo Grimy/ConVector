@@ -40,6 +40,7 @@ public class WriterGraphics2D {
 				-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private final Path2D path = new Path2D.Float();
+	private Point2D.Float smooth = null;
 
 	private Color color = Color.BLACK;
 	private Color fillColor = null;
@@ -178,11 +179,14 @@ public class WriterGraphics2D {
 		assert points.length == 2 * nbPoints : "Expected: " + 2 * nbPoints + "Got: " + points.length;
 		log.finest(Arrays.toString(points));
 		(relative ? relativeTransform() : ctm).transform(points, 0, points, 0, nbPoints);
-		final Point2D point = path.getCurrentPoint();
+		final Point2D point = nbPoints == 1 ? path.getCurrentPoint() : smooth;
 		if (point != null) {
 			points[0] = Float.isNaN(points[0]) ? (float) point.getX() : points[0];
 			points[1] = Float.isNaN(points[1]) ? (float) point.getY() : points[1];
 		}
+		smooth = nbPoints == 1 ? null : new Point2D.Float(
+				2 * points[points.length - 2] - points[points.length - 4],
+				2 * points[points.length - 1] - points[points.length - 3]);
 	}
 
 	////////////////////////
