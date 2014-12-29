@@ -15,6 +15,7 @@ package cc.drawall;
 
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
@@ -132,9 +133,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			float ry = getFloat(attr, "ry", getFloat(attr, "r", 0f));
 			float cx = getFloat(attr, "cx", 0f);
 			float cy = getFloat(attr, "cy", 0f);
-			d = "M " + (cx - rx) + "," + (cy - ry)
-				+ "A" + rx + "," + ry + " 0 1 0 " + (cx + rx) + "," + (cy + ry)
-				+ "A" + rx + "," + ry + " 0 1 0 " + (cx - rx) + "," + (cy - ry);
+			g.append(g.getTransform().createTransformedShape(
+					new Ellipse2D.Float(cx - rx, cy - ry, 2 * rx, 2 * ry)));
+			g.draw();
 			break;
 		case "polygon":
 			d = "L" + attr.getValue("points") + "z";
