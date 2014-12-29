@@ -98,17 +98,36 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			handleAttr(attr.getLocalName(i), attr.getValue(i));
 		}
 
-		String d = attr.getValue("d");
-		if ("line".equals(name)) {
-			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1");
-			d += " L " + attr.getValue("x2") + "," + attr.getValue("y2");
+		String d = null;
+		switch (name) {
+		case "line":
+			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1")
+			 + " L " + attr.getValue("x2") + "," + attr.getValue("y2");
+			break;
+		case "ellipse":
+			float rx = Float.parseFloat(attr.getValue("rx"));
+			float ry = Float.parseFloat(attr.getValue("ry"));
+			float cx = Float.parseFloat(attr.getValue("cx"));
+			float cy = Float.parseFloat(attr.getValue("cy"));
+			d = "M " + (cx - rx) + "," + (cy - ry)
+				+ "A" + rx + "," + ry + " 0 1 0 " + (cx + rx) + "," + (cy + ry)
+				+ "A" + rx + "," + ry + " 0 1 0 " + (cx - rx) + "," + (cy - ry);
+			break;
+		case "polygon":
+			d = "M" + attr.getValue("points").replace(' ', 'L');
+			break;
+		case "rect":
+		case "circle":
+		case "polyline":
+			log.severe("Unhandled basic shape: " + name);
+			break;
+		default:
+			d = attr.getValue("d");
 		}
-		if (d == null) {
-			return;
+		if (d != null) {
+			parsePathData(d);
+			g.draw();
 		}
-		parsePathData(d);
-
-		g.draw();
 	}
 
 	@Override
@@ -165,10 +184,18 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.lineTo(relative, Float.NaN, scanner.nextFloat());
 				break;
 			case 'T': // smooth quadratic
+				Point2D p = g.getCurrentPoint();
+				g.quadTo(relative, Float.NaN, Float.NaN,
+						scanner.nextFloat(), scanner.nextFloat());
+				break;
 			case 'S': // smooth cubic
+				p = g.getCurrentPoint();
+				g.curveTo(relative, Float.NaN, Float.NaN,
+						scanner.nextFloat(), scanner.nextFloat(),
+						scanner.nextFloat(), scanner.nextFloat());
+				break;
 			default:
-				// (newx1, newy1) = (2*curx - oldx2, 2*cury - oldy2)
-				assert false : "Unhandled path operator: " + cmd;
+				assert false;
 			}
 		}
 	}
