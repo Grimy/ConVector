@@ -205,11 +205,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private static Color parseColor(final String colorName) {
-		if ("none".equals(colorName)) {
+		log.finest("Parsing color: " + colorName);
+		try {
+			javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
+			return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
+		} catch (IllegalArgumentException e) {
 			return null;
 		}
-		javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
-		return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
 	}
 
 	private static AffineTransform parseTransform(final String transform) {
