@@ -37,6 +37,15 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Logger log = Logger.getLogger(SVGImporter.class.getName());
 
 	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
+	private static final Map<String, Float> unitMap = new HashMap<>(); {
+		// Conversion ratios to pixels, as given by the SVG spec in 7.10: Units
+		unitMap.put("px", 1f);
+		unitMap.put("pt", 1.25f);
+		unitMap.put("pc", 15f);
+		unitMap.put("mm", 3.543307f);
+		unitMap.put("cm", 35.43307f);
+		unitMap.put("in", 90f);
+	}
 
 	private enum Caps {
 		BUTT, ROUND, SQUARE;
@@ -54,10 +63,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop -> handleAttr(
 				prop.split(":")[0], prop.split(":")[1])));
-		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(Float.parseFloat(v.replace("px", ""))));
+		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(Caps.valueOf(v.toUpperCase()).ordinal()));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(Joins.valueOf(v.toUpperCase()).ordinal()));
-		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(Float.parseFloat(v)));
+		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v)));
 	}
 
 	private void handleAttr(final String name, final String value) {
@@ -83,9 +92,17 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		return new InputSource(SVGImporter.class.getResourceAsStream("dtd/svg10.dtd"));
 	}
 
+	/** Parses a floating-point number, respecting SVG units. */
+	private float parseLength(final String floatString) {
+		int index = floatString.length() - 2;  // all SVG units are 2 chars long
+		Float multiplier = unitMap.get(floatString.substring(index));
+		return multiplier == null ? Float.parseFloat(floatString) :
+			multiplier * Float.parseFloat(floatString.substring(0, index));
+	}
+
 	public float getFloat(final Attributes attr, final String name, final float def) {
 		final String value = attr.getValue(name);
-		return value != null ? Float.parseFloat(value.replace("px", "")) : def;
+		return value != null ? parseLength(value) : def;
 	}
 
 	@Override
@@ -119,10 +136,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				+ "A" + rx + "," + ry + " 0 1 0 " + (cx - rx) + "," + (cy - ry);
 			break;
 		case "polygon":
-			d = "M" + attr.getValue("points").replace(' ', 'L');
+			d = "L" + attr.getValue("points") + "z";
+			break;
+		case "polyline":
+			d = "L" + attr.getValue("points");
 			break;
 		case "rect":
-		case "polyline":
 			log.severe("Unhandled basic shape: " + name);
 			break;
 		default:
@@ -140,6 +159,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private void parsePathData(final String data) {
+		log.fine("Parsing path data: " + data);
+
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(data);
 		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|" +
@@ -150,11 +171,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			if (scanner.hasNext(SVG_COMMAND)) {
 				cmd = scanner.next(SVG_COMMAND).charAt(0);
 			}
-			log.finest("cmd: " + cmd);
 			final boolean relative = Character.isLowerCase(cmd);
-			if (relative && g.getCurrentPoint() == null) {
-				g.moveTo(false, 0, 0);
+			if (g.getCurrentPoint() == null) {
+				g.moveTo(false, relative ? 0 : scanner.nextFloat(),
+								relative ? 0 : scanner.nextFloat());
+				continue;
 			}
+			log.finer("cmd: " + cmd);
 			switch (Character.toUpperCase(cmd)) {
 			case 'M':
 				g.moveTo(relative, scanner.nextFloat(), scanner.nextFloat());
@@ -205,7 +228,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private static Color parseColor(final String colorName) {
-		log.finest("Parsing color: " + colorName);
+		log.fine("Parsing color: " + colorName);
 		try {
 			javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
 			return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
