@@ -37,14 +37,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
 
-	private static final Map<String, Color> colors = new HashMap<>(); static {
-		colors.put("black", Color.BLACK);
-		colors.put("red", Color.RED);
-		colors.put("green", Color.GREEN);
-		colors.put("blue", Color.BLUE);
-		colors.put("yellow", Color.YELLOW);
-	}
-
 	private enum Caps {
 		BUTT, ROUND, SQUARE;
 	}
@@ -201,7 +193,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private static Color parseColor(final String colorName) {
-		return colorName.charAt(0) == '#' ? Color.decode(colorName) : colors.get(colorName);
+		javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
+		return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
 	}
 
 	private static AffineTransform parseTransform(final String transform) {
