@@ -16,6 +16,7 @@ package cc.drawall;
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -82,6 +83,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		return new InputSource(SVGImporter.class.getResourceAsStream("dtd/svg10.dtd"));
 	}
 
+	public float getFloat(final Attributes attr, final String name, final float def) {
+		final String value = attr.getValue(name);
+		return value != null ? Float.parseFloat(value) : def;
+	}
+
 	@Override
 	public void startElement(final String namespace, final String local,
 			final String name, final Attributes attr) {
@@ -92,15 +98,21 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 		String d = null;
 		switch (name) {
+		case "svg":
+			g.append(new Rectangle2D.Float(0, 0, getFloat(attr, "width", Float.MAX_VALUE),
+						getFloat(attr, "height", Float.MAX_VALUE)));
+			g.clip();
+			g.reset();
+			break;
 		case "line":
 			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1")
 			 + " L " + attr.getValue("x2") + "," + attr.getValue("y2");
 			break;
 		case "ellipse":
-			float rx = Float.parseFloat(attr.getValue("rx"));
-			float ry = Float.parseFloat(attr.getValue("ry"));
-			float cx = Float.parseFloat(attr.getValue("cx"));
-			float cy = Float.parseFloat(attr.getValue("cy"));
+			float rx = getFloat(attr, "rx", 0f);
+			float ry = getFloat(attr, "ry", 0f);
+			float cx = getFloat(attr, "cx", 0f);
+			float cy = getFloat(attr, "cy", 0f);
 			d = "M " + (cx - rx) + "," + (cy - ry)
 				+ "A" + rx + "," + ry + " 0 1 0 " + (cx + rx) + "," + (cy + ry)
 				+ "A" + rx + "," + ry + " 0 1 0 " + (cx - rx) + "," + (cy - ry);
@@ -193,6 +205,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private static Color parseColor(final String colorName) {
+		if ("none".equals(colorName)) {
+			return null;
+		}
 		javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
 		return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
 	}
