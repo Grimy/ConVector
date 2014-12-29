@@ -95,7 +95,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	/** Parses a floating-point number, respecting SVG units. */
 	private float parseLength(final String floatString) {
 		int index = floatString.length() - 2;  // all SVG units are 2 chars long
-		Float multiplier = unitMap.get(floatString.substring(index));
+		Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
 		return multiplier == null ? Float.parseFloat(floatString) :
 			multiplier * Float.parseFloat(floatString.substring(0, index));
 	}
