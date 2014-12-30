@@ -17,7 +17,7 @@ import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -91,7 +91,7 @@ public class Main extends Canvas {
 		}
 	}
 
-	public void createAndShowGUI() {
+	private void createAndShowGUI() {
 		final JMenuItem in = new JMenuItem("Import");
 		in.addActionListener(event -> {
 			if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
@@ -124,11 +124,11 @@ public class Main extends Canvas {
 		assert graphics instanceof Graphics2D;
 		Graphics2D g = (Graphics2D) graphics;
 		super.paint(g);
-		final Rectangle bounds = drawing.getBounds();
-		final double ratio = Math.min((double) getWidth() / bounds.width,
-				(double) getHeight() / bounds.height);
+		final Rectangle2D bounds = drawing.getBounds();
+		final double ratio = Math.min(getWidth() / bounds.getWidth(),
+				getHeight() / bounds.getHeight());
 		g.scale(ratio, ratio);
-		g.translate(-bounds.x, -bounds.y);
+		g.translate(-bounds.getX(), -bounds.getY());
 		for (Drawing.Splash splash: drawing) {
 			g.setColor(splash.color);
 			g.fill(splash.shape);
