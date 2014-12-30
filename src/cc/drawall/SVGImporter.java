@@ -103,7 +103,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			multiplier * Float.parseFloat(floatString.substring(0, index));
 	}
 
-	public float getFloat(final Attributes attr, final String name, final float def) {
+	private float getFloat(final Attributes attr, final String name, final float def) {
 		final String value = attr.getValue(name);
 		return value != null ? parseLength(value) : def;
 	}
@@ -218,15 +218,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.lineTo(relative, Float.NaN, scanner.nextFloat());
 				break;
 			case 'T': // smooth quadratic
-				Point2D p = g.getCurrentPoint();
-				g.quadTo(relative, Float.NaN, Float.NaN,
-						scanner.nextFloat(), scanner.nextFloat());
+				g.quadTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(), scanner.nextFloat());
 				break;
 			case 'S': // smooth cubic
-				p = g.getCurrentPoint();
-				g.curveTo(relative, Float.NaN, Float.NaN,
-						scanner.nextFloat(), scanner.nextFloat(),
-						scanner.nextFloat(), scanner.nextFloat());
+				g.curveTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(),
+						scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat());
 				break;
 			default:
 				assert false;

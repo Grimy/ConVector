@@ -135,7 +135,7 @@ public class PSImporter implements Importer {
 		builtin("countdictstack", () -> stack.push(1f));
 		builtin("dictstack", () -> ((Object[]) stack.peek())[0] = vars);
 
-		builtin("dict", () -> {stack.pop(); stack.push(vars);});
+		builtin("dict", () -> stack.push(p(1) > 0 ? vars : null));
 		builtin("begin", () -> stack.pop());
 		builtin("end", NOOP);
 		builtin("load", () -> stack.push(getVar(stack.pop())));
@@ -187,14 +187,13 @@ public class PSImporter implements Importer {
 		// Flow control
 		builtin("exec", () -> execute(stack.pop()));
 		builtin("stopped", () -> {
-			// try {
-				// execute(stack.pop());
-			// } catch (Exception e) {
-				// stack.push(true);
-				// return;
-			// }
-			stack.pop();
-			stack.push(true);
+			try {
+				execute(stack.pop());
+			} catch (Exception e) {
+				stack.push(Boolean.TRUE);
+				return;
+			}
+			stack.push(Boolean.FALSE);
 		});
 		builtin("quit", NOOP);
 		builtin("if", () -> {
@@ -238,14 +237,14 @@ public class PSImporter implements Importer {
 		// exec
 
 		// Type, attributes and conversion operators
-		builtin("type", () -> {stack.pop(); stack.push("nametype");});
+		builtin("type", () -> stack.push(stack.pop() instanceof String ? "nametype" : null));
 		// cvi
 		builtin("cvx", NOOP);
 		builtin("cvr", NOOP);
 		builtin("cvlit", () -> stack.push(literal(stack.peek())));
-		builtin("rcheck", () -> {stack.pop(); stack.push(true);});
-		builtin("wcheck", () -> {stack.pop(); stack.push(true);});
-		builtin("xcheck", () -> {stack.pop(); stack.push(true);});
+		builtin("rcheck", () -> stack.push(stack.pop() != null));
+		builtin("wcheck", () -> stack.push(stack.pop() != null));
+		builtin("xcheck", () -> stack.push(stack.pop() != null));
 		builtin("readonly", NOOP);
 		builtin("executeonly", NOOP);
 
@@ -255,7 +254,7 @@ public class PSImporter implements Importer {
 
 		// Miscellaneous
 		vars.put("ps_level", 1f);
-		builtin("currentglobal", () -> stack.push(false));
+		builtin("currentglobal", () -> stack.push(Boolean.FALSE));
 		builtin("bind", () -> stack.push(Arrays.stream((Object[]) stack.pop()).map(
 			o -> vars.containsKey(o) ? vars.get(o) : o
 		).toArray()));
@@ -385,12 +384,7 @@ public class PSImporter implements Importer {
 					// Deferred execution mode
 					stack.push(obj);
 				} else {
-					try {
-						execute(obj);
-					} catch (Exception e) {
-						log.severe(stack.toString());
-						throw e;
-					}
+					execute(obj);
 				}
 			}
 	}

@@ -18,7 +18,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
-/** An Exporter for the DOV format. */
+/** Outputs a vector to DOV format. */
 public class DOVExporter extends Exporter {
 
 	public DOVExporter() {

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Outputs a vector as a PDF. */
 public class PDFExporter extends Exporter {
 
 	private final List<Integer> xref = new ArrayList<>(4);
@@ -34,7 +35,7 @@ public class PDFExporter extends Exporter {
 		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + (int) bounds.getWidth() + " "
 				+ (int) bounds.getHeight() + "]>>");
 		writeObj("<</Length 4 0 R>>stream\n%");
-		double ratio = Math.max(bounds.getWidth(), bounds.getHeight()) / 65535;
+		final double ratio = Math.max(bounds.getWidth(), bounds.getHeight()) / 65535;
 		writeFormat("%f 0 0 %f 0 0 cm\n", ratio, ratio);
 	}
 
@@ -51,7 +52,7 @@ public class PDFExporter extends Exporter {
 		final int startxref = out.size();
 		out.writeBytes("xref\n1 " + xref.size() + "\n");
 		for (final int pos: xref) {
-			out.writeBytes(String.format("%010d 00000  n%n", pos));
+			writeFormat(String.format("%010d 00000  n%n", pos));
 		}
 		writeFormat("trailer<</Size %d/Root 1 0 R>>", xref.size() + 1);
 		out.writeBytes("startxref " + startxref + "\n%%EOF");

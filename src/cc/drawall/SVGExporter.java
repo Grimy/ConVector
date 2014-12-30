@@ -17,6 +17,7 @@ import java.awt.Color;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
+/* Outputs a vector as SVG. */
 public class SVGExporter extends Exporter {
 
 	public SVGExporter() {

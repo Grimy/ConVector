@@ -42,6 +42,8 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	/* The splashes composing this Drawing. */
 	private List<Splash> splashes = new ArrayList<>();
 
+	int flatness = -1;
+
 	/* Adds the specified shape, filled with the specified color, to this Drawing. */
 	void paint(final Color color, final Shape shape) {
 		bounds = bounds.createUnion(shape.getBounds2D());
@@ -76,7 +78,8 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		final List<Splash> splitted = new ArrayList<>();
 		forEach(splash -> {
 			Path2D path = new Path2D.Double();
-			for (final PathIterator itr = splash.getPathIterator(null); !itr.isDone(); itr.next()) {
+			for (final PathIterator itr = splash.getPathIterator(null, -1);
+					!itr.isDone(); itr.next()) {
 				final int type = itr.currentSegment(coords);
 				switch (type) {
 				case PathIterator.SEG_MOVETO:
@@ -135,8 +138,6 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		return splashes.iterator();
 	}
 
-	public static int flatness = -1;
-
 	public static class Splash {
 		public final Color color;
 		public final Shape shape;
@@ -145,7 +146,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 			this.shape = shape;
 		}
 
-		public PathIterator getPathIterator(final AffineTransform transform) {
+		public PathIterator getPathIterator(final AffineTransform transform, final int flatness) {
 			return flatness < 0 ? shape.getPathIterator(transform)
 			                    : shape.getPathIterator(transform, flatness);
 		}
@@ -181,7 +182,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		return Math.abs(surface) / 2;
 	}
 
-	/** Returns true iff the specified Drawing is identical to this one. */
+	/** @return true iff the specified Drawing is identical to this one. */
 	public boolean looksLike(final Drawing that) {
 		log.warning("Entering looksLike");
 		if (this.splashes.size() != that.splashes.size()) {

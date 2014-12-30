@@ -17,6 +17,7 @@ import java.awt.Color;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
+/** Outputs a vector to GCode. */
 public class GCodeExporter extends Exporter {
 
 	public GCodeExporter() {
