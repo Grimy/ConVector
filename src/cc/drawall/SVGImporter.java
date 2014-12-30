@@ -125,7 +125,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			break;
 		case "line":
 			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1")
-			 + " L " + attr.getValue("x2") + "," + attr.getValue("y2");
+			   + "," + attr.getValue("x2") + "," + attr.getValue("y2");
 			break;
 		case "circle":
 		case "ellipse":
@@ -138,10 +138,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			g.draw();
 			break;
 		case "polygon":
-			d = "L" + attr.getValue("points") + "z";
+			d = "M" + attr.getValue("points") + "z";
 			break;
 		case "polyline":
-			d = "L" + attr.getValue("points");
+			d = "M" + attr.getValue("points");
 			break;
 		case "rect":
 			log.severe("Unhandled basic shape: " + name);
@@ -174,10 +174,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				cmd = scanner.next(SVG_COMMAND).charAt(0);
 			}
 			final boolean relative = Character.isLowerCase(cmd);
-			if (g.getCurrentPoint() == null) {
-				g.moveTo(false, relative ? 0 : scanner.nextFloat(),
-								relative ? 0 : scanner.nextFloat());
-				continue;
+			if (g.getCurrentPoint() == null && relative) {
+				g.moveTo(false, 0, 0);
 			}
 			log.finer("cmd: " + cmd);
 			switch (Character.toUpperCase(cmd)) {
