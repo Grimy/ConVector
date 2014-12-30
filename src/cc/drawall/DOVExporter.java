@@ -14,24 +14,24 @@
 package cc.drawall;
 
 import java.awt.Color;
-import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
 /** An Exporter for the DOV format. */
 public class DOVExporter extends Exporter {
 
+	public DOVExporter() {
+		super(FLATTEN | MERGE | SHORTEN);
+	}
+
 	@Override
-	protected AffineTransform writeHeader(final Drawing drawing) throws IOException {
-		final Rectangle bounds = drawing.getBounds();
-		final double ratio = 65535.0 / Math.max(bounds.width, bounds.height);
+	protected void writeHeader(final Rectangle2D bounds) throws IOException {
 		out.writeChars("\u39FF\u0000");
-		out.writeChar((int) (bounds.width * ratio));
-		out.writeChar((int) (bounds.height * ratio));
-		out.writeChar(bounds.width);
-		out.writeChar(bounds.height);
-		return new AffineTransform(ratio, 0, 0, ratio, -bounds.x * ratio, -bounds.y * ratio);
+		out.writeChar((int) (65535));
+		out.writeChar((int) (65535));
+		out.writeChar((int) bounds.getWidth());
+		out.writeChar((int) bounds.getHeight());
 	}
 
 	@Override

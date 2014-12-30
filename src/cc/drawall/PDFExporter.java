@@ -14,8 +14,7 @@
 package cc.drawall;
 
 import java.awt.Color;
-import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,36 +24,36 @@ public class PDFExporter extends Exporter {
 	private final List<Integer> xref = new ArrayList<>(4);
 
 	public PDFExporter() {
-		super("% % m", "% % l", null, "% % % % % % c", "h");
+		super(REVERSE, "% % m", "% % l", null, "% % % % % % c", "h");
 	}
 
 	@Override
-	protected AffineTransform writeHeader(final Drawing drawing) throws IOException {
-		final Rectangle bounds = drawing.getBounds();
+	protected void writeHeader(final Rectangle2D bounds) throws IOException {
 		out.writeBytes("%PDF-1\n");
 		writeObj("<</Pages 1 0 R/Kids[2 0 R]/Count 1>>");
-		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + bounds.width + " " + bounds.height + "]>>");
+		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + (int) bounds.getWidth() + " "
+				+ (int) bounds.getHeight() + "]>>");
 		writeObj("<</Length 4 0 R>>stream\n%");
-		return new AffineTransform(1, 0, 0, -1, -bounds.x, bounds.y + bounds.height);
+		double ratio = Math.max(bounds.getWidth(), bounds.getHeight()) / 65535;
+		writeFormat("%f 0 0 %f 0 0 cm\n", ratio, ratio);
 	}
 
 	@Override
 	protected void writeColor(final Color color) throws IOException {
 		final float[] rgb = color.getRGBColorComponents(null);
-		writeFormat("f %.3f %.3f %.3f rg%n", rgb[0], rgb[1], rgb[2]);
+		writeFormat("h f %.3f %.3f %.3f rg%n", rgb[0], rgb[1], rgb[2]);
 	}
 
 	@Override
 	protected void writeFooter() throws IOException {
 		out.writeBytes("f endstream\nendobj\n");
-		writeObj(" " + (out.size() - xref.get(2) - 48) + " "); // Magic!
+		writeObj(" " + (out.size() - xref.get(2) - 48) + " ");
 		final int startxref = out.size();
 		out.writeBytes("xref\n1 " + xref.size() + "\n");
 		for (final int pos: xref) {
 			out.writeBytes(String.format("%010d 00000  n%n", pos));
 		}
 		writeFormat("trailer<</Size %d/Root 1 0 R>>", xref.size() + 1);
-
 		out.writeBytes("startxref " + startxref + "\n%%EOF");
 	}
 

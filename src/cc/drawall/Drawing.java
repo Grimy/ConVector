@@ -14,12 +14,12 @@
 package cc.drawall;
 
 import java.awt.Color;
-import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,20 +37,20 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	private static final double[] coords = new double[6];
 
 	/* The bounding rectangle of this Drawing (initially empty). */
-	private Rectangle bounds = new Rectangle(0, 0, -1, -1);
+	private Rectangle2D bounds = new Rectangle2D.Double(0, 0, -1, -1);
 
 	/* The splashes composing this Drawing. */
 	private List<Splash> splashes = new ArrayList<>();
 
 	/* Adds the specified shape, filled with the specified color, to this Drawing. */
 	void paint(final Color color, final Shape shape) {
-		bounds = bounds.union(shape.getBounds());
+		bounds = bounds.createUnion(shape.getBounds2D());
 		splashes.add(new Splash(color, shape));
 	}
 
 	/* Changes the list of areas so that they can be rendered correctly in any order.
 	 * This implies removing from the lower splashes parts that would be hidden by higher splashes. */
-	void flatten() {
+	void mergeLayers() {
 		final Area mask = new Area();
 		final Map<Color, Area> colorMap = new HashMap<>();
 		for (final Splash splash: splashes) {
@@ -126,7 +126,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	}
 
 	/** Returns the bounding box of this Drawing. */
-	public Rectangle getBounds() {
+	public Rectangle2D getBounds() {
 		return bounds;
 	}
 
@@ -135,8 +135,9 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		return splashes.iterator();
 	}
 
+	public static int flatness = -1;
+
 	public static class Splash {
-		private static final Integer flatness = Integer.getInteger("flatness");
 		public final Color color;
 		public final Shape shape;
 		public Splash(final Color color, final Shape shape) {
@@ -145,8 +146,8 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		}
 
 		public PathIterator getPathIterator(final AffineTransform transform) {
-			return flatness == null ? shape.getPathIterator(transform)
-			                        : shape.getPathIterator(transform, flatness);
+			return flatness < 0 ? shape.getPathIterator(transform)
+			                    : shape.getPathIterator(transform, flatness);
 		}
 	}
 

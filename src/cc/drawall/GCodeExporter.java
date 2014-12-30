@@ -14,25 +14,18 @@
 package cc.drawall;
 
 import java.awt.Color;
-import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
 public class GCodeExporter extends Exporter {
 
 	public GCodeExporter() {
-		super("G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G5 I% J% P% Q% X% Y%");
+		super(MERGE | SHORTEN, "G0 X% Y%", "G1 X% Y%", "G5.1 I% J% X% Y%", "G5 I% J% P% Q% X% Y%");
 	}
 
 	@Override
-	protected AffineTransform writeHeader(final Drawing drawing) throws IOException {
-		// TODO : return flags requiring optimization and flattening
-		drawing.optimize();
-		final Rectangle bounds = drawing.getBounds();
-		final double ratio = 25000.0 / Math.max(bounds.width, bounds.height);
+	protected void writeHeader(final Rectangle2D bounds) throws IOException {
 		out.writeBytes("G21\n");
-		return new AffineTransform(ratio, 0, 0, -ratio,
-				-bounds.x * ratio, (bounds.height + bounds.y) * ratio);
 	}
 
 	@Override
