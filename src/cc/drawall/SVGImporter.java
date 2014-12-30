@@ -134,8 +134,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			float ry = getFloat(attr, "ry", getFloat(attr, "r", 0f));
 			float cx = getFloat(attr, "cx", 0f);
 			float cy = getFloat(attr, "cy", 0f);
-			g.append(g.getTransform().createTransformedShape(
-					new Ellipse2D.Float(cx - rx, cy - ry, 2 * rx, 2 * ry)));
+			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
+					cx - rx, cy - ry, 2 * rx, 2 * ry)));
 			g.draw();
 			break;
 		case "polygon":
@@ -145,7 +145,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			d = "M" + attr.getValue("points");
 			break;
 		case "rect":
-			log.severe("Unhandled basic shape: " + name);
+			if (getFloat(attr, "rx", 0f) > 0f || getFloat(attr, "ry", 0f) > 0f) {
+				log.severe("Rounded rectangles are not handled.");
+			}
+			g.append(g.getTransform().createTransformedShape(new Rectangle2D.Float(
+					getFloat(attr, "x", 0f), getFloat(attr, "y", 0f),
+					getFloat(attr, "width", 0f), getFloat(attr, "height", 0f))));
+			g.draw();
 			break;
 		default:
 			d = attr.getValue("d");
