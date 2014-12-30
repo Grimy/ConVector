@@ -79,6 +79,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	public void process(final InputStream input, final WriterGraphics2D output) {
 		this.g = output;
 		g.setFillColor(Color.BLACK);
+		g.setColor(null);
 		try {
 			SAXParserFactory.newInstance().newSAXParser().parse(input, this);
 		} catch (final ParserConfigurationException | IOException e) {
