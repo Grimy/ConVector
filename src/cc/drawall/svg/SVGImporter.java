@@ -11,7 +11,7 @@
  * © 2014 Victor Adam
  */
 
-package cc.drawall;
+package cc.drawall.svg;
 
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
@@ -27,12 +27,17 @@ import java.util.Scanner;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import cc.drawall.Importer;
+import cc.drawall.WriterGraphics2D;
 
 public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Logger log = Logger.getLogger(SVGImporter.class.getName());
@@ -92,18 +97,18 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	@Override
 	public InputSource resolveEntity(final String publicId, final String systemId) {
-		return new InputSource(SVGImporter.class.getResourceAsStream("dtd/svg10.dtd"));
+		return new InputSource(SVGImporter.class.getResourceAsStream("svg10.dtd"));
 	}
 
 	/** Parses a floating-point number, respecting SVG units. */
-	private float parseLength(final String floatString) {
+	private static float parseLength(final String floatString) {
 		int index = floatString.length() - 2;  // all SVG units are 2 chars long
 		Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
 		return multiplier == null ? Float.parseFloat(floatString) :
 			multiplier * Float.parseFloat(floatString.substring(0, index));
 	}
 
-	private float getFloat(final Attributes attr, final String name, final float def) {
+	private static float getFloat(final Attributes attr, final String name, final float def) {
 		final String value = attr.getValue(name);
 		return value != null ? parseLength(value) : def;
 	}

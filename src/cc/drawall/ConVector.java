@@ -11,7 +11,7 @@
  * © 2014 Victor Adam
  */
 
-package cc.drawall.ui;
+package cc.drawall;
 
 import java.awt.BorderLayout;
 import java.awt.Canvas;
@@ -33,11 +33,8 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import cc.drawall.DrawMaster;
-import cc.drawall.Drawing;
-
 /** User interface. */
-public class Main extends Canvas {
+public class ConVector extends Canvas {
 	static {
 		// Ensure the decimal separator is "." everywhere.
 		Locale.setDefault(Locale.Category.FORMAT, Locale.US);
@@ -48,7 +45,7 @@ public class Main extends Canvas {
 	private final JFileChooser chooser = new JFileChooser();
 	private transient Drawing drawing = new Drawing();
 
-	public Main() {
+	public ConVector() {
 		// TODO: get list of valid formats
 		chooser.setFileFilter(new FileNameExtensionFilter("Vectors",
 					new String[] {"svg", "pdf", "ps", "gcode", "dov"}));
@@ -59,7 +56,7 @@ public class Main extends Canvas {
 	  * Otherwise, start the GUI. */
 	public static void main(final String... args) {
 		if (args.length == 0) {
-			new Main().createAndShowGUI();
+			new ConVector().createAndShowGUI();
 			return;
 		}
 		if (args.length != 2) {

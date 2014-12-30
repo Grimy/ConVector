@@ -21,7 +21,7 @@ clean:
 
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
 run: build
-	$(JAVA) cc.drawall.ui.Main $(ARGS)
+	$(JAVA) cc.drawall.ConVector $(ARGS)
 
 # "make bench": runs benchmarks
 bench:

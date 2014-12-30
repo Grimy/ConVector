@@ -11,7 +11,7 @@
  * © 2014 Victor Adam
  */
 
-package cc.drawall;
+package cc.drawall.gcode;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -20,6 +20,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Logger;
+
+import cc.drawall.Importer;
+import cc.drawall.WriterGraphics2D;
 
 /* Importer used to parse GCode. */
 public class GCodeImporter implements Importer {

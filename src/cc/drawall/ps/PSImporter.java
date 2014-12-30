@@ -11,7 +11,7 @@
  * © 2014 Victor Adam
  */
 
-package cc.drawall;
+package cc.drawall.ps;
 
 import java.awt.Color;
 import java.awt.color.ColorSpace;
@@ -36,6 +36,9 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.DatatypeConverter;
+
+import cc.drawall.Importer;
+import cc.drawall.WriterGraphics2D;
 
 /** Importer used to parse PostScript. */
 public class PSImporter implements Importer {

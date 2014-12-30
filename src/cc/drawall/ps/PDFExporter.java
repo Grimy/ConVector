@@ -11,13 +11,15 @@
  * © 2014 Victor Adam
  */
 
-package cc.drawall;
+package cc.drawall.ps;
 
 import java.awt.Color;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import cc.drawall.Exporter;
 
 /** Outputs a vector as a PDF. */
 public class PDFExporter extends Exporter {

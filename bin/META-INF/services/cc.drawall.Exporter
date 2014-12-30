@@ -1,5 +1,5 @@
 cc.drawall.DOVExporter
-cc.drawall.GCodeExporter
-cc.drawall.PDFExporter
-cc.drawall.PSExporter
-cc.drawall.SVGExporter
+cc.drawall.gcode.GCodeExporter
+cc.drawall.ps.PDFExporter
+cc.drawall.ps.PSExporter
+cc.drawall.svg.SVGExporter

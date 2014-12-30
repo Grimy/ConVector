@@ -1,3 +1,3 @@
-cc.drawall.GCodeImporter
-cc.drawall.PSImporter
-cc.drawall.SVGImporter
+cc.drawall.gcode.GCodeImporter
+cc.drawall.ps.PSImporter
+cc.drawall.svg.SVGImporter
