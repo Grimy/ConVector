@@ -179,7 +179,7 @@ public class WriterGraphics2D {
 		assert points.length == 2 * nbPoints : "Expected: " + 2 * nbPoints + "Got: " + points.length;
 		log.finest(Arrays.toString(points));
 		(relative ? relativeTransform() : ctm).transform(points, 0, points, 0, nbPoints);
-		final Point2D point = nbPoints == 1 ? path.getCurrentPoint() : smooth;
+		final Point2D point = nbPoints > 1 && smooth != null ? smooth : path.getCurrentPoint();
 		if (point != null) {
 			points[0] = Float.isNaN(points[0]) ? (float) point.getX() : points[0];
 			points[1] = Float.isNaN(points[1]) ? (float) point.getY() : points[1];
