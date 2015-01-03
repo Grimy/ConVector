@@ -21,10 +21,10 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
-import cc.drawall.Importer;
 import cc.drawall.Graphics;
+import cc.drawall.Importer;
 
-/* Importer used to parse GCode. */
+/** Importer used to parse GCode. */
 public class GCodeImporter implements Importer {
 	private static final Logger log = Logger.getLogger(GCodeImporter.class.getName());
 
@@ -48,7 +48,7 @@ public class GCodeImporter implements Importer {
 			g.draw();
 			g.moveTo(relative, readPos('X'), readPos('Y'));
 		});
-		gcodes.put(5, () -> g.curveTo(relative, readArg('I'), readArg('J'),
+		gcodes.put(5, () -> g.lineTo(relative, readArg('I'), readArg('J'),
 					readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
 		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
 		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));

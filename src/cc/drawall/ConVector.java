@@ -52,8 +52,8 @@ class ConVector extends Canvas {
 		setSize(800, 600);
 	}
 
-	/** If command lines arguments are given, process them.
-	  * Otherwise, start the GUI. */
+	/** If command lines arguments are given, process them. Otherwise, start the GUI.
+	  * @param args first argument is the input file, second is the output file */
 	public static void main(final String... args) {
 		if (args.length == 0) {
 			new ConVector().createAndShowGUI();

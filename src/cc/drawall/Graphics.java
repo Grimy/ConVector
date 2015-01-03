@@ -32,6 +32,13 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
+/** Graphics context for all drawing operations done by Importer plugins.
+  * Provides methods for setting graphical state, constructing paths and drawing them.
+  * Graphical state includes the current transform matrix, clipping path,
+  * font, stroke type, stroking color and filling color.
+  * Path construction can be done using straight lines, Bézier curves, `closePath` instructions
+  * and text.
+  * Path drawing is either stroking, filling or both. */
 public class Graphics {
 	private static final Logger log = Logger.getLogger(Graphics.class.getName());
 
@@ -49,7 +56,7 @@ public class Graphics {
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
 	private Drawing drawing = new Drawing();
 
-	/** Saved graphical context. */
+	/* Saved graphical context. */
 	private Graphics prev = null;
 
 	Drawing getDrawing() {
@@ -60,29 +67,28 @@ public class Graphics {
 	// Path construction //
 	///////////////////////
 
-	public void moveTo(final boolean relative, final float... points) {
-		transform(relative, points, 1);
+	public void moveTo(final boolean relative, final float x, final float y) {
+		final float[] points = {x, y};
+		transform(relative, points);
 		path.moveTo(points[0], points[1]);
 	}
 
 	public void lineTo(final boolean relative, final float... points) {
-		transform(relative, points, 1);
-		path.lineTo(points[0], points[1]);
-	}
-
-	public void quadTo(final boolean relative, final float... points) {
-		transform(relative, points, 2);
-		path.quadTo(points[0], points[1], points[2], points[3]);
-	}
-
-	public void curveTo(final boolean relative, final float... points) {
-		transform(relative, points, 3);
-		path.curveTo(points[0], points[1], points[2], points[3], points[4], points[5]);
+		transform(relative, points);
+		if (points.length == 2) {
+			path.lineTo(points[0], points[1]);
+		} else if (points.length == 4) {
+			path.quadTo(points[0], points[1], points[2], points[3]);
+		} else if (points.length == 6) {
+			path.curveTo(points[0], points[1], points[2], points[3], points[4], points[5]);
+		} else {
+			throw new IllegalArgumentException("Invalid length for point array: " + points.length);
+		}
 	}
 
 	public void arcTo(final boolean relative, final Point2D radius, final float xAxisRotation,
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
-		transform(relative, points, 1);
+		transform(relative, points);
 		ctm.deltaTransform(radius, radius);
 		final Point2D p0 = path.getCurrentPoint();
 		final double x0 = p0.getX();
@@ -138,22 +144,32 @@ public class Graphics {
 				-angleStart, -angleExtent, Arc2D.OPEN)), true);
 	}
 
+	/** Closes the current path by drawing a straight line back to the coordinates of the
+	  * last moveTo. If the path is already closed then this method has no effect. */
 	public void closePath() {
 		path.closePath();
 	}
 
+	/** Resets the path to its initial, empty state. */
 	public void reset() {
 		path.reset();
 	}
 
+	/** Appends the geometry of the specified Shape to the path.
+	  * The winding rule of the specified Shape is ignored.
+	  * @param shape whose geometry is appended to the path */
 	public void append(final Shape shape) {
 		path.append(shape, false);
 	}
 
+	/** Returns the coordinates most recently added to the end of the path as a Point2D. */
 	public Point2D getCurrentPoint() {
 		return path.getCurrentPoint();
 	}
 
+	/** Intersects the clipping area with the path.
+	  * This sets the clipping area to the intersection of its current value with the area
+	  * by the path, after closing it if necessary. */
 	public void clip() {
 		clippath.intersect(new Area(path));
 	}
@@ -175,9 +191,9 @@ public class Graphics {
 			ctm.getShearX(), ctm.getScaleY(), point.getX(), point.getY());
 	}
 
-	private void transform(final boolean relative, final float[] points, final int nbPoints) {
-		assert points.length == 2 * nbPoints : "Expected: " + 2 * nbPoints + "Got: " + points.length;
+	private void transform(final boolean relative, final float[] points) {
 		log.finest(Arrays.toString(points));
+		final int nbPoints = points.length / 2;
 		(relative ? relativeTransform() : ctm).transform(points, 0, points, 0, nbPoints);
 		final Point2D point = nbPoints > 1 && smooth != null ? smooth : path.getCurrentPoint();
 		if (point != null) {

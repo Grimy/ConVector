@@ -49,12 +49,16 @@ public abstract class Exporter {
 	private final String[] format;
 	private final int flags;
 
+	/** Constructs an exporter with the specified flags and segement formatting strings.
+	  * @param flags a bit mask, constructed by OR-ing together the flags that apply.
+	  * @param format a list of format strings for the different segment types:
+	  * moveTo, lineTo, quadTo, curveTo and closePath. */
 	protected Exporter(final int flags, final String... format) {
 		this.flags = flags;
 		this.format = format;
 	}
 
-	public final void output(final Drawing drawing, final OutputStream out) throws IOException {
+	final void output(final Drawing drawing, final OutputStream out) throws IOException {
 		final int flatness = (flags & FLATTEN) == 0 ? -1 : Integer.getInteger("flatness", 1);
 		if ((flags & MERGE) != 0) {
 			drawing.mergeLayers();
@@ -80,9 +84,24 @@ public abstract class Exporter {
 		writeFooter();
 	}
 
+	/** Writes the beginning of the output file.
+	  * @param bounds the bounding box of the original drawing */
 	protected abstract void writeHeader(final Rectangle2D bounds) throws IOException;
-	protected abstract void writeFooter() throws IOException;
-	protected abstract void writeColor(final Color color) throws IOException;
+
+	/** Writes the end of the output file.
+	 * By default, this does nothing; subclasses should override this if the
+	 * target filetype requires some form of footer. */
+	protected void writeFooter() throws IOException {
+		write("");
+	}
+
+	/** Writes the necessary instructions to change the Color of the drawing.
+	  * By default, this does nothing; subclasses should override this if the
+	  * target filetype supports color.
+	  * @param color the new painting color */
+	protected void writeColor(final Color color) throws IOException {
+		write("");
+	}
 
 	protected void writeSegment(final int type, final double[] coords) throws IOException {
 		int i = 0;
@@ -95,6 +114,14 @@ public abstract class Exporter {
 
 	protected final void write(final String format, final Object... args) throws IOException {
 		out.writeBytes(String.format(format, args));
+	}
+
+	protected final void writeInt(final int i) throws IOException {
+		out.writeInt(i);
+	}
+
+	protected final void writeChar(final int c) throws IOException {
+		out.writeChar(c);
 	}
 
 	protected final int bytesWritten() {

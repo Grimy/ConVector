@@ -11,12 +11,13 @@
  * © 2014 Victor Adam
  */
 
-package cc.drawall;
+package cc.drawall.dov;
 
-import java.awt.Color;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+
+import cc.drawall.Exporter;
 
 /** Outputs a vector to DOV format. */
 public class DOVExporter extends Exporter {
@@ -27,38 +28,27 @@ public class DOVExporter extends Exporter {
 
 	@Override
 	protected void writeHeader(final Rectangle2D bounds) throws IOException {
-		out.writeChars("\u39FF\u0000");
-		out.writeChar((int) bounds.getWidth());
-		out.writeChar((int) bounds.getHeight());
-	}
-
-	@Override
-	protected void writeColor(final Color color) throws IOException {
-		out.writeChar(0x10C0);
-		out.writeInt(color.getRGB());
+		write("#\u0039\u00FF\u00AF");
+		writeChar((int) bounds.getWidth());
+		writeChar((int) bounds.getHeight());
 	}
 
 	@Override
 	protected void writeSegment(final int type, final double[] coords) throws IOException {
 		switch (type) {
 		case PathIterator.SEG_MOVETO:
-			out.writeChar(0x0001);
-			out.writeChar((int) coords[0]);
-			out.writeChar((int) coords[1]);
+			writeChar(0x0001);
+			writeChar((int) coords[0]);
+			writeChar((int) coords[1]);
 			break;
 		case PathIterator.SEG_LINETO:
-			out.writeChar((int) coords[0]);
-			out.writeChar((int) coords[1]);
+			writeChar((int) coords[0]);
+			writeChar((int) coords[1]);
 			break;
 		case PathIterator.SEG_CLOSE:
 			break;
 		default:
 			assert false : "Unexpected segment type; try setting -Dflatness";
 		}
-	}
-
-	@Override
-	protected void writeFooter() throws IOException {
-		out.writeChar(0xFFFF);
 	}
 }

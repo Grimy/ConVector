@@ -36,9 +36,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import cc.drawall.Importer;
 import cc.drawall.Graphics;
+import cc.drawall.Importer;
 
+/** An Importer for SVG images. */
 public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Logger log = Logger.getLogger(SVGImporter.class.getName());
 
@@ -199,11 +200,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.lineTo(relative, scanner.nextFloat(), scanner.nextFloat());
 				break;
 			case 'Q':
-				g.quadTo(relative, scanner.nextFloat(), scanner.nextFloat(),
+				g.lineTo(relative, scanner.nextFloat(), scanner.nextFloat(),
 						scanner.nextFloat(), scanner.nextFloat());
 				break;
 			case 'C':
-				g.curveTo(relative, scanner.nextFloat(), scanner.nextFloat(),
+				g.lineTo(relative, scanner.nextFloat(), scanner.nextFloat(),
 						scanner.nextFloat(), scanner.nextFloat(),
 						scanner.nextFloat(), scanner.nextFloat());
 				break;
@@ -223,10 +224,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.lineTo(relative, Float.NaN, scanner.nextFloat());
 				break;
 			case 'T': // smooth quadratic
-				g.quadTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(), scanner.nextFloat());
+				g.lineTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(), scanner.nextFloat());
 				break;
 			case 'S': // smooth cubic
-				g.curveTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(),
+				g.lineTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(),
 						scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat());
 				break;
 			default:
