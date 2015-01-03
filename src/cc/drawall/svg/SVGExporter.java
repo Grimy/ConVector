@@ -22,6 +22,7 @@ import cc.drawall.Exporter;
 /* Outputs a vector as SVG. */
 public class SVGExporter extends Exporter {
 
+	/** Constructor. */
 	public SVGExporter() {
 		super(0, "M%,%", "L%,%", "Q%,% %,%", "C%,% %,% %,%", "Z");
 	}

@@ -26,6 +26,7 @@ public class PDFExporter extends Exporter {
 
 	private final List<Integer> xref = new ArrayList<>(4);
 
+	/** Constructor. */
 	public PDFExporter() {
 		super(REVERSE, "% % m", "% % l", null, "% % % % % % c", "h");
 	}

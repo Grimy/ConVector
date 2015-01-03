@@ -17,9 +17,10 @@ import java.io.InputStream;
 
 /** Base interface for plugins. */
 @FunctionalInterface
-
 public interface Importer {
-
-	/** Interprets `input` and draws on `output`. */
+	/** Interprets bytes read from `input` and draws on `output`.
+	  * Each implementing class is a way to interpret bytes as a vector image.
+	  * @param input the stream to be read and parsed
+	  * @param output the target graphics environment */
 	void process(final InputStream input, final Graphics output);
 }

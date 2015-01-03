@@ -103,6 +103,9 @@ public abstract class Exporter {
 		write("");
 	}
 
+	/** Writes a single segment to the output stream.
+	  * By default, this formats the coordinates using one of the format strings
+	  * passed to the constructor. */
 	protected void writeSegment(final int type, final double[] coords) throws IOException {
 		int i = 0;
 		for (final Character chr: format[type].toCharArray()) {
@@ -112,18 +115,24 @@ public abstract class Exporter {
 		out.write('\n');
 	}
 
+	/** A convenience method to write a formatted string to the output stream
+	  * using the specified format string and arguments. */
 	protected final void write(final String format, final Object... args) throws IOException {
 		out.writeBytes(String.format(format, args));
 	}
 
+	/** Writes an int value, which is comprised of four bytes, to the output stream. */ 
 	protected final void writeInt(final int i) throws IOException {
 		out.writeInt(i);
 	}
 
+	/** Writes a char value, which is comprised of two bytes, to the output stream. */
 	protected final void writeChar(final int c) throws IOException {
 		out.writeChar(c);
 	}
 
+	/** Returns the number of bytes written to the output stream so far.
+	  * @return the number of bytes written to the output stream so far */
 	protected final int bytesWritten() {
 		return out.size();
 	}

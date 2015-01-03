@@ -22,6 +22,7 @@ import cc.drawall.Exporter;
 /** Outputs a vector to DOV format. */
 public class DOVExporter extends Exporter {
 
+	/** Constructor. */
 	public DOVExporter() {
 		super(FLATTEN | MERGE | SHORTEN);
 	}

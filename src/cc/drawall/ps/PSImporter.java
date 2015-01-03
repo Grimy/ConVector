@@ -37,8 +37,8 @@ import java.util.regex.Pattern;
 
 import javax.xml.bind.DatatypeConverter;
 
-import cc.drawall.Importer;
 import cc.drawall.Graphics;
+import cc.drawall.Importer;
 
 /** Importer used to parse PostScript. */
 public class PSImporter implements Importer {
@@ -284,7 +284,7 @@ public class PSImporter implements Importer {
 			g.append(g.getClip());
 		});
 		builtin("pathbbox", () -> {
-			Rectangle2D r = g.getBounds();
+			Rectangle2D r = g.pathBounds();
 			stack.push((float) r.getMinX());
 			stack.push((float) r.getMinY());
 			stack.push((float) r.getMaxX());
@@ -334,14 +334,18 @@ public class PSImporter implements Importer {
 		builtin("findfont", () -> stack.push(((String) stack.pop()).replace('-', ' ')));
 		builtin("scalefont", () -> g.setFontSize(p(1)));
 		builtin("setfont", () -> g.setFont((String) stack.pop()));
-		builtin("show", () -> g.drawString((String) stack.pop()));
+		builtin("show", () -> {
+			g.charpath((String) stack.pop());
+			g.fill(Path2D.WIND_EVEN_ODD);
+		});
 		builtin("ashow", () -> {
-			g.drawString((String) stack.pop());
+			g.charpath((String) stack.pop());
+			g.fill(Path2D.WIND_EVEN_ODD);
 			p(2);
 			p();
 		});
 		builtin("charpath", () -> {
-			stack.pop(); // TODO boolean stroke
+			stack.pop(); // boolean stroke
 			g.charpath((String) stack.pop());
 		});
 

@@ -67,12 +67,25 @@ public class Graphics {
 	// Path construction //
 	///////////////////////
 
+	/** Set the current point without drawing anything.
+	  * @param relative whether to interpret coordinates as relative to the current point
+	  * @param x the target abscissa
+	  * @param y the target ordinate */
 	public void moveTo(final boolean relative, final float x, final float y) {
 		final float[] points = {x, y};
 		transform(relative, points);
 		path.moveTo(points[0], points[1]);
 	}
 
+	/** Appends a Bézier curve specified by a list of coordinates to the current path.
+	  * The starting point is always the current point; further control points should
+	  * be specified in order as pairs of x, y coordinates. Thus, the order of the curve
+	  * is equal to the number of given coordinate pairs.
+	  * For example, if only one pair is given, the result is a first-order Bézier curve,
+	  * aka a straight line.
+	  * @param relative whether to interpret coordinates as relative to the current point
+	  * @param points the array containing the control point coordinates of the desired curve.
+	  */
 	public void lineTo(final boolean relative, final float... points) {
 		transform(relative, points);
 		if (points.length == 2) {
@@ -86,6 +99,14 @@ public class Graphics {
 		}
 	}
 
+	/** Appends an elliptical arc specified by endpoint parameterization to the current path.
+	  * @param relative whether to interpret coordinates as relative to the current point
+	  * @param radius TODO
+	  * @param xAxisRotation indicates how the ellipse as a whole is rotated
+	  * @param largeArcFlag whether to choose one of the larger arc sweeps
+	  * @param sweepFlag whether to choose one of the counterclockwise arc sweeps
+	  * @param points TODO
+	  */
 	public void arcTo(final boolean relative, final Point2D radius, final float xAxisRotation,
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
 		transform(relative, points);
@@ -174,14 +195,18 @@ public class Graphics {
 		clippath.intersect(new Area(path));
 	}
 
-	public Rectangle2D getBounds() {
+	/** Returns the smallest rectangle that completely encloses the current path. */
+	public Rectangle2D pathBounds() {
 		return path.getBounds2D();
 	}
 
-	public void charpath(final String str) {
+	/** Appends an outline of the specified text to the path.
+	  * Text is rendered using the current font and starting at the current point.
+	  * @param text the text to be outlined */
+	public void charpath(final String text) {
 		assert font != null : "Undefined font";
 		path.append(relativeTransform().createTransformedShape(font.createGlyphVector(
-			new FontRenderContext(null, true, false), str).getOutline()), false);
+			new FontRenderContext(null, true, false), text).getOutline()), false);
 	}
 
 	private AffineTransform relativeTransform() {
@@ -209,6 +234,7 @@ public class Graphics {
 	// Drawing operations //
 	////////////////////////
 
+	/** Stroke and/or fill the current path, then reset it. */
 	public void draw() {
 		if (fillColor != null) {
 			path.closePath();
@@ -227,16 +253,14 @@ public class Graphics {
 		path.reset();
 	}
 
+	/** Fill the current path with the main color, then reset it.
+	  * @param windingRule the winding rule to use
+	  * @see java.awt.geom.GeneralPath */
 	public void fill(final int windingRule) {
 		path.closePath();
 		path.setWindingRule(windingRule);
 		paintArea(color, new Area(path));
 		path.reset();
-	}
-
-	public void drawString(final String str) {
-		charpath(str);
-		fill(Path2D.WIND_EVEN_ODD);
 	}
 
 	private void paintArea(final Color color, final Area area) {
@@ -248,23 +272,41 @@ public class Graphics {
 	// Graphics settings //
 	///////////////////////
 
+	/** Set the stroke width.
+	  * @param width the width of stroked paths
+	  * @see java.awt.BasicStroke */
 	public void setStrokeWidth(final float width) {
 		setStroke("width", width);
 	}
 
+	/** Set the dashing style.
+	  * @param dash an array representing the dashing pattern
+	  * @param phase an offset from the start of the dashing pattern
+	  * @see java.awt.BasicStroke */
 	public void setStrokeDash(final float[] dash, final float phase) {
 		setStroke("dash", dash);
 		setStroke("phase", phase);
 	}
 
+	/** Changes the line cap style.
+	  * @param cap either BasicStroke.CAP_BUTT, BasicStroke.CAP_ROUND or BasicStroke.CAP_SQUARE
+	  * @see java.awt.BasicStroke */
 	public void setLineCap(final int cap) {
 		setStroke("cap", cap);
 	}
 
+	/** Changes the line join style.
+	  * @param join either BasicStroke.JOIN_BEVEL, BasicStroke.JOIN_MITER BasicStroke.JOIN_ROUND
+	  * @see java.awt.BasicStroke */
 	public void setLineJoin(final int join) {
 		setStroke("join", join);
 	}
 
+	/** Set the limit to trim a line join when the join style is JOIN_MITER.
+	  * A line join is trimmed when the ratio of miter length to stroke width is greater than
+	  * the specified value.
+	  * @param float the maximum allowed ratio of miter length to stroke width
+	  * @see java.awt.BasicStroke */
 	public void setMiterLimit(final float limit) {
 		setStroke("miterlimit", limit);
 	}
@@ -295,6 +337,9 @@ public class Graphics {
 		return clippath;
 	}
 
+	/** Set the current font to the one described by the specified string.
+	  * If no fitting font is found in the system, an attempt is made to load one
+	  * from the ressource files. */
 	public void setFont(final String fontDescriptor) {
 		final String fontName = fontDescriptor.split(" ")[0];
 		final GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -313,16 +358,23 @@ public class Graphics {
 			.deriveFont(AffineTransform.getScaleInstance(1, -1));
 	}
 
+	/** Set the font size.
+	  * @param fontSize the desired font size, in points */
 	public void setFontSize(final float fontSize) {
 		this.fontSize = fontSize;
 	}
 
+	/** Pushes a snapshot of the graphical state on the save stack.
+	  * @see restore() */
 	public void save() {
 		final Graphics copy = new Graphics();
 		copy.copy(this);
 		prev = copy;
 	}
 
+	/** Reverts the graphical state to the latest snapshot.
+	  * The used snapshot is popped from the save stack, so that a later restore()
+	  * will restore an earlier snapshot. */
 	public void restore() {
 		copy(prev);
 	}
