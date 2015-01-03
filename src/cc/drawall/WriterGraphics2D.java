@@ -52,7 +52,7 @@ public class WriterGraphics2D {
 	/** Saved graphical context. */
 	private WriterGraphics2D prev = null;
 
-	public Drawing getDrawing() {
+	Drawing getDrawing() {
 		return drawing;
 	}
 
@@ -259,7 +259,7 @@ public class WriterGraphics2D {
 			field.setAccessible(true);
 			field.set(stroke, value);
 		} catch (final IllegalAccessException | NoSuchFieldException e) {
-			throw new IllegalArgumentException("No such field: " + fieldName, e);
+			throw new AssertionError("No such field: " + fieldName, e);
 		}
 	}
 

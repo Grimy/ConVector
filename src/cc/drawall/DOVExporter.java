@@ -28,8 +28,6 @@ public class DOVExporter extends Exporter {
 	@Override
 	protected void writeHeader(final Rectangle2D bounds) throws IOException {
 		out.writeChars("\u39FF\u0000");
-		out.writeChar((int) (65535));
-		out.writeChar((int) (65535));
 		out.writeChar((int) bounds.getWidth());
 		out.writeChar((int) bounds.getHeight());
 	}

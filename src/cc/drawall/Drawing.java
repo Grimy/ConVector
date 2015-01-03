@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /** An in-memory representation of a vector image.
   * A Drawing is an ordered list of colored areas. Those areas are rendered
   * so that the latter ones can hide the first ones by drawing over them. */
-public class Drawing implements Iterable<Drawing.Splash> {
+class Drawing implements Iterable<Drawing.Splash> {
 	private static final Logger log = Logger.getLogger(Drawing.class.getName());
 
 	/* Buffer used for temporary storage of coordinates. */
@@ -129,7 +129,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	}
 
 	/** Returns the bounding box of this Drawing. */
-	public Rectangle2D getBounds() {
+	Rectangle2D getBounds() {
 		return bounds;
 	}
 
@@ -138,15 +138,15 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		return splashes.iterator();
 	}
 
-	public static class Splash {
-		public final Color color;
-		public final Shape shape;
-		public Splash(final Color color, final Shape shape) {
+	static class Splash {
+		final Color color;
+		final Shape shape;
+		Splash(final Color color, final Shape shape) {
 			this.color = color;
 			this.shape = shape;
 		}
 
-		public PathIterator getPathIterator(final AffineTransform transform, final int flatness) {
+		PathIterator getPathIterator(final AffineTransform transform, final int flatness) {
 			return flatness < 0 ? shape.getPathIterator(transform)
 			                    : shape.getPathIterator(transform, flatness);
 		}
@@ -162,7 +162,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	}
 
 	/** Returns the surface of the specified area. */
-	public static double computeSurface(final Area area) {
+	static double computeSurface(final Area area) {
 		double surface = 0.0;
 		double x = 0.0, y = 0.0, startX = 0.0, startY = 0.0, prevX, prevY;
 		for (PathIterator i = area.getPathIterator(null, 0); !i.isDone(); i.next()) {
@@ -183,7 +183,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	}
 
 	/** @return true iff the specified Drawing is identical to this one. */
-	public boolean looksLike(final Drawing that) {
+	boolean looksLike(final Drawing that) {
 		log.warning("Entering looksLike");
 		if (this.splashes.size() != that.splashes.size()) {
 			log.warning("Sizes differ");

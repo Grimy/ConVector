@@ -28,7 +28,7 @@ public class GCodeExporter extends Exporter {
 
 	@Override
 	protected void writeHeader(final Rectangle2D bounds) throws IOException {
-		out.writeBytes("G21\n");
+		write("G21\n");
 	}
 
 	@Override
@@ -38,6 +38,6 @@ public class GCodeExporter extends Exporter {
 
 	@Override
 	protected void writeFooter() throws IOException {
-		out.writeBytes("M30\n");
+		write("M30\n");
 	}
 }

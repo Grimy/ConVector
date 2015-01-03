@@ -511,7 +511,7 @@ public class PSImporter implements Importer {
 		return new AffineTransform(matrix);
 	}
 
-	private static final class PSDict extends HashMap<Object, Object> {
+	static final class PSDict extends HashMap<Object, Object> {
 		@Override
 		public boolean equals(Object that) {
 			return this == that;

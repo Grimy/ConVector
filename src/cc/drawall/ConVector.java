@@ -34,7 +34,7 @@ import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /** User interface. */
-public class ConVector extends Canvas {
+class ConVector extends Canvas {
 	static {
 		// Ensure the decimal separator is "." everywhere.
 		Locale.setDefault(Locale.Category.FORMAT, Locale.US);
@@ -45,7 +45,7 @@ public class ConVector extends Canvas {
 	private final JFileChooser chooser = new JFileChooser();
 	private transient Drawing drawing = new Drawing();
 
-	public ConVector() {
+	ConVector() {
 		// TODO: get list of valid formats
 		chooser.setFileFilter(new FileNameExtensionFilter("Vectors",
 					new String[] {"svg", "pdf", "ps", "gcode", "dov"}));

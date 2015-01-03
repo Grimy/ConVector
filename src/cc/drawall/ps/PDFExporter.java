@@ -32,36 +32,36 @@ public class PDFExporter extends Exporter {
 
 	@Override
 	protected void writeHeader(final Rectangle2D bounds) throws IOException {
-		out.writeBytes("%PDF-1\n");
+		write("%PDF-1\n");
 		writeObj("<</Pages 1 0 R/Kids[2 0 R]/Count 1>>");
 		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + (int) bounds.getWidth() + " "
 				+ (int) bounds.getHeight() + "]>>");
 		writeObj("<</Length 4 0 R>>stream\n%");
 		final double ratio = Math.max(bounds.getWidth(), bounds.getHeight()) / 65535;
-		writeFormat("%f 0 0 %f 0 0 cm\n", ratio, ratio);
+		write("%f 0 0 %f 0 0 cm\n", ratio, ratio);
 	}
 
 	@Override
 	protected void writeColor(final Color color) throws IOException {
 		final float[] rgb = color.getRGBColorComponents(null);
-		writeFormat("h f %.3f %.3f %.3f rg%n", rgb[0], rgb[1], rgb[2]);
+		write("h f %.3f %.3f %.3f rg%n", rgb[0], rgb[1], rgb[2]);
 	}
 
 	@Override
 	protected void writeFooter() throws IOException {
-		out.writeBytes("f endstream\nendobj\n");
-		writeObj(" " + (out.size() - xref.get(2) - 48) + " ");
-		final int startxref = out.size();
-		out.writeBytes("xref\n1 " + xref.size() + "\n");
+		write("f endstream\nendobj\n");
+		writeObj(" " + (bytesWritten() - xref.get(2) - 48) + " ");
+		final int startxref = bytesWritten();
+		write("xref\n1 " + xref.size() + "\n");
 		for (final int pos: xref) {
-			writeFormat(String.format("%010d 00000  n%n", pos));
+			write(String.format("%010d 00000  n%n", pos));
 		}
-		writeFormat("trailer<</Size %d/Root 1 0 R>>", xref.size() + 1);
-		out.writeBytes("startxref " + startxref + "\n%%EOF");
+		write("trailer<</Size %d/Root 1 0 R>>", xref.size() + 1);
+		write("startxref " + startxref + "\n%%EOF");
 	}
 
 	private void writeObj(final String content) throws IOException {
-		xref.add(out.size());
-		out.writeBytes(xref.size() + " 0 obj" + content + "endobj\n");
+		xref.add(bytesWritten());
+		write(xref.size() + " 0 obj" + content + "endobj\n");
 	}
 }

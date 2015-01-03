@@ -45,7 +45,7 @@ public abstract class Exporter {
 	  * Set this if the output filetype doesn’t handle superposition. */
 	protected static final int MERGE   = 1 << 3;
 
-	protected DataOutputStream out;
+	DataOutputStream out;
 	private final String[] format;
 	private final int flags;
 
@@ -93,7 +93,11 @@ public abstract class Exporter {
 		out.write('\n');
 	}
 
-	protected final void writeFormat(final String format, final Object... args) throws IOException {
+	protected final void write(final String format, final Object... args) throws IOException {
 		out.writeBytes(String.format(format, args));
+	}
+
+	protected final int bytesWritten() {
+		return out.size();
 	}
 }
