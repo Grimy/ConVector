@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 import javax.xml.bind.DatatypeConverter;
 
 import cc.drawall.Importer;
-import cc.drawall.WriterGraphics2D;
+import cc.drawall.Graphics;
 
 /** Importer used to parse PostScript. */
 public class PSImporter implements Importer {
@@ -78,7 +78,7 @@ public class PSImporter implements Importer {
 	private static final Object MARK = new Object();
 	private static final Object CURLY_MARK = new Object();
 
-	private WriterGraphics2D g;
+	private Graphics g;
 
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
 	private Iterator<Object> itr;
@@ -371,7 +371,7 @@ public class PSImporter implements Importer {
 	}
 
 	@Override
-	public void process(final InputStream input, final WriterGraphics2D out) {
+	public void process(final InputStream input, final Graphics out) {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(input, "ascii");
 		g = out;

@@ -32,8 +32,8 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-public class WriterGraphics2D {
-	private static final Logger log = Logger.getLogger(WriterGraphics2D.class.getName());
+public class Graphics {
+	private static final Logger log = Logger.getLogger(Graphics.class.getName());
 
 	private final AffineTransform ctm = new AffineTransform();
 	private Area clippath = new Area(new Rectangle2D.Float(
@@ -50,7 +50,7 @@ public class WriterGraphics2D {
 	private Drawing drawing = new Drawing();
 
 	/** Saved graphical context. */
-	private WriterGraphics2D prev = null;
+	private Graphics prev = null;
 
 	Drawing getDrawing() {
 		return drawing;
@@ -302,7 +302,7 @@ public class WriterGraphics2D {
 	}
 
 	public void save() {
-		final WriterGraphics2D copy = new WriterGraphics2D();
+		final Graphics copy = new Graphics();
 		copy.copy(this);
 		prev = copy;
 	}
@@ -311,7 +311,7 @@ public class WriterGraphics2D {
 		copy(prev);
 	}
 
-	private void copy(final WriterGraphics2D that) {
+	private void copy(final Graphics that) {
 		this.ctm.setTransform(that.ctm);
 		this.clippath = (Area) that.clippath.clone();
 		this.color = that.color;

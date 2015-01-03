@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import cc.drawall.Importer;
-import cc.drawall.WriterGraphics2D;
+import cc.drawall.Graphics;
 
 public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Logger log = Logger.getLogger(SVGImporter.class.getName());
@@ -61,7 +61,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		MITER, ROUND, BEVEL;
 	}
 
-	private WriterGraphics2D g;
+	private Graphics g;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
@@ -81,7 +81,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 
 	@Override
-	public void process(final InputStream input, final WriterGraphics2D output) {
+	public void process(final InputStream input, final Graphics output) {
 		this.g = output;
 		g.setFillColor(Color.BLACK);
 		g.setColor(null);

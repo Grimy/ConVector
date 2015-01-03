@@ -20,12 +20,12 @@ import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
 /** Responsible for loading plugins and invoking the correct one for a given filetype. */
-enum DrawMaster {;
+enum PluginOverseer {;
 
 	/** Parses the specified InputStream using a plugin appropriate for the specified
 	  * filetype, and returns the resulting Drawing. */
 	static Drawing importStream(final InputStream input, final String filetype) {
-		WriterGraphics2D g = new WriterGraphics2D();
+		Graphics g = new Graphics();
 		StreamSupport.stream(ServiceLoader.load(Importer.class).spliterator(), false).filter(
 			o -> o.getClass().getSimpleName().replace("Importer", "").equalsIgnoreCase(filetype)
 		).findAny().get().process(input, g);

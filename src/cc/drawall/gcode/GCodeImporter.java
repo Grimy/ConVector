@@ -22,7 +22,7 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 
 import cc.drawall.Importer;
-import cc.drawall.WriterGraphics2D;
+import cc.drawall.Graphics;
 
 /* Importer used to parse GCode. */
 public class GCodeImporter implements Importer {
@@ -37,7 +37,7 @@ public class GCodeImporter implements Importer {
 	/** The scanner used to parse the input. */
 	private Scanner scanner;
 
-	private WriterGraphics2D g;
+	private Graphics g;
 
 	/* Maps GCode variable names to their values. */
 	private final Map<Integer, Float> variables = new HashMap<>();
@@ -82,7 +82,7 @@ public class GCodeImporter implements Importer {
 	}
 
 	@Override
-	public void process(final InputStream input, final WriterGraphics2D output) {
+	public void process(final InputStream input, final Graphics output) {
 		scanner = new Scanner(input, "ascii");
 		g = output;
 		g.moveTo(false, 0, 0);

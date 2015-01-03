@@ -73,7 +73,7 @@ class ConVector extends Canvas {
 
 	private static Drawing importFile(final File file) {
 		try (final InputStream input = new FileInputStream(file)) {
-			return DrawMaster.importStream(input, getExtension(file));
+			return PluginOverseer.importStream(input, getExtension(file));
 		} catch (final IOException e) {
 			log.severe("Can’t open file for reading: " + file.getName());
 			return new Drawing();
@@ -82,7 +82,7 @@ class ConVector extends Canvas {
 
 	private static void exportFile(final File file, final Drawing drawing) {
 		try (final OutputStream output = new FileOutputStream(file)) {
-			DrawMaster.exportStream(output, getExtension(file), drawing);
+			PluginOverseer.exportStream(output, getExtension(file), drawing);
 		} catch (final IOException e) {
 			log.severe("Can’t open file for writing: " + file.getName());
 		}
