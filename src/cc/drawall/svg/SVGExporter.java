@@ -19,7 +19,7 @@ import java.io.IOException;
 
 import cc.drawall.Exporter;
 
-/* Outputs a vector as SVG. */
+/** Outputs a vector as SVG. */
 public class SVGExporter extends Exporter {
 
 	/** Constructor. */

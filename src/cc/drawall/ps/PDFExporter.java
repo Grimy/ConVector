@@ -33,11 +33,11 @@ public class PDFExporter extends Exporter {
 
 	@Override
 	protected void writeHeader(final Rectangle2D bounds) throws IOException {
-		write("%PDF-1\n");
+		write("%%PDF-1\n");
 		writeObj("<</Pages 1 0 R/Kids[2 0 R]/Count 1>>");
 		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + (int) bounds.getWidth() + " "
 				+ (int) bounds.getHeight() + "]>>");
-		writeObj("<</Length 4 0 R>>stream\n%");
+		writeObj("<</Length 4 0 R>>stream\n%%");
 		final double ratio = Math.max(bounds.getWidth(), bounds.getHeight()) / 65535;
 		write("%f 0 0 %f 0 0 cm\n", ratio, ratio);
 	}
@@ -58,7 +58,7 @@ public class PDFExporter extends Exporter {
 			write(String.format("%010d 00000  n%n", pos));
 		}
 		write("trailer<</Size %d/Root 1 0 R>>", xref.size() + 1);
-		write("startxref " + startxref + "\n%%EOF");
+		write("startxref " + startxref + "\n%%%%EOF");
 	}
 
 	private void writeObj(final String content) throws IOException {
