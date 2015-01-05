@@ -18,11 +18,14 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 /** The base class for all Exporter plugins.
   * Provides a common template for all output filetypes. Abstract methods should be overriden
   * to implement the details relevant to a particular filetype. */
 public abstract class Exporter {
+
+	private static final Charset ASCII = Charset.forName("US-ASCII");
 
 	// Buffer to hold PathIterator coordinates
 	private static final double[] coords = new double[6];
@@ -83,7 +86,10 @@ public abstract class Exporter {
 	}
 
 	/** Writes the beginning of the output file.
-	  * @param bounds the bounding box of the original drawing */
+	  * @param width the width of the original drawing
+	  * @param height the height of the original drawing
+	  * @param ratio the scaling ratio that should be applied to this drawing to return
+	  * it to its original size */
 	protected abstract void writeHeader(final double width, final double height,
 			final double ratio);
 
@@ -110,13 +116,13 @@ public abstract class Exporter {
 		for (final Character chr: format[type].toCharArray()) {
 			write(chr == '%' ? Integer.toString((int) coords[i++]) : Character.toString(chr));
 		}
-		out.putChar('\n');
+		out.put((byte) '\n');
 	}
 
 	/** A convenience method to write a formatted string to the output stream
 	  * using the specified format string and arguments. */
 	protected final void write(final String format, final Object... args) {
-		out.put(String.format(format, args).getBytes());
+		out.put(String.format(format, args).getBytes(ASCII));
 	}
 
 	/** Writes a char value, which is comprised of two bytes, to the output stream. */

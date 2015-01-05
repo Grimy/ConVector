@@ -304,7 +304,7 @@ public class Graphics {
 	/** Set the limit to trim a line join when the join style is JOIN_MITER.
 	  * A line join is trimmed when the ratio of miter length to stroke width is greater than
 	  * the specified value.
-	  * @param float the maximum allowed ratio of miter length to stroke width
+	  * @param limit the maximum allowed ratio of miter length to stroke width
 	  * @see java.awt.BasicStroke */
 	public void setMiterLimit(final float limit) {
 		setStroke("miterlimit", limit);

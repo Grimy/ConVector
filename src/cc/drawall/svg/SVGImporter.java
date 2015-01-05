@@ -164,8 +164,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		}
 		if (d != null) {
 			parsePathData(d);
-		}
-		if (g.getCurrentPoint() != null) {
 			g.draw();
 		}
 	}

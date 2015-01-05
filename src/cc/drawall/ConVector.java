@@ -85,8 +85,8 @@ class ConVector extends Canvas {
 	private static void exportFile(final File file, final Drawing drawing) {
 		try (FileChannel chan = new RandomAccessFile(file, "rw").getChannel()) {
 			ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 10 << 20);
-				// final OutputStream output = new FileOutputStream(file)) {
 			PluginOverseer.exportStream(output, getExtension(file), drawing);
+			chan.truncate(output.position());
 		} catch (final IOException e) {
 			log.severe("Can’t open file for writing: " + file.getName());
 		}

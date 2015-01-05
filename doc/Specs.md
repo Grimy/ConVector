@@ -52,15 +52,13 @@ This allows treating the entire file a single array, which simplifies
 implementation and should give better cache performance. This is way more
 important than shaving a byte here and there.
 
-A DOV file starts with a 16-bytes header, containing the following fields:
+A DOV file starts with a 12-bytes header, containing the following fields:
 * Magic number (0x2339, 0xFFAF), used to identify the DOV format
 * Reserved field. Should contain only 0 (0x0000, 0x0000). May be used in a future version.
-* Dimensions of the image (width, height)
 * Dimension of the original image (width, height)
 
 For maximal accuracy, DOV images should make use of the full range of possible
-uint16 values, meaning that either “Width” or “Height” should be 65535.
-However, this is not a requirement of the format.
+uint16 values. However, this is not a requirement of the format.
 
 In order to allow converting DOV back to a vector format where the units are
 not arbitrary (e.g. GCode), the dimensions of the original image can be stored.
@@ -84,10 +82,10 @@ Formal grammar (EBNF)
 --------------------
 
 DOV file ::= header, { instruction };
-header ::= magic number, reserved, dimensions, dimensions;
+header ::= magic number, reserved, original dimensions;
 magic number ::= "\x2339", "\xFFAF";
 reserved ::= "\x0000", "\x0000";
-dimesions ::= uint16, uint16;
+original dimensions ::= uint16, uint16;
 uint16 ::= ? any 16-bit unsigned integer ?;
 
 instruction ::= point | "\xFFFF", directive
