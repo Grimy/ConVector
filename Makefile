@@ -29,7 +29,7 @@ run: build
 
 # "make bench": runs benchmarks
 bench:
-	$(JAVA) -Xprof cc.drawall.GLCBuilder examples/lyra.svg blah.pdf
+	$(JAVA) -Xprof cc.drawall.ConVector $(ARGS)
 
 test:
 	javac $(TESTCP) test/cc/drawall/SVGTest.java && java $(TESTCP) org.junit.runner.JUnitCore cc.drawall.SVGTest

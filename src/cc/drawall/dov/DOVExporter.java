@@ -14,7 +14,6 @@
 package cc.drawall.dov;
 
 import java.awt.geom.PathIterator;
-import java.io.IOException;
 
 import cc.drawall.Exporter;
 
@@ -27,15 +26,14 @@ public class DOVExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeHeader(final double width, final double height,
-			final double ratio) throws IOException {
+	protected void writeHeader(final double width, final double height, final double ratio) {
 		write("#\u0039\u00FF\u00AF");
 		writeChar((int) width);
 		writeChar((int) height);
 	}
 
 	@Override
-	protected void writeSegment(final int type, final double[] coords) throws IOException {
+	protected void writeSegment(final int type, final double[] coords) {
 		switch (type) {
 		case PathIterator.SEG_MOVETO:
 			writeChar(0x0001);

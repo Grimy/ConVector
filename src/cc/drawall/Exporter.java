@@ -17,9 +17,7 @@ import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 /** The base class for all Exporter plugins.
   * Provides a common template for all output filetypes. Abstract methods should be overriden
@@ -45,7 +43,7 @@ public abstract class Exporter {
 	  * Set this if the output filetype doesn’t handle superposition. */
 	protected static final int MERGE   = 1 << 3;
 
-	private DataOutputStream out;
+	private ByteBuffer out;
 	private final String[] format;
 	private final int flags;
 
@@ -58,7 +56,8 @@ public abstract class Exporter {
 		this.format = format;
 	}
 
-	final void output(final Drawing drawing, final OutputStream out) throws IOException {
+	final void output(final Drawing drawing, final ByteBuffer out) {
+		this.out = out;
 		final int flatness = (flags & FLATTEN) == 0 ? -1 : Integer.getInteger("flatness", 1);
 		if ((flags & MERGE) != 0) {
 			drawing.mergeLayers();
@@ -66,7 +65,6 @@ public abstract class Exporter {
 		if ((flags & SHORTEN) != 0) {
 			drawing.optimize();
 		}
-		this.out = new DataOutputStream(out);
 		final Rectangle2D bounds = drawing.getBounds();
 		final double ratio = 65535 / Math.max(bounds.getWidth(), bounds.getHeight());
 		final int reverse = (flags & REVERSE) == 0 ? 1 : -1;
@@ -87,12 +85,12 @@ public abstract class Exporter {
 	/** Writes the beginning of the output file.
 	  * @param bounds the bounding box of the original drawing */
 	protected abstract void writeHeader(final double width, final double height,
-			final double ratio) throws IOException;
+			final double ratio);
 
 	/** Writes the end of the output file.
 	 * By default, this does nothing; subclasses should override this if the
 	 * target filetype requires some form of footer. */
-	protected void writeFooter() throws IOException {
+	protected void writeFooter() {
 		write("");
 	}
 
@@ -100,36 +98,35 @@ public abstract class Exporter {
 	  * By default, this does nothing; subclasses should override this if the
 	  * target filetype supports color.
 	  * @param color the new painting color */
-	protected void writeColor(final Color color) throws IOException {
+	protected void writeColor(final Color color) {
 		write("");
 	}
 
 	/** Writes a single segment to the output stream.
 	  * By default, this formats the coordinates using one of the format strings
 	  * passed to the constructor. */
-	protected void writeSegment(final int type, final double[] coords) throws IOException {
+	protected void writeSegment(final int type, final double[] coords) {
 		int i = 0;
 		for (final Character chr: format[type].toCharArray()) {
-			out.writeBytes(chr == '%' ? Integer.toString((int) coords[i++])
-				: Character.toString(chr));
+			write(chr == '%' ? Integer.toString((int) coords[i++]) : Character.toString(chr));
 		}
-		out.write('\n');
+		out.putChar('\n');
 	}
 
 	/** A convenience method to write a formatted string to the output stream
 	  * using the specified format string and arguments. */
-	protected final void write(final String format, final Object... args) throws IOException {
-		out.writeBytes(String.format(format, args));
+	protected final void write(final String format, final Object... args) {
+		out.put(String.format(format, args).getBytes());
 	}
 
 	/** Writes a char value, which is comprised of two bytes, to the output stream. */
-	protected final void writeChar(final int c) throws IOException {
-		out.writeChar(c);
+	protected final void writeChar(final int c) {
+		out.putChar((char) c);
 	}
 
 	/** Returns the number of bytes written to the output stream so far.
 	  * @return the number of bytes written to the output stream so far */
 	protected final int bytesWritten() {
-		return out.size();
+		return out.position();
 	}
 }

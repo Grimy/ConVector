@@ -14,7 +14,6 @@
 package cc.drawall.svg;
 
 import java.awt.Color;
-import java.io.IOException;
 
 import cc.drawall.Exporter;
 
@@ -27,8 +26,7 @@ public class SVGExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeHeader(final double width, final double height,
-			final double ratio) throws IOException {
+	protected void writeHeader(final double width, final double height, final double ratio) {
 		write("<?xml version='1.0' encoding='UTF-8' standalone='no'?>\n");
 		write("<!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.0//EN' ");
 		write("'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>\n");
@@ -40,12 +38,12 @@ public class SVGExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeColor(final Color color) throws IOException {
+	protected void writeColor(final Color color) {
 		write("'/><path style='fill:#%06x;stroke:none' d='", color.getRGB() & 0xFFFFFF);
 	}
 
 	@Override
-	protected void writeFooter() throws IOException {
+	protected void writeFooter() {
 		write("'/></svg>\n");
 	}
 }

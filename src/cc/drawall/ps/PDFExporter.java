@@ -14,7 +14,6 @@
 package cc.drawall.ps;
 
 import java.awt.Color;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +30,7 @@ public class PDFExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeHeader(final double width, final double height,
-			final double ratio) throws IOException {
+	protected void writeHeader(final double width, final double height, final double ratio) {
 		write("%%PDF-1\n");
 		writeObj("<</Pages 1 0 R/Kids[2 0 R]/Count 1>>");
 		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + width  + " " + height + "]>>");
@@ -41,13 +39,13 @@ public class PDFExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeColor(final Color color) throws IOException {
+	protected void writeColor(final Color color) {
 		final float[] rgb = color.getRGBColorComponents(null);
 		write("h f %.3f %.3f %.3f rg\n", rgb[0], rgb[1], rgb[2]);
 	}
 
 	@Override
-	protected void writeFooter() throws IOException {
+	protected void writeFooter() {
 		write("f endstream\nendobj\n");
 		writeObj(" " + (bytesWritten() - xref.get(2) - 48) + " ");
 		final int startxref = bytesWritten();
@@ -59,7 +57,7 @@ public class PDFExporter extends Exporter {
 		write("startxref " + startxref + "\n%%%%EOF");
 	}
 
-	private void writeObj(final String content) throws IOException {
+	private void writeObj(final String content) {
 		xref.add(bytesWritten());
 		write(xref.size() + " 0 obj" + content + "endobj\n");
 	}

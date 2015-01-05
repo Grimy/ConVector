@@ -15,7 +15,7 @@ package cc.drawall;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.InputMismatchException;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
@@ -43,11 +43,10 @@ enum PluginOverseer {;
 	}
 
 	/** Writes a drawing to a stream, using a plugin appropriate for the specified filetype. */
-	static void exportStream(final OutputStream output, final String filetype,
-			final Drawing drawing) throws IOException {
+	static void exportStream(final ByteBuffer output, final String filetype,
+			final Drawing drawing) {
 		StreamSupport.stream(ServiceLoader.load(Exporter.class).spliterator(), false).filter(
 			o -> o.getClass().getSimpleName().replace("Exporter", "").equalsIgnoreCase(filetype)
 		).findAny().get().output(drawing, output);
-		output.flush();
 	}
 }
