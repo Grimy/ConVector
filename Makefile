@@ -15,6 +15,10 @@ bin/%.class: src/%.java
 jar: build
 	cd bin; zip -r drawall.jar *
 
+# "make doc": generate the documentation using Doxygen
+doc:
+	doxygen doc/Doxyfile
+
 # "make clean": remove generated files
 clean:
 	find bin -name '*.class' -delete
@@ -38,4 +42,4 @@ sonar: build
 	DISPLAY=:0 xdg-open .sonar/issues-report/issues-report-light.html
 
 .SECONDARY:
-.PHONY: all cache test format build clean run test bench sonar
+.PHONY: all doc cache test format build clean run test bench sonar
