@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.InputMismatchException;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.function.Consumer;
@@ -62,7 +63,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		MITER, ROUND, BEVEL;
 	}
 
-	private Graphics g;
+	private Graphics g = new Graphics();
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
@@ -82,8 +83,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 
 	@Override
-	public void process(final InputStream input, final Graphics output) {
-		this.g = output;
+	public Graphics process(final InputStream input) {
 		g.setFillColor(Color.BLACK);
 		g.setColor(null);
 		try {
@@ -91,9 +91,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		} catch (final ParserConfigurationException | IOException e) {
 			assert false : "XML error : " + e;
 		} catch (final SAXException e) {
-			log.severe("Input is not a valid SVG");
-			log.finer(e.toString());
+			throw new InputMismatchException("Invalid XML file:" + e);
 		}
+		return g;
 	}
 
 	@Override

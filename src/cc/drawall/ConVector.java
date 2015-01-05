@@ -18,11 +18,11 @@ import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
 import java.util.logging.Logger;
@@ -40,7 +40,7 @@ class ConVector extends Canvas {
 		Locale.setDefault(Locale.Category.FORMAT, Locale.US);
 		System.setProperty("java.util.logging.config.file", "bin/log.properties");
 	}
-	private static final Logger log = Logger.getLogger("drawall.GLCBuilder");
+	private static final Logger log = Logger.getLogger(ConVector.class.getName());
 
 	private final JFileChooser chooser = new JFileChooser();
 	private transient Drawing drawing = new Drawing();
@@ -72,10 +72,11 @@ class ConVector extends Canvas {
 	}
 
 	private static Drawing importFile(final File file) {
-		try (final InputStream input = new FileInputStream(file)) {
-			return PluginOverseer.importStream(input, getExtension(file));
+		try (final BufferedInputStream input = new BufferedInputStream(
+					new FileInputStream(file))) {
+			return PluginOverseer.importStream(input);
 		} catch (final IOException e) {
-			log.severe("Can’t open file for reading: " + file.getName());
+			log.severe("Problem reading file " + file.getName() + ": " + e);
 			return new Drawing();
 		}
 	}

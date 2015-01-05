@@ -13,23 +13,33 @@
 
 package cc.drawall;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.InputMismatchException;
 import java.util.ServiceLoader;
+import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
 
 /** Responsible for loading plugins and invoking the correct one for a given filetype. */
 enum PluginOverseer {;
+	private static final Logger log = Logger.getLogger(PluginOverseer.class.getName());
 
 	/** Parses the specified InputStream using a plugin appropriate for the specified
 	  * filetype, and returns the resulting Drawing. */
-	static Drawing importStream(final InputStream input, final String filetype) {
-		Graphics g = new Graphics();
-		StreamSupport.stream(ServiceLoader.load(Importer.class).spliterator(), false).filter(
-			o -> o.getClass().getSimpleName().replace("Importer", "").equalsIgnoreCase(filetype)
-		).findAny().get().process(input, g);
-		return g.getDrawing();
+	static Drawing importStream(final BufferedInputStream input) throws IOException {
+		for (Importer importer: ServiceLoader.load(Importer.class)) {
+			log.info("Trying to import using " + importer.getClass());
+			input.mark(32);
+			try {
+				return importer.process(input).drawing;
+			} catch (InputMismatchException e) {
+				log.warning(importer.getClass() + ": " + e);
+			}
+			input.reset();
+		}
+		log.severe("No suitable importers found");
+		return new Drawing();
 	}
 
 	/** Writes a drawing to a stream, using a plugin appropriate for the specified filetype. */

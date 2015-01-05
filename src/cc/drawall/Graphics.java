@@ -42,26 +42,25 @@ import java.util.logging.Logger;
 public class Graphics {
 	private static final Logger log = Logger.getLogger(Graphics.class.getName());
 
+	Drawing drawing = new Drawing();
+
+	/* Graphical state information */
 	private final AffineTransform ctm = new AffineTransform();
 	private Area clippath = new Area(new Rectangle2D.Float(
 				-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private final Path2D path = new Path2D.Float();
-	private Point2D.Float smooth = null;
-
 	private Color color = Color.BLACK;
 	private Color fillColor = null;
 	private Font font = null;
 	private float fontSize = 1;
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
-	private Drawing drawing = new Drawing();
 
 	/* Saved graphical context. */
 	private Graphics prev = null;
 
-	Drawing getDrawing() {
-		return drawing;
-	}
+	/* First control point of a following smooth curve */
+	private Point2D.Float smooth = null;
 
 	///////////////////////
 	// Path construction //

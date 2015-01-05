@@ -45,7 +45,7 @@ public abstract class Exporter {
 	  * Set this if the output filetype doesn’t handle superposition. */
 	protected static final int MERGE   = 1 << 3;
 
-	DataOutputStream out;
+	private DataOutputStream out;
 	private final String[] format;
 	private final int flags;
 

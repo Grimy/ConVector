@@ -61,7 +61,7 @@ public class PSImporter implements Importer {
 	private static final Runnable NOOP = () -> log.finest("No-op");
 
 	/* ==PATTERNS== */
-	private static final Pattern NUMBER = Pattern.compile("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
+	private static final Pattern NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+([eE][-+]?\\d+)?");
 	private static final Pattern STRING = Pattern.compile("(?:\\\\.|[^()])*");
 	private static final String WHITESPACE = "[\0\t\r\n\f ]";
 	private static final Pattern HEX_STRING = Pattern.compile("(?:[0-9a-fA-F]|" + WHITESPACE + ")*");
@@ -78,7 +78,7 @@ public class PSImporter implements Importer {
 	private static final Object MARK = new Object();
 	private static final Object CURLY_MARK = new Object();
 
-	private Graphics g;
+	private Graphics g = new Graphics();
 
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
 	private Iterator<Object> itr;
@@ -375,25 +375,23 @@ public class PSImporter implements Importer {
 	}
 
 	@Override
-	public void process(final InputStream input, final Graphics out) {
-		@SuppressWarnings("resource")
+	public Graphics process(final InputStream input) {
 		final Scanner scanner = new Scanner(input, "ascii");
-		g = out;
 		g.getClip().intersect(new Area(new Rectangle2D.Float(0, 0, 612, 792)));
-		log.info(g.getTransform().toString());
 
 		// See PLRM 3.1: Syntax
 		scanner.useDelimiter(String.format("(%1$s|(?=%2$s)|(?<=%2$s)|%%.*+)+",
 					WHITESPACE, "[(){}<>\\[\\]/]"));
-			while (scanner.hasNext()) {
-				final Object obj = tokenize(scanner.next(), scanner);
-				if (stack.contains(CURLY_MARK)) {
-					// Deferred execution mode
-					stack.push(obj);
-				} else {
-					execute(obj);
-				}
+		while (scanner.hasNext()) {
+			final Object obj = tokenize(scanner.next(), scanner);
+			if (stack.contains(CURLY_MARK)) {
+				// Deferred execution mode
+				stack.push(obj);
+			} else {
+				execute(obj);
 			}
+		}
+		return g;
 	}
 
 	private void execute(final Object object) {

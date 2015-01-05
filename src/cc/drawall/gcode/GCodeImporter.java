@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import cc.drawall.Graphics;
 import cc.drawall.Importer;
@@ -28,8 +29,11 @@ import cc.drawall.Importer;
 public class GCodeImporter implements Importer {
 	private static final Logger log = Logger.getLogger(GCodeImporter.class.getName());
 
-	/* Convertion ratio. */
+	/* Conversion ratio. */
 	private static final double INCHES_TO_MM = 25.4;
+
+	private static final Pattern TOKEN = Pattern.compile("[GMFTSO#]"
+			+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
 
 	/* Whether to compute coordinates relative to the current point. Set by G20 / G21 */
 	private boolean relative = false;
@@ -37,7 +41,7 @@ public class GCodeImporter implements Importer {
 	/** The scanner used to parse the input. */
 	private Scanner scanner;
 
-	private Graphics g;
+	private Graphics g = new Graphics();
 
 	/* Maps GCode variable names to their values. */
 	private final Map<Integer, Float> variables = new HashMap<>();
@@ -82,9 +86,8 @@ public class GCodeImporter implements Importer {
 	}
 
 	@Override
-	public void process(final InputStream input, final Graphics output) {
+	public Graphics process(final InputStream input) {
 		scanner = new Scanner(input, "ascii");
-		g = output;
 		g.moveTo(false, 0, 0);
 
 		// Ignore whitespace and comments
@@ -92,7 +95,7 @@ public class GCodeImporter implements Importer {
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
-			final String token = scanner.next().toUpperCase(Locale.US).replaceAll("\\s", "");
+			final String token = scanner.next(TOKEN).toUpperCase(Locale.US).replaceAll("\\s", "");
 			final float arg = parseFloat(token.substring(1));
 
 			switch (token.charAt(0)) {
@@ -113,11 +116,12 @@ public class GCodeImporter implements Importer {
 			case 'S': // Set spindle speed
 				break;
 
-			case 'o': // Control flow
+			case 'O': // Control flow
 			default:
 				throw new InputMismatchException("Invalid GCode: " + token);
 			}
 		}
+		return g;
 	}
 
 	private float readPos(final char axis) {

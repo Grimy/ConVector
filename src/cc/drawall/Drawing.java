@@ -72,7 +72,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		colorMap.forEach(this::paint);
 	}
 
-	/** Splits each Area into disjoint subpaths. */
+	/* Splits each Area into disjoint subpaths. */
 	private void split() {
 		final double[] start = {0, 0};
 		final List<Splash> splitted = new ArrayList<>();
@@ -109,7 +109,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		splashes = splitted;
 	}
 
-	/** Changes the order of shapes so as to reduce the total distance moved. */
+	/* Changes the order of shapes so as to reduce the total distance moved. */
 	void optimize() {
 		split();
 		for (int i = 1; i < splashes.size(); i++) {
@@ -128,7 +128,6 @@ class Drawing implements Iterable<Drawing.Splash> {
 		}
 	}
 
-	/** Returns the bounding box of this Drawing. */
 	Rectangle2D getBounds() {
 		return bounds;
 	}
@@ -152,7 +151,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		}
 	}
 
-	/** Returns the distance between the first points of two Shapes. */
+	/* Returns the distance between the first points of two Shapes. */
 	private static double getDistance(Shape a, Shape b) {
 		a.getPathIterator(null).currentSegment(coords);
 		final double ax = coords[0], ay = coords[1];
@@ -161,7 +160,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		return (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
 	}
 
-	/** Returns the surface of the specified area. */
+	/* Returns the surface of the specified area. */
 	static double computeSurface(final Area area) {
 		double surface = 0.0;
 		double x = 0.0, y = 0.0, startX = 0.0, startY = 0.0, prevX, prevY;
@@ -182,7 +181,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		return Math.abs(surface) / 2;
 	}
 
-	/** @return true iff the specified Drawing is identical to this one. */
+	/* Returns true iff the specified Drawing is identical to this one. */
 	boolean looksLike(final Drawing that) {
 		log.warning("Entering looksLike");
 		if (this.splashes.size() != that.splashes.size()) {
