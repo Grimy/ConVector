@@ -1,117 +1,45 @@
 #!/bin/sh
 
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]
-then
-	echo "Usage: $0 test_directory/" >&2
-	exit 1
-fi
+die() { echo -e "$@" >&2; exit 1; }
 
-if [ -d "$1"output ]
-then
-	rm -R "$1"output
-fi
+progress_bar() {
+	printf '\r%3s [' $format
+	printf '%-56.56s' $(head -c $(expr $i \* 56 / $nb_files) </dev/zero | tr '\0' '#')
+	printf '] %-17.17s' $file
+	i=$(expr $i + 1)
+}
 
-mkdir "$1"output
+JAVA="java -ea -classpath $(dirname $(readlink -f $0))/bin"
 
-trace="$1"output/log
+cd "$1" || die "Usage: $0 test_directory/"
+rm -r output/* 2>/dev/null
+mkdir output
 
-rm $trace 2> /dev/null
-nb_svg_files=`ls -1 "$1"*.svg | wc -l` 2> /dev/null
-nb_ps_files=`ls -1 "$1"*.ps | wc -l` 2> /dev/null
+nb_files=$(find * -maxdepth 0 -type f | wc -l) 2>/dev/null
+echo "$nb_files files will be converted."
 
-echo "$nb_svg_files files will be imported."
-
-echo "\nExporting files in SVG..."
-echo "\n\n*** exporting in SVG ***" >> $trace
-printf '%0.s_' $(seq 1 $nb_svg_files)
-echo ""
-
-mkdir "$1"output/svg
-for file in "$1"*.svg
-do
-	if [ -f $file ]
-	then
-		fullname=$(basename "$file")
-		filename="${fullname%.*}"
-		echo "\n*** $fullname to svg ***" >> $trace 2>&1
-		echo -n "-"
-		make ARGS="$file "$1"output/svg/$(basename "$filename.svg")" run >> $trace 2>&1
-	fi
+for format in svg ps pdf; do
+	i=1
+	for file in $(find * -maxdepth 0 -type f); do
+		basename="${file%.*}"
+		progress_bar
+		$JAVA cc.drawall.ConVector "$file" output/$basename.$format || die
+	done
+	echo
 done
 
-echo "\n\nExporting files in PS..."
-echo "\n\n*** exporting in PS ***" >> $trace
-printf '%0.s_' $(seq 1 $nb_svg_files)
-echo ""
+echo "Creating comparison pictures..."
 
-mkdir "$1"output/ps
-for file in "$1"*.svg
-do
-	if [ -f $file ]
-	then
-		fullname=$(basename "$file")
-		filename="${fullname%.*}"
-		echo "\n*** $fullname to ps ***" >> $trace 2>&1
-		echo -n "-"
-		make ARGS="$file "$1"output/ps/$(basename "$filename.ps")" run >> $trace 2>&1
-	fi
-done
-
-mkdir "$1"output/pdf
-echo "\n\nExporting files in PDF..."
-echo "\n\n*** exporting in PDF ***" >> $trace
-printf '%0.s_' $(seq 1 $nb_svg_files)
-echo ""
-
-for file in "$1"*.svg
-do
-	if [ -f $file ]
-	then
-		fullname=$(basename "$file")
-		filename="${fullname%.*}"
-		echo "\n*** $fullname to pdf ***" >> $trace 2>&1
-		echo -n "-"
-		make ARGS="$file "$1"output/pdf/$(basename "$filename.pdf")" run >> $trace 2>&1
-	fi
-done
-
-#mkdir "$1"output/gcode
-#echo "\n\nExporting files in GCODE..."
-#echo "\n\n*** exporting in GCODE ***" >> $trace
-#printf '%0.s_' $(seq 1 $nb_svg_files)
-#echo ""
-#
-#for file in "$1"*.svg
-#do
-#	if [ -f $file ]
-#	then
-#		fullname=$(basename "$file")
-#		filename="${fullname%.*}"
-#		echo "\n*** $fullname to gcode ***" >> $trace 2>&1
-#		echo -n "-"
-#		make ARGS="$file "$1"output/gcode/$(basename "$filename.gcode")" run >> $trace 2>&1
-#	fi
-#done
-
-echo "\n\nCreating comparison pictures..."
-printf '%0.s_' $(seq 1 $nb_svg_files)
-echo ""
-
-mkdir "$1"output/compare
-for file in "$1"*.svg
-do
-	if [ -f $file ]
-	then
-		fullname=$(basename "$file")
-		filename="${fullname%.*}"
-		echo -n "-"
-		montage -background black \
+mkdir output/compare
+for file in $(find * -maxdepth 0 -type f); do
+	basename="${file%.*}"
+	echo -n "-"
+	montage -background black \
 		\( -border 1 "$file" \) \
-		\( -border 1 "$1"output/svg/$filename.svg \) \
-		\( -border 1 "$1"output/ps/$filename.ps \) \
-		\( -border 1 "$1"output/pdf/$filename.pdf \) \
-		-geometry 1280x720+1+1 "$1"output/compare/$filename.png
-	fi
+		\( -border 1 output/$basename.svg \) \
+		\( -border 1 output/$basename.ps \) \
+		\( -border 1 output/$basename.pdf \) \
+	-geometry 1280x720+1+1 output/compare/$basename.png
 done
 
 echo "\ndone"
