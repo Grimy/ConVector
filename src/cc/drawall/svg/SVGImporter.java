@@ -164,6 +164,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		}
 		if (d != null) {
 			parsePathData(d);
+		}
+		if (g.getCurrentPoint() != null) {
 			g.draw();
 		}
 	}
@@ -231,7 +233,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 						scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat());
 				break;
 			default:
-				assert false;
+				assert false : "Unknown path operator: " + cmd;
 			}
 		}
 	}
