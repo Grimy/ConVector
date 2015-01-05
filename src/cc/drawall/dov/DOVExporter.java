@@ -14,7 +14,6 @@
 package cc.drawall.dov;
 
 import java.awt.geom.PathIterator;
-import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
 import cc.drawall.Exporter;
@@ -28,10 +27,11 @@ public class DOVExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeHeader(final Rectangle2D bounds) throws IOException {
+	protected void writeHeader(final double width, final double height,
+			final double ratio) throws IOException {
 		write("#\u0039\u00FF\u00AF");
-		writeChar((int) bounds.getWidth());
-		writeChar((int) bounds.getHeight());
+		writeChar((int) width);
+		writeChar((int) height);
 	}
 
 	@Override

@@ -73,7 +73,7 @@ public abstract class Exporter {
 		final AffineTransform normalize = new AffineTransform(
 				ratio, 0, 0, ratio * reverse, -bounds.getX() * ratio,
 				((flags & REVERSE) * bounds.getHeight() + bounds.getY() * reverse) * ratio);
-		writeHeader(bounds);
+		writeHeader(bounds.getWidth(), bounds.getHeight(), 1 / ratio);
 		for (final Drawing.Splash splash: drawing) {
 			writeColor(splash.color);
 			for (final PathIterator itr = splash.getPathIterator(normalize, flatness);
@@ -86,7 +86,8 @@ public abstract class Exporter {
 
 	/** Writes the beginning of the output file.
 	  * @param bounds the bounding box of the original drawing */
-	protected abstract void writeHeader(final Rectangle2D bounds) throws IOException;
+	protected abstract void writeHeader(final double width, final double height,
+			final double ratio) throws IOException;
 
 	/** Writes the end of the output file.
 	 * By default, this does nothing; subclasses should override this if the
@@ -119,11 +120,6 @@ public abstract class Exporter {
 	  * using the specified format string and arguments. */
 	protected final void write(final String format, final Object... args) throws IOException {
 		out.writeBytes(String.format(format, args));
-	}
-
-	/** Writes an int value, which is comprised of four bytes, to the output stream. */ 
-	protected final void writeInt(final int i) throws IOException {
-		out.writeInt(i);
 	}
 
 	/** Writes a char value, which is comprised of two bytes, to the output stream. */

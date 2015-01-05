@@ -14,7 +14,6 @@
 package cc.drawall.ps;
 
 import java.awt.Color;
-import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,20 +31,19 @@ public class PDFExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeHeader(final Rectangle2D bounds) throws IOException {
+	protected void writeHeader(final double width, final double height,
+			final double ratio) throws IOException {
 		write("%%PDF-1\n");
 		writeObj("<</Pages 1 0 R/Kids[2 0 R]/Count 1>>");
-		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + (int) bounds.getWidth() + " "
-				+ (int) bounds.getHeight() + "]>>");
+		writeObj("<</Contents 3 0 R/MediaBox[0 0 " + width  + " " + height + "]>>");
 		writeObj("<</Length 4 0 R>>stream\n%%");
-		final double ratio = Math.max(bounds.getWidth(), bounds.getHeight()) / 65535;
 		write("%f 0 0 %f 0 0 cm\n", ratio, ratio);
 	}
 
 	@Override
 	protected void writeColor(final Color color) throws IOException {
 		final float[] rgb = color.getRGBColorComponents(null);
-		write("h f %.3f %.3f %.3f rg%n", rgb[0], rgb[1], rgb[2]);
+		write("h f %.3f %.3f %.3f rg\n", rgb[0], rgb[1], rgb[2]);
 	}
 
 	@Override
@@ -55,7 +53,7 @@ public class PDFExporter extends Exporter {
 		final int startxref = bytesWritten();
 		write("xref\n1 " + xref.size() + "\n");
 		for (final int pos: xref) {
-			write(String.format("%010d 00000  n%n", pos));
+			write(String.format("%010d 00000  n\n", pos));
 		}
 		write("trailer<</Size %d/Root 1 0 R>>", xref.size() + 1);
 		write("startxref " + startxref + "\n%%%%EOF");
