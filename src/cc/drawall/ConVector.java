@@ -18,7 +18,6 @@ import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -73,9 +72,9 @@ class ConVector extends Canvas {
 	}
 
 	private static Drawing importFile(final File file) {
-		try (final BufferedInputStream input = new BufferedInputStream(
-					new FileInputStream(file))) {
-			return PluginOverseer.importStream(input);
+		try (final FileInputStream input = new FileInputStream(file);
+				final FileChannel chan = input.getChannel()) {
+			return PluginOverseer.importStream(chan);
 		} catch (final IOException e) {
 			log.severe("Problem reading file " + file.getName() + ": " + e);
 			return new Drawing();
@@ -83,7 +82,8 @@ class ConVector extends Canvas {
 	}
 
 	private static void exportFile(final File file, final Drawing drawing) {
-		try (final FileChannel chan = new RandomAccessFile(file, "rw").getChannel()) {
+		try (final RandomAccessFile handle = new RandomAccessFile(file, "rw");
+				final FileChannel chan = handle.getChannel()) {
 			final ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 10 << 20);
 			PluginOverseer.exportStream(output, getExtension(file), drawing);
 			chan.truncate(output.position());

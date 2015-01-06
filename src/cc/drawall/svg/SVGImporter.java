@@ -19,7 +19,8 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.InputMismatchException;
@@ -79,16 +80,17 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 
 	@Override
-	public Graphics process(final InputStream input) {
+	public Graphics process(final ReadableByteChannel input) {
 		g.setFillColor(Color.BLACK);
 		g.setColor(null);
 		try {
-			SAXParserFactory.newInstance().newSAXParser().parse(input, this);
+			SAXParserFactory.newInstance().newSAXParser().parse(
+					Channels.newInputStream(input), this);
 		} catch (final ParserConfigurationException | IOException e) {
 			assert false : "XML error : " + e;
 		} catch (final SAXException e) {
-			final RuntimeException wrapper = new InputMismatchException("Invalid XML file"
-					+ e.getMessage());
+			final RuntimeException wrapper = new InputMismatchException(
+					"Invalid XML file" + e.getMessage());
 			wrapper.initCause(e);
 			throw wrapper;
 		}

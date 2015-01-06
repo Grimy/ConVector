@@ -20,7 +20,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.InputStream;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -363,7 +363,8 @@ public class PSImporter implements Importer {
 	}
 
 	@Override
-	public Graphics process(final InputStream input) {
+	@SuppressWarnings("resource")
+	public Graphics process(final ReadableByteChannel input) {
 		final Scanner scanner = new Scanner(input, "ascii");
 		g.getClip().intersect(new Area(new Rectangle2D.Float(0, 0, 612, 792)));
 

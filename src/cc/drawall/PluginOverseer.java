@@ -13,9 +13,9 @@
 
 package cc.drawall;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.InputMismatchException;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
@@ -27,16 +27,15 @@ enum PluginOverseer {;
 
 	/** Parses the specified InputStream using a plugin appropriate for the specified
 	  * filetype, and returns the resulting Drawing. */
-	static Drawing importStream(final BufferedInputStream input) throws IOException {
+	static Drawing importStream(final FileChannel input) throws IOException {
 		for (final Importer importer: ServiceLoader.load(Importer.class)) {
 			log.info("Trying to import using " + importer.getClass());
-			input.mark(32);
 			try {
 				return importer.process(input).drawing;
 			} catch (final InputMismatchException e) {
 				log.warning(importer.getClass() + ": " + e);
 			}
-			input.reset();
+			input.position(0);
 		}
 		log.severe("No suitable importers found");
 		return new Drawing();

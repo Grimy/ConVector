@@ -13,7 +13,7 @@
 
 package cc.drawall.gcode;
 
-import java.io.InputStream;
+import java.nio.channels.ReadableByteChannel;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.Locale;
@@ -86,7 +86,7 @@ public class GCodeImporter implements Importer {
 	}
 
 	@Override
-	public Graphics process(final InputStream input) {
+	public Graphics process(final ReadableByteChannel input) {
 		scanner = new Scanner(input, "ascii");
 		g.moveTo(false, 0, 0);
 
