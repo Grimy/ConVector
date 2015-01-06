@@ -28,12 +28,12 @@ enum PluginOverseer {;
 	/** Parses the specified InputStream using a plugin appropriate for the specified
 	  * filetype, and returns the resulting Drawing. */
 	static Drawing importStream(final BufferedInputStream input) throws IOException {
-		for (Importer importer: ServiceLoader.load(Importer.class)) {
+		for (final Importer importer: ServiceLoader.load(Importer.class)) {
 			log.info("Trying to import using " + importer.getClass());
 			input.mark(32);
 			try {
 				return importer.process(input).drawing;
-			} catch (InputMismatchException e) {
+			} catch (final InputMismatchException e) {
 				log.warning(importer.getClass() + ": " + e);
 			}
 			input.reset();

@@ -83,8 +83,8 @@ class ConVector extends Canvas {
 	}
 
 	private static void exportFile(final File file, final Drawing drawing) {
-		try (FileChannel chan = new RandomAccessFile(file, "rw").getChannel()) {
-			ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 10 << 20);
+		try (final FileChannel chan = new RandomAccessFile(file, "rw").getChannel()) {
+			final ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 10 << 20);
 			PluginOverseer.exportStream(output, getExtension(file), drawing);
 			chan.truncate(output.position());
 		} catch (final IOException e) {
@@ -123,14 +123,14 @@ class ConVector extends Canvas {
 	@Override
 	public void paint(final Graphics graphics) {
 		assert graphics instanceof Graphics2D;
-		Graphics2D g = (Graphics2D) graphics;
+		final Graphics2D g = (Graphics2D) graphics;
 		super.paint(g);
 		final Rectangle2D bounds = drawing.getBounds();
 		final double ratio = Math.min(getWidth() / bounds.getWidth(),
 				getHeight() / bounds.getHeight());
 		g.scale(ratio, ratio);
 		g.translate(-bounds.getX(), -bounds.getY());
-		for (Drawing.Splash splash: drawing) {
+		for (final Drawing.Splash splash: drawing) {
 			g.setColor(splash.color);
 			g.fill(splash.shape);
 		}

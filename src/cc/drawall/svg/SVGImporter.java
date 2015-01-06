@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.function.Consumer;
@@ -55,25 +56,20 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		unitMap.put("in", 90f);
 	}
 
-	private enum Caps {
-		BUTT, ROUND, SQUARE;
-	}
+	private static final List<String> caps = Arrays.asList("butt", "round", "square");
+	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
 
-	private enum Joins {
-		MITER, ROUND, BEVEL;
-	}
-
-	private Graphics g = new Graphics();
+	private final Graphics g = new Graphics();
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
 		attrHandlers.put("stroke", v -> g.setColor(parseColor(v)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
-		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop -> handleAttr(
-				prop.split(":")[0], prop.split(":")[1])));
+		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
+				handleAttr(prop.split(":")[0], prop.split(":")[1])));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
-		attrHandlers.put("stroke-linecap", v -> g.setLineCap(Caps.valueOf(v.toUpperCase()).ordinal()));
-		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(Joins.valueOf(v.toUpperCase()).ordinal()));
+		attrHandlers.put("stroke-linecap", v -> g.setLineCap(caps.indexOf(v)));
+		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(joins.indexOf(v)));
 		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v)));
 	}
 
@@ -91,7 +87,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		} catch (final ParserConfigurationException | IOException e) {
 			assert false : "XML error : " + e;
 		} catch (final SAXException e) {
-			throw new InputMismatchException("Invalid XML file:" + e);
+			final RuntimeException wrapper = new InputMismatchException("Invalid XML file"
+					+ e.getMessage());
+			wrapper.initCause(e);
+			throw wrapper;
 		}
 		return g;
 	}
@@ -103,15 +102,15 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	/** Parses a floating-point number, respecting SVG units. */
 	private static float parseLength(final String floatString) {
-		int index = floatString.length() - 2;  // all SVG units are 2 chars long
-		Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
-		return multiplier == null ? Float.parseFloat(floatString) :
-			multiplier * Float.parseFloat(floatString.substring(0, index));
+		final int index = floatString.length() - 2;  // all SVG units are 2 chars long
+		final Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
+		return multiplier == null ? Float.parseFloat(floatString)
+			: multiplier * Float.parseFloat(floatString.substring(0, index));
 	}
 
 	private static float getFloat(final Attributes attr, final String name, final float def) {
 		final String value = attr.getValue(name);
-		return value != null ? parseLength(value) : def;
+		return value == null ? def : parseLength(value);
 	}
 
 	@Override
@@ -136,10 +135,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			break;
 		case "circle":
 		case "ellipse":
-			float rx = getFloat(attr, "rx", getFloat(attr, "r", 0f));
-			float ry = getFloat(attr, "ry", getFloat(attr, "r", 0f));
-			float cx = getFloat(attr, "cx", 0f);
-			float cy = getFloat(attr, "cy", 0f);
+			final float rx = getFloat(attr, "rx", getFloat(attr, "r", 0f));
+			final float ry = getFloat(attr, "ry", getFloat(attr, "r", 0f));
+			final float cx = getFloat(attr, "cx", 0f);
+			final float cy = getFloat(attr, "cy", 0f);
 			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
 					cx - rx, cy - ry, 2 * rx, 2 * ry)));
 			g.draw();
@@ -164,6 +163,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		}
 		if (d != null) {
 			parsePathData(d);
+		}
+		if (g.getCurrentPoint() != null) {
 			g.draw();
 		}
 	}
@@ -178,8 +179,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(data);
-		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|" +
-				"[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
+		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|"
+				+ "[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
 		char cmd = '!';
 
 		while (scanner.hasNext()) {
@@ -239,9 +240,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static Color parseColor(final String colorName) {
 		log.fine("Parsing color: " + colorName);
 		try {
-			javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
+			final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
 			return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
-		} catch (IllegalArgumentException e) {
+		} catch (final IllegalArgumentException e) {
 			return null;
 		}
 	}

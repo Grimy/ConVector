@@ -51,16 +51,16 @@ public class Graphics {
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private final Path2D path = new Path2D.Float();
 	private Color color = Color.BLACK;
-	private Color fillColor = null;
-	private Font font = null;
+	private Color fillColor;
+	private Font font;
 	private float fontSize = 1;
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
 
 	/* Saved graphical context. */
-	private Graphics prev = null;
+	private Graphics prev;
 
 	/* First control point of a following smooth curve */
-	private Point2D.Float smooth = null;
+	private Point2D.Float smooth;
 
 	///////////////////////
 	// Path construction //
@@ -194,7 +194,8 @@ public class Graphics {
 		clippath.intersect(new Area(path));
 	}
 
-	/** Returns the smallest rectangle that completely encloses the current path. */
+	/** Returns the smallest rectangle that completely encloses the current path.
+	  * @return the smallest rectangle that completely encloses the current path */
 	public Rectangle2D pathBounds() {
 		return path.getBounds2D();
 	}

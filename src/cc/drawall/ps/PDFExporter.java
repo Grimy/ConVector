@@ -51,7 +51,7 @@ public class PDFExporter extends Exporter {
 		final int startxref = bytesWritten();
 		write("xref\n1 " + xref.size() + "\n");
 		for (final int pos: xref) {
-			write(String.format("%010d 00000  n\n", pos));
+			write("%010d 00000  n\n", pos);
 		}
 		write("trailer<</Size %d/Root 1 0 R>>", xref.size() + 1);
 		write("startxref " + startxref + "\n%%%%EOF");

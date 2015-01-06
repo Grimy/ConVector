@@ -78,7 +78,7 @@ public class PSImporter implements Importer {
 	private static final Object MARK = new Object();
 	private static final Object CURLY_MARK = new Object();
 
-	private Graphics g = new Graphics();
+	private final Graphics g = new Graphics();
 
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
 	private Iterator<Object> itr;
@@ -123,8 +123,8 @@ public class PSImporter implements Importer {
 			stack.push(substack(array.length).toArray(array));
 		});
 		builtin("length", () -> {
-			Object o = stack.pop();
-			stack.push(o instanceof Object[] ? ((Object[])o).length : 0f);
+			final Object o = stack.pop();
+			stack.push(o instanceof Object[] ? ((Object[]) o).length : 0f);
 		});
 
 		// Dictionary
@@ -144,14 +144,14 @@ public class PSImporter implements Importer {
 		builtin("load", () -> stack.push(getVar(stack.pop())));
 		builtin("def", () -> vars.put(pop2(), stack.pop()));
 		builtin("get", () -> {
-			Object o = pop2();
-			stack.push(o instanceof PSDict ? ((PSDict) o).get(stack.pop()) :
-					o instanceof Object[] ? ((Object[]) o)[(int) p(1)] :
-					((String) o).codePointAt((int) p(1)));
+			final Object o = pop2();
+			stack.push(o instanceof PSDict ? ((PSDict) o).get(stack.pop())
+					: o instanceof Object[] ? ((Object[]) o)[(int) p(1)]
+					: ((String) o).codePointAt((int) p(1)));
 		});
 		builtin("put", () -> {
-			Object value = stack.pop();
-			Object o = pop2();
+			final Object value = stack.pop();
+			final Object o = pop2();
 			if (o instanceof PSDict) {
 				((PSDict) o).put(stack.pop(), value);
 			} else {
@@ -160,7 +160,7 @@ public class PSImporter implements Importer {
 		});
 		builtin("known", () -> stack.push(((PSDict) pop2()).containsKey(stack.pop())));
 		builtin("where", () -> {
-			boolean exists = vars.containsKey(stack.pop());
+			final boolean exists = vars.containsKey(stack.pop());
 			if (exists) {
 				stack.push(vars);
 			}
@@ -189,15 +189,7 @@ public class PSImporter implements Importer {
 
 		// Flow control
 		builtin("exec", () -> execute(stack.pop()));
-		builtin("stopped", () -> {
-			try {
-				execute(stack.pop());
-			} catch (Exception e) {
-				stack.push(Boolean.TRUE);
-				return;
-			}
-			stack.push(Boolean.FALSE);
-		});
+		builtin("stopped", () -> stack.push(Boolean.FALSE));
 		builtin("quit", NOOP);
 		builtin("if", () -> {
 			final Object code = stack.pop();
@@ -218,24 +210,20 @@ public class PSImporter implements Importer {
 		});
 		builtin("for", () -> {
 			final Object code = stack.pop();
-			for (float i = p(3), inc = p(), max = p(); i < max; i += inc) {
+			final float max = p(1), inc = p(1);
+			for (float i = p(1); i < max; i += inc) {
 				stack.push(i);
 				execute(code);
 			}
 		});
 		builtin("forall", () -> {
 			final Object code = stack.pop();
-			if (stack.peek() instanceof String) {
-				((String) stack.pop()).chars().forEach(c -> {
+			final Object array = stack.pop();
+			(array instanceof String ? ((String) array).chars().mapToObj(c -> c)
+				: Arrays.stream((Object[]) array)).forEach(c -> {
 					stack.push(c);
 					execute(code);
 				});
-			} else {
-				for (Object o: (Object[]) stack.pop()) {
-					stack.push(o);
-					execute(code);
-				}
-			}
 		});
 		// exec
 
@@ -284,7 +272,7 @@ public class PSImporter implements Importer {
 			g.append(g.getClip());
 		});
 		builtin("pathbbox", () -> {
-			Rectangle2D r = g.pathBounds();
+			final Rectangle2D r = g.pathBounds();
 			stack.push((float) r.getMinX());
 			stack.push((float) r.getMinY());
 			stack.push((float) r.getMaxX());
@@ -479,7 +467,7 @@ public class PSImporter implements Importer {
 
 	/** Pops n items from the stack and returns them as an array. */
 	private Object[] popTo(final Object mark) {
-		int n = stack.lastIndexOf(mark);
+		final int n = stack.lastIndexOf(mark);
 		assert n >= 0 : "No matching mark";
 		final Object[] array = substack(stack.size() - 1 - n).toArray();
 		stack.setSize(n);
@@ -487,7 +475,7 @@ public class PSImporter implements Importer {
 	}
 
 	/** Returns a live view of the top n elements of the stack. */
-	private List<Object> substack(int n) {
+	private List<Object> substack(final int n) {
 		final int size = stack.size();
 		return stack.subList(size - n, size);
 	}
@@ -515,7 +503,7 @@ public class PSImporter implements Importer {
 
 	static final class PSDict extends HashMap<Object, Object> {
 		@Override
-		public boolean equals(Object that) {
+		public boolean equals(final Object that) {
 			return this == that;
 		}
 

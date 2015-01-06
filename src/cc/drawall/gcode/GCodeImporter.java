@@ -36,12 +36,12 @@ public class GCodeImporter implements Importer {
 			+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
 
 	/* Whether to compute coordinates relative to the current point. Set by G20 / G21 */
-	private boolean relative = false;
+	private boolean relative;
 
 	/** The scanner used to parse the input. */
 	private Scanner scanner;
 
-	private Graphics g = new Graphics();
+	private final Graphics g = new Graphics();
 
 	/* Maps GCode variable names to their values. */
 	private final Map<Integer, Float> variables = new HashMap<>();
@@ -125,7 +125,7 @@ public class GCodeImporter implements Importer {
 	}
 
 	private float readPos(final char axis) {
-		return scanner.hasNext(axis + ".*") ? readArg(axis) : relative ? 0 : Float.NaN;
+		return scanner.hasNext(axis + ".*") ? readArg(axis) : Float.NaN;
 	}
 
 	/**
@@ -144,8 +144,8 @@ public class GCodeImporter implements Importer {
 	 * Handles GCode variables (#%d) and mathematical expressions.
 	 */
 	private float parseFloat(final String string) {
-		String expr = string.charAt(0) == '[' ? string.substring(1, string.length() - 1)
-		                                      : string;
+		final String expr = string.charAt(0) == '['
+			? string.substring(1, string.length() - 1) : string;
 
 		// Compute mathematical expressions
 		float result = 0;
