@@ -93,6 +93,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 					"Invalid XML file" + e.getMessage());
 			wrapper.initCause(e);
 			throw wrapper;
+		} catch (IllegalStateException e) {
+			/* End of input was reached */
 		}
 		return g;
 	}
@@ -174,6 +176,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
 		g.restore();
+		if (name.equals("svg")) {
+			throw new IllegalStateException();
+		}
 	}
 
 	private void parsePathData(final String data) {

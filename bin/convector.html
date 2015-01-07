@@ -1,0 +1,41 @@
+HTTP/1.0 200 OK
+Content-Type: text/html
+Encoding: UTF-8
+
+<!DOCTYPE HTML>
+<html>
+	<head>
+		 <meta charset=UTF-8>
+	</head>
+	<body>
+		<form>
+			<label>File to convert:</label>
+			<input type=file id=file />
+			<input type=button id=submit value=Convert />
+		</form>
+		<div id=result></div>
+		<script>
+document.getElementById('submit').onclick = function() {
+	var reader = new FileReader();
+	var xhr = new XMLHttpRequest();
+	var lastPos = 0;
+	document.getElementById('result').textContent = '';
+
+	function progress() {
+		console.log("progress: " + xhr.readyState);
+		var data = xhr.responseText.substring(lastPos);
+		lastPos = xhr.responseText.length;
+		console.log(data.length + " bytes of data received");
+		console.log(data);
+		document.getElementById('result').textContent += data;
+	}
+	reader.onload = function() {
+		xhr.onprogress = progress;
+		xhr.open('POST', '/', true);
+		xhr.send(reader.result);
+	}
+	reader.readAsArrayBuffer(document.getElementById('file').files[0]);
+}
+		</script>
+	</body>
+</html>

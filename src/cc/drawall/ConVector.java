@@ -56,7 +56,12 @@ class ConVector extends Canvas {
 	  * @param args first argument is the input file, second is the output file */
 	public static void main(final String... args) {
 		if (args.length == 0) {
-			new ConVector().createAndShowGUI();
+			try {
+				new WebService().loop();
+			} catch (IOException e) {
+				log.severe("WebService encountered an error");
+				throw new RuntimeException(e);
+			}
 			return;
 		}
 		if (args.length != 2) {
