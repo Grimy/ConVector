@@ -5,6 +5,9 @@ JAVAC = javac $(CLASSPATH) -sourcepath src -source 1.8 -d bin
 JAVA = java -ea $(CLASSPATH) -Xss228m $(JAVA_ARGS)
 CLASSES = $(shell find src -name *.java | sed -r 's!src!bin!;s!java$$!class!')
 PACKAGE = cc/drawall/
+IMAGES := $(shell find examples/* -maxdepth 0 -type f)
+IMAGES := $(subst examples,output,$(IMAGES))
+IMAGES := $(IMAGES:=.png)
 
 # "make build": use ecj to compile .java files into .class files
 build: $(CLASSES)
@@ -30,6 +33,11 @@ run: build
 # "make bench": runs benchmarks
 bench:
 	$(JAVA) -Xprof cc.drawall.ConVector $(ARGS)
+
+mass: $(IMAGES)
+
+output/%.png: examples/% $(CLASSES)
+	./montage.sh $(notdir $<)
 
 test:
 	javac $(TESTCP) test/cc/drawall/SVGTest.java && java $(TESTCP) org.junit.runner.JUnitCore cc.drawall.SVGTest
