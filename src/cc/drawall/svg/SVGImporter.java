@@ -61,10 +61,14 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
 
 	private final Graphics g = new Graphics();
+	private String currentGradient;
+	private final Map<String, Color> gradients = new HashMap<>();
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
 		attrHandlers.put("stroke", v -> g.setColor(parseColor(v)));
+		attrHandlers.put("stop-color", v -> gradients.put(
+					"url(#" + currentGradient + ")", parseColor(v)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 				handleAttr(prop.split(":")[0], prop.split(":")[1])));
@@ -112,7 +116,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			: multiplier * Float.parseFloat(floatString.substring(0, index));
 	}
 
-	private static float getFloat(final Attributes attr, final String name, final float def) {
+	private static float getFloat(final Attributes attr, final String name,
+			final float def) {
 		final String value = attr.getValue(name);
 		return value == null ? def : parseLength(value);
 	}
@@ -132,6 +137,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 						getFloat(attr, "height", Float.MAX_VALUE)));
 			g.clip();
 			g.reset();
+			break;
+		case "linearGradient":
+			currentGradient = attr.getValue("id");
 			break;
 		case "line":
 			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1")
@@ -244,8 +252,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		}
 	}
 
-	private static Color parseColor(final String colorName) {
+	private Color parseColor(final String colorName) {
 		log.fine("Parsing color: " + colorName);
+		if (gradients.containsKey(colorName)) {
+			return gradients.get(colorName);
+		}
+
 		try {
 			final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
 			return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
