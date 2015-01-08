@@ -257,6 +257,9 @@ public class Graphics {
 	  * @param windingRule the winding rule to use
 	  * @see java.awt.geom.GeneralPath */
 	public void fill(final int windingRule) {
+		if (path.getCurrentPoint() == null) {
+			return;
+		}
 		path.closePath();
 		path.setWindingRule(windingRule);
 		paintArea(color, new Area(path));
