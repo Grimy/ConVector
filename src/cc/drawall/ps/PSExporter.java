@@ -8,7 +8,7 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU
  * General Public License along with DraWall. If not, see <http://www.gnu.org/licenses/>.
  * © 2012–2014 Nathanaël Jourdane
- * © 2014 Victor Adam
+ * © 2014-2015 Victor Adam
  */
 
 package cc.drawall.ps;
