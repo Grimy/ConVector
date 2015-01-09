@@ -1,3 +1,4 @@
+MAKEFLAGS += -j
 CLASSPATH = -classpath bin
 TESTCP = -classpath bin:/usr/share/java/*:test
 

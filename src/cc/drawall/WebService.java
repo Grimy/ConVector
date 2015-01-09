@@ -23,14 +23,55 @@ class WebService {
 					WebService.class.getResource("/convector.html").getFile(), "rw");
 				final FileChannel chan = file.getChannel()) {
 			return chan.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new IOError(e);
 		}
 	}
 	
+	private static ByteBuffer process(final SocketChannel chan) {
+		final ByteBuffer result = ByteBuffer.allocate(10 << 20);
+		final Exporter gcode = new GCodeExporter();
+		final Drawing drawing = new SVGImporter().process(chan).drawing;
+		gcode.output(drawing, result);
+		result.flip();
+		return result;
+	}
+
+	private static String readline(final SocketChannel chan) throws IOException {
+		final ByteBuffer buffer = ByteBuffer.allocate(1);
+		final StringBuilder line = new StringBuilder();
+		for (char c = '\0'; c != '\n';) {
+			chan.read(buffer);
+			buffer.flip();
+			c = (char) buffer.get();
+			line.append(c);
+			buffer.clear();
+		}
+		return line.toString().trim();
+	}
+
+	private static void handle(final SocketChannel cli) throws IOException {
+		String line = "Non Empty";
+		int length = 0;
+		log.info("Received request");
+		while (!line.isEmpty()) {
+			line = readline(cli);
+			if (line.startsWith("Content-Length: ")) {
+				length = Integer.parseInt(line.replace("Content-Length: ", ""));
+			}
+		}
+		log.info("Length: " + length);
+		final ByteBuffer answer = length == 0 ? getHTML() : process(cli);
+		while (answer.hasRemaining()) {
+			answer.position(answer.position() + cli.write(answer));
+		}
+		log.info("Done writing");
+		cli.shutdownOutput();
+	}
+
 	WebService() throws IOException {
 		serv = ServerSocketChannel.open();
-		serv.bind(new InetSocketAddress(3434));
+		serv.bind(new InetSocketAddress(80));
 	}
 
 	void loop() throws IOException {
@@ -38,51 +79,4 @@ class WebService {
 			handle(serv.accept());
 		}
 	}
-
-	private static ByteBuffer process(SocketChannel chan) {
-		ByteBuffer result = ByteBuffer.allocate(10 << 20);
-		Exporter gcode = new GCodeExporter();
-		log.warning("Allocated " + result.capacity() + " bytes");
-		Drawing drawing = new SVGImporter().process(chan).drawing;
-		log.warning("Done importing");
-		gcode.output(drawing, result);
-		log.warning("Done exporting");
-		result.flip();
-		return result;
-	}
-
-	private static String readline(SocketChannel chan) throws IOException {
-		final ByteBuffer buffer = ByteBuffer.allocate(1);
-		String line = "";
-		for (char c = '\0'; c != '\n';) {
-			chan.read(buffer);
-			buffer.flip();
-			c = (char) buffer.get();
-			line += c;
-			buffer.clear();
-		}
-		return line.trim();
-	}
-
-	private static void handle(SocketChannel cli) throws IOException {
-		String line = "Non Empty";
-		int length = 0;
-		log.warning("Received request");
-		while (!line.isEmpty()) {
-			line = readline(cli);
-			log.warning("Read: " + line);
-			if (line.startsWith("Content-Length: ")) {
-				length = Integer.parseInt(line.replace("Content-Length: ", ""));
-			}
-		}
-		log.warning("Length: " + length);
-		ByteBuffer answer = length == 0 ? getHTML() : process(cli);
-		log.warning("Done processing");
-		while (answer.hasRemaining()) {
-			answer.position(answer.position() + cli.write(answer));
-		}
-		log.warning("Done writing");
-		cli.shutdownOutput();
-	}
 }
-

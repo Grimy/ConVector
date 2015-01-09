@@ -20,6 +20,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -58,10 +59,14 @@ class ConVector extends Canvas {
 		if (args.length == 0) {
 			try {
 				new WebService().loop();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				log.severe("WebService encountered an error");
-				throw new RuntimeException(e);
+				throw new IOError(e);
 			}
+			return;
+		}
+		if ("--gui".equals(args[0])) {
+			new ConVector().createAndShowGUI();
 			return;
 		}
 		if (args.length != 2) {
