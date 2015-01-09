@@ -67,8 +67,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
 		attrHandlers.put("stroke", v -> g.setColor(parseColor(v)));
-		attrHandlers.put("stop-color", v -> gradients.put(
-					"url(#" + currentGradient + ")", parseColor(v)));
+		attrHandlers.put("stop-color", v -> gradients.put(currentGradient, parseColor(v)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 				handleAttr(prop.split(":")[0], prop.split(":")[1])));
@@ -97,7 +96,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 					"Invalid XML file" + e.getMessage());
 			wrapper.initCause(e);
 			throw wrapper;
-		} catch (IllegalStateException e) {
+		} catch (final IllegalStateException e) {
 			/* End of input was reached */
 		}
 		return g;
@@ -139,7 +138,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			g.reset();
 			break;
 		case "linearGradient":
-			currentGradient = attr.getValue("id");
+			currentGradient = "url(#" + attr.getValue("id") + ")";
 			break;
 		case "line":
 			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1")
@@ -170,6 +169,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 					getFloat(attr, "width", 0f), getFloat(attr, "height", 0f))));
 			g.draw();
 			break;
+		case "defs":
+		case "clipPath":
+			g.setColor(null);
+			g.setFillColor(null);
+			break;
 		default:
 			d = attr.getValue("d");
 		}
@@ -184,7 +188,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
 		g.restore();
-		if (name.equals("svg")) {
+		if ("svg".equals(name)) {
 			throw new IllegalStateException();
 		}
 	}
