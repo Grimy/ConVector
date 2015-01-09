@@ -19,6 +19,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Arrays;
@@ -104,7 +105,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	@Override
 	public InputSource resolveEntity(final String publicId, final String systemId) {
-		return new InputSource(SVGImporter.class.getResourceAsStream("svg10.dtd"));
+		return new InputSource(new StringReader(""));
 	}
 
 	/** Parses a floating-point number, respecting SVG units. */
