@@ -47,11 +47,11 @@ public class GCodeImporter implements Importer {
 	private final Map<Integer, Float> variables = new HashMap<>();
 
 	private final Map<Integer, Runnable> gcodes = new HashMap<>(); {
-		gcodes.put(0, () -> g.lineTo(relative, readPos('X'), readPos('Y')));
-		gcodes.put(1, () -> {
+		gcodes.put(0, () -> {
 			g.draw();
 			g.moveTo(relative, readPos('X'), readPos('Y'));
 		});
+		gcodes.put(1, () -> g.lineTo(relative, readPos('X'), readPos('Y')));
 		gcodes.put(5, () -> g.lineTo(relative, readArg('I'), readArg('J'),
 					readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
 		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
@@ -89,6 +89,7 @@ public class GCodeImporter implements Importer {
 	public Graphics process(final ReadableByteChannel input) {
 		scanner = new Scanner(input, "ascii");
 		g.moveTo(false, 0, 0);
+		g.setStrokeWidth(.01f);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
@@ -96,6 +97,7 @@ public class GCodeImporter implements Importer {
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
 			final String token = scanner.next(TOKEN).toUpperCase(Locale.US).replaceAll("\\s", "");
+			log.finest("Read token: " + token);
 			final float arg = parseFloat(token.substring(1));
 
 			switch (token.charAt(0)) {
