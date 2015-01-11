@@ -1,4 +1,4 @@
-HTTP/1.0 200 OK
+HTTP/1.1 200 OK
 Content-Type: text/html
 Encoding: UTF-8
 
@@ -8,33 +8,43 @@ Encoding: UTF-8
 		 <meta charset=UTF-8>
 	</head>
 	<body>
-		<form>
-			<label>File to convert:</label>
-			<input type=file id=file />
-			<input type=button id=submit value=Convert />
-		</form>
+		<label for=file>File to convert:</label>
+		<input type=file id=file />
+		<label for=type>Convert to:</label>
+		<select id=type>
+			<option value=dov>DOV</option>
+			<option value=gcode>GCode</option>
+			<option value=pdf>PDF</option>
+			<option value=ps>PostScript</option>
+			<option value=svg>SVG</option>
+		</select>
+		<input type=button id=submit value=Convert />
 		<div id=result></div>
 		<script>
 document.getElementById('submit').onclick = function() {
-	var reader = new FileReader();
 	var xhr = new XMLHttpRequest();
+	var reader = new FileReader();
 	var lastPos = 0;
-	document.getElementById('result').textContent = '';
+	var file = document.getElementById('file').files[0];
+	var result = document.getElementById('result');
 
-	function progress() {
-		console.log("progress: " + xhr.readyState);
+	xhr.onprogress = function() {
+		console.log('progress: ' + xhr.readyState);
 		var data = xhr.responseText.substring(lastPos);
 		lastPos = xhr.responseText.length;
-		console.log(data.length + " bytes of data received");
+		console.log(data.length + ' bytes of data received');
 		console.log(data);
-		document.getElementById('result').textContent += data;
+		result.textContent += data;
 	}
+
 	reader.onload = function() {
-		xhr.onprogress = progress;
-		xhr.open('POST', '/', true);
+		var extension = file.name.substr(file.name.lastIndexOf('.') + 1);
+		xhr.open('POST', extension + '/' + document.getElementById('type').value, true);
 		xhr.send(reader.result);
 	}
-	reader.readAsArrayBuffer(document.getElementById('file').files[0]);
+
+	result.textContent = '';
+	reader.readAsArrayBuffer(file);
 }
 		</script>
 	</body>

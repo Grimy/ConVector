@@ -10,9 +10,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
-import cc.drawall.gcode.GCodeExporter;
-import cc.drawall.svg.SVGImporter;
-
 class WebService {
 	private static final Logger log = Logger.getLogger(WebService.class.getName());
 
@@ -28,55 +25,42 @@ class WebService {
 		}
 	}
 	
-	private static ByteBuffer process(final SocketChannel chan) {
+	private static ByteBuffer process(final HTTPChannel chan) {
+		final String[] filetypes = chan.url.split("/");
+		if (filetypes.length < 3) {
+			return getHTML();
+		}
 		final ByteBuffer result = ByteBuffer.allocate(10 << 20);
-		final Exporter gcode = new GCodeExporter();
-		final Drawing drawing = new SVGImporter().process(chan).drawing;
-		gcode.output(drawing, result);
+		final Drawing drawing = PluginOverseer.importStream(chan, filetypes[1]);
+		PluginOverseer.exportStream(result, filetypes[2], drawing);
 		result.flip();
 		return result;
 	}
 
-	private static String readline(final SocketChannel chan) throws IOException {
-		final ByteBuffer buffer = ByteBuffer.allocate(1);
-		final StringBuilder line = new StringBuilder();
-		for (char c = '\0'; c != '\n';) {
-			chan.read(buffer);
-			buffer.flip();
-			c = (char) buffer.get();
-			line.append(c);
-			buffer.clear();
+	private static void send(ByteBuffer reply, SocketChannel client) throws IOException {
+		while (reply.hasRemaining()) {
+			reply.position(reply.position() + client.write(reply));
 		}
-		return line.toString().trim();
-	}
-
-	private static void handle(final SocketChannel cli) throws IOException {
-		String line = "Non Empty";
-		int length = 0;
-		log.info("Received request");
-		while (!line.isEmpty()) {
-			line = readline(cli);
-			if (line.startsWith("Content-Length: ")) {
-				length = Integer.parseInt(line.replace("Content-Length: ", ""));
-			}
-		}
-		log.info("Length: " + length);
-		final ByteBuffer answer = length == 0 ? getHTML() : process(cli);
-		while (answer.hasRemaining()) {
-			answer.position(answer.position() + cli.write(answer));
-		}
-		log.info("Done writing");
-		cli.shutdownOutput();
 	}
 
 	WebService() throws IOException {
+		int port = 3434;
 		serv = ServerSocketChannel.open();
-		serv.bind(new InetSocketAddress(80));
+		serv.bind(new InetSocketAddress(port));
+		log.info("Listening on port " + port);
 	}
 
-	void loop() throws IOException {
+	void loop() {
 		for (;;) {
-			handle(serv.accept());
+			try (final SocketChannel client = serv.accept();
+				final HTTPChannel query = new HTTPChannel(client)) {
+				log.info("Received query: " + query.url + " from " + client.getRemoteAddress());
+				ByteBuffer reply = process(query);
+				send(reply, client);
+				log.info("Successfully sent " + reply.position() + "B of reply");
+			} catch (IOException e) {
+				log.severe("WebService error: " + e);
+			}
 		}
 	}
 }

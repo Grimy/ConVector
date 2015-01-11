@@ -13,39 +13,39 @@
 
 package cc.drawall;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.InputMismatchException;
+import java.nio.channels.ReadableByteChannel;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
-import java.util.stream.StreamSupport;
 
 /** Responsible for loading plugins and invoking the correct one for a given filetype. */
 enum PluginOverseer {;
 	private static final Logger log = Logger.getLogger(PluginOverseer.class.getName());
+	private static final Map<String, Importer> importers = new HashMap<>();
+	private static final Map<String, Exporter> exporters = new HashMap<>();
+	static {
+		for (Importer importer: ServiceLoader.load(Importer.class)) {
+			importers.put(importer.getClass().getSimpleName().replace("Importer", "")
+					.toLowerCase(), importer);
+		}
+		for (Exporter exporter: ServiceLoader.load(Exporter.class)) {
+			exporters.put(exporter.getClass().getSimpleName().replace("Exporter", "")
+					.toLowerCase(), exporter);
+		}
+		log.info("Done importing plugins");
+	}
 
 	/** Parses the specified InputStream using a plugin appropriate for the specified
 	  * filetype, and returns the resulting Drawing. */
-	static Drawing importStream(final FileChannel input) throws IOException {
-		for (final Importer importer: ServiceLoader.load(Importer.class)) {
-			log.info("Trying to import using " + importer.getClass());
-			try {
-				return importer.process(input).drawing;
-			} catch (final InputMismatchException e) {
-				log.warning(importer.getClass() + ": " + e);
-			}
-			input.position(0);
-		}
-		log.severe("No suitable importers found");
-		return new Drawing();
+	static Drawing importStream(final ReadableByteChannel input, final String filetype) {
+		return importers.get(filetype).process(input).drawing;
 	}
 
 	/** Writes a drawing to a stream, using a plugin appropriate for the specified filetype. */
 	static void exportStream(final ByteBuffer output, final String filetype,
 			final Drawing drawing) {
-		StreamSupport.stream(ServiceLoader.load(Exporter.class).spliterator(), false).filter(
-			o -> o.getClass().getSimpleName().replace("Exporter", "").equalsIgnoreCase(filetype)
-		).findAny().get().output(drawing, output);
+		exporters.get(filetype).output(drawing, output);
 	}
 }

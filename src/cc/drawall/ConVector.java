@@ -84,7 +84,7 @@ class ConVector extends Canvas {
 	private static Drawing importFile(final File file) {
 		try (final FileInputStream input = new FileInputStream(file);
 				final FileChannel chan = input.getChannel()) {
-			return PluginOverseer.importStream(chan);
+			return PluginOverseer.importStream(chan, getExtension(file));
 		} catch (final IOException e) {
 			log.severe("Problem reading file " + file.getName() + ": " + e);
 			return new Drawing();
