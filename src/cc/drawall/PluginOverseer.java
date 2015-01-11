@@ -16,6 +16,7 @@ package cc.drawall;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
@@ -26,13 +27,13 @@ enum PluginOverseer {;
 	private static final Map<String, Importer> importers = new HashMap<>();
 	private static final Map<String, Exporter> exporters = new HashMap<>();
 	static {
-		for (Importer importer: ServiceLoader.load(Importer.class)) {
+		for (final Importer importer: ServiceLoader.load(Importer.class)) {
 			importers.put(importer.getClass().getSimpleName().replace("Importer", "")
-					.toLowerCase(), importer);
+					.toLowerCase(Locale.US), importer);
 		}
-		for (Exporter exporter: ServiceLoader.load(Exporter.class)) {
+		for (final Exporter exporter: ServiceLoader.load(Exporter.class)) {
 			exporters.put(exporter.getClass().getSimpleName().replace("Exporter", "")
-					.toLowerCase(), exporter);
+					.toLowerCase(Locale.US), exporter);
 		}
 		log.info("Done importing plugins");
 	}

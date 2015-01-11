@@ -58,7 +58,7 @@ class ConVector extends Canvas {
 	public static void main(final String... args) {
 		if (args.length == 0) {
 			try {
-				new WebService().loop();
+				new WebService(3434).loop();
 			} catch (final IOException e) {
 				log.severe("WebService encountered an error");
 				throw new IOError(e);

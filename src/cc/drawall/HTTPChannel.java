@@ -1,3 +1,16 @@
+/*
+ * This file is part of DraWall.
+ * DraWall is free software: you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * DraWall is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU
+ * General Public License along with DraWall. If not, see <http://www.gnu.org/licenses/>.
+ * © 2012–2014 Nathanaël Jourdane
+ * © 2014-2015 Victor Adam
+ */
+
 package cc.drawall;
 
 import java.io.IOException;
@@ -7,15 +20,26 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
 class HTTPChannel implements ReadableByteChannel {
-	private SocketChannel chan;
+	private final SocketChannel chan;
 	private int remaining;
 	private static final Logger log = Logger.getLogger(WebService.class.getName());
 	String url;
-	String host;
 
-	HTTPChannel(SocketChannel chan) throws IOException {
+	HTTPChannel(final SocketChannel chan) throws IOException {
 		this.chan = chan;
 		parseHeaders();
+	}
+
+	private void parseHeaders() throws IOException {
+		url = readline().split(" ")[1];
+		String line = ".";
+		while (!line.isEmpty()) {
+			line = readline();
+			log.finest("Received header: " + line);
+			if (line.startsWith("Content-Length: ")) {
+				remaining = Integer.parseInt(line.replace("Content-Length: ", ""));
+			}
+		}
 	}
 
 	private String readline() throws IOException {
@@ -31,24 +55,12 @@ class HTTPChannel implements ReadableByteChannel {
 		return line.toString().trim();
 	}
 
-	void parseHeaders() throws IOException {
-		url = readline().split(" ")[1];
-		String line = ".";
-		while (!line.isEmpty()) {
-			line = readline();
-			log.finest("Received header: " + line);
-			if (line.startsWith("Content-Length: ")) {
-				remaining = Integer.parseInt(line.replace("Content-Length: ", ""));
-			}
-		}
-	}
-
 	@Override
-	public int read(ByteBuffer dest) throws IOException {
+	public int read(final ByteBuffer dest) throws IOException {
 		if (remaining <= 0) {
 			return -1;
 		}
-		int read = chan.read(dest);
+		final int read = chan.read(dest);
 		remaining -= read;
 		return read;
 	}
