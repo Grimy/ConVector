@@ -1,8 +1,6 @@
 .metadata
+bin
 *~
-_*
-releases
-img_test
 javadoc.xml
 *.class
 .sonar

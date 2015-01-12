@@ -17,6 +17,7 @@ bin/%.class: src/%.java
 	$(JAVAC) $<
 
 jar: build
+	for file in $$(cd src; find * -type f -not -name '*.java'); do cp "src/$$file" "bin/$$file"; done
 	cd bin; zip -r drawall.jar *
 
 # "make doc": generate the documentation using Doxygen
