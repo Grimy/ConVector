@@ -50,8 +50,8 @@ class WebService {
 			return getHTML();
 		}
 		final ByteBuffer result = ByteBuffer.allocate(10 << 20);
-		final Drawing drawing = PluginOverseer.importStream(chan, filetypes[1]);
-		PluginOverseer.exportStream(result, filetypes[2], drawing);
+		final Drawing drawing = Importer.importStream(chan, filetypes[1]);
+		Exporter.exportStream(result, filetypes[2], drawing);
 		result.flip();
 		return result;
 	}
