@@ -4,17 +4,20 @@ TESTCP = -classpath bin:/usr/share/java/*:test
 
 JAVAC = javac $(CLASSPATH) -sourcepath src -source 1.8 -d bin
 JAVA = java -ea $(CLASSPATH) -Xss228m $(JAVA_ARGS)
-CLASSES = $(shell find src -name *.java | sed -r 's!src!bin!;s!java$$!class!')
-PACKAGE = cc/drawall/
+CLASSES   = $(shell find src -name '*.java' | sed -r 's!src!bin!;s!java$$!class!')
+RESOURCES = $(shell find src/* -maxdepth 0 -not -name cc)
 IMAGES := $(shell find examples/* -maxdepth 0 -type f)
 IMAGES := $(subst examples,output,$(IMAGES))
 IMAGES := $(IMAGES:=.png)
 
 # "make build": use ecj to compile .java files into .class files
-build: $(CLASSES)
+build: $(CLASSES) $(subst src/, bin/, $(RESOURCES))
 
 bin/%.class: src/%.java
 	$(JAVAC) $<
+
+bin/%: src/%
+	cp -r $< $@
 
 jar: build
 	for file in $$(cd src; find * -type f -not -name '*.java'); do cp "src/$$file" "bin/$$file"; done
