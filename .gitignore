@@ -4,7 +4,8 @@ bin
 javadoc.xml
 *.class
 .sonar
-blah*
+blah.*
+result.*
 drawall.jar
 examples
 output

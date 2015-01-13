@@ -1,21 +1,22 @@
 package cc.drawall;
 
-import org.junit.*;
-import static org.junit.Assert.*;
-import static org.junit.matchers.JUnitMatchers.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertTrue;
+
+import java.nio.channels.Channels;
+
+import org.junit.Test;
+
+import cc.drawall.svg.SVGImporter;
 
 public class SVGTest {
 	@Test
 	public void ok() {
-		WriterGraphics2D g = new WriterGraphics2D();
-		new SVGImporter().process(getClass().getResourceAsStream("ellipses.svg"), g);
-		Drawing d1 = g.getDrawing();
-		d1.flatten();
-		g = new WriterGraphics2D();
-		new SVGImporter().process(getClass().getResourceAsStream("ellipses_simple.svg"), g);
-		Drawing d2 = g.getDrawing();
-		d2.flatten();
-		assertTrue(d1.looksLike(d2));
+		Drawing drawing = new SVGImporter().process(Channels.newChannel(
+				getClass().getResourceAsStream("ellipses.svg"))).drawing;
+		drawing.mergeLayers();
+		Drawing simpleDrawing = new SVGImporter().process(Channels.newChannel(
+				getClass().getResourceAsStream("ellipses_simple.svg"))).drawing;
+		simpleDrawing.mergeLayers();
+		assertTrue(drawing.looksLike(simpleDrawing));
 	}
 }

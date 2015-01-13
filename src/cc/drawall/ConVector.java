@@ -47,7 +47,6 @@ class ConVector extends Canvas {
 	private transient Drawing drawing = new Drawing();
 
 	ConVector() {
-		// TODO: get list of valid formats
 		chooser.setFileFilter(new FileNameExtensionFilter("Vectors",
 					new String[] {"svg", "pdf", "ps", "gcode", "dov"}));
 		setSize(800, 600);

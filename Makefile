@@ -29,7 +29,7 @@ doc:
 
 # "make clean": remove generated files
 clean:
-	find bin -name '*.class' -delete
+	rm -rf bin/*
 
 # "make run ARGS=[...]": invokes java on the main class with specified arguments
 run: build

@@ -186,7 +186,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 	boolean looksLike(final Drawing that) {
 		log.warning("Entering looksLike");
 		if (this.splashes.size() != that.splashes.size()) {
-			log.warning("Sizes differ");
+			log.warning(this.splashes.size() + " != " + that.splashes.size());
 			return false;
 		}
 		for (int i = 0; i < splashes.size(); i++) {
