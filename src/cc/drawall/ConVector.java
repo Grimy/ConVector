@@ -55,18 +55,14 @@ class ConVector extends Canvas {
 	  * @param args first argument is the input file, second is the output file */
 	public static void main(final String... args) {
 		if (args.length == 0) {
-			WebService.loop(3434);
-			return;
-		}
-		if ("--gui".equals(args[0])) {
 			new ConVector().createAndShowGUI();
-			return;
-		}
-		if (args.length != 2) {
+		} else if (args.length == 1) {
+			WebService.loop(Integer.parseInt(args[0]));
+		} else if (args.length == 2) {
+			exportFile(new File(args[1]), importFile(new File(args[0])));
+		} else {
 			log.severe("Too many arguments.");
-			return;
 		}
-		exportFile(new File(args[1]), importFile(new File(args[0])));
 	}
 
 	private static String getExtension(final File file) {
