@@ -1,2 +1,2 @@
-Main-Class: cc.drawall.ui.Main
+Main-Class: cc.drawall.ConVector
 
