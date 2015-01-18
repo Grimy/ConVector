@@ -7,7 +7,7 @@ javadoc.xml
 .sonar
 blah.*
 result.*
-drawall.jar
+convector.jar
 examples
 output
 doc/out

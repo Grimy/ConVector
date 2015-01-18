@@ -19,7 +19,6 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Locale;
 import java.util.ServiceLoader;
 
 /** The base class for all Exporter plugins.
@@ -73,9 +72,8 @@ public abstract class Exporter {
 		final Rectangle2D bounds = drawing.getBounds();
 		final double ratio = 65535 / Math.max(bounds.getWidth(), bounds.getHeight());
 		final int reverse = (flags & REVERSE) == 0 ? 1 : -1;
-		final AffineTransform normalize = new AffineTransform(
-				ratio, 0, 0, ratio * reverse, -bounds.getX() * ratio,
-				((flags & REVERSE) * bounds.getHeight() + bounds.getY() * reverse) * ratio);
+		final AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio * reverse,
+				0, (flags & REVERSE) * bounds.getHeight() * ratio);
 		writeHeader(bounds.getWidth(), bounds.getHeight(), 1 / ratio);
 		for (final Drawing.Splash splash: drawing) {
 			writeColor(splash.color);
@@ -143,7 +141,7 @@ public abstract class Exporter {
 			final Drawing drawing) {
 		for (final Exporter exporter: ServiceLoader.load(Exporter.class)) {
 			if (exporter.getClass().getSimpleName().replace("Exporter", "")
-					.toLowerCase(Locale.US).equals(filetype)) {
+					.equalsIgnoreCase(filetype)) {
 				exporter.output(drawing, output);
 			}
 		}
