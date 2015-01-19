@@ -25,14 +25,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /** An in-memory representation of a vector image.
   * A Drawing is an ordered list of colored areas. Those areas are rendered
   * so that the latter ones can hide the first ones by drawing over them. */
 class Drawing implements Iterable<Drawing.Splash> {
-	private static final Logger log = Logger.getLogger(Drawing.class.getName());
-
 	/* Buffer used for temporary storage of coordinates. */
 	private static final double[] coords = new double[6];
 
@@ -112,11 +109,12 @@ class Drawing implements Iterable<Drawing.Splash> {
 
 	/* Changes the order of shapes so as to reduce the total distance moved. */
 	void optimize() {
+		final int numSplashes = splashes.size();
 		split();
-		for (int i = 1; i < splashes.size(); i++) {
+		for (int i = 1; i < numSplashes; i++) {
 			double min = Double.POSITIVE_INFINITY;
 			int best = -1;
-			for (int j = i; j < splashes.size(); j++) {
+			for (int j = i; j < numSplashes; j++) {
 				final double dist = getDistance(splashes.get(i - 1).shape, splashes.get(j).shape);
 				best = dist < min ? j : best;
 				min = dist < min ? dist : min;
@@ -180,25 +178,5 @@ class Drawing implements Iterable<Drawing.Splash> {
 			}
 		}
 		return Math.abs(surface) / 2;
-	}
-
-	/* Returns true iff the specified Drawing is identical to this one. */
-	boolean looksLike(final Drawing that) {
-		log.warning("Entering looksLike");
-		if (this.splashes.size() != that.splashes.size()) {
-			log.warning(this.splashes.size() + " != " + that.splashes.size());
-			return false;
-		}
-		for (int i = 0; i < splashes.size(); i++) {
-			final Area xor = new Area(this.splashes.get(i).shape);
-			final double totalSize = computeSurface(xor);
-			xor.exclusiveOr((Area) that.splashes.get(i).shape);
-			final double ratio = computeSurface(xor) / totalSize;
-			log.warning("ratio: " + ratio);
-			if (ratio > 1E-4) {
-				return false;
-			}
-		}
-		return true;
 	}
 }

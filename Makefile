@@ -1,6 +1,5 @@
 MAKEFLAGS += -j
 CLASSPATH = -classpath bin
-TESTCP = -classpath bin:/usr/share/java/*:test
 
 JAVAC = javac $(CLASSPATH) -sourcepath src -source 1.8 -d bin
 JAVA = java -ea $(CLASSPATH) -Xss228m $(JAVA_ARGS)
@@ -39,9 +38,6 @@ run: build
 bench:
 	$(JAVA) -Xprof cc.drawall.ConVector $(ARGS)
 
-test:
-	javac $(TESTCP) test/cc/drawall/SVGTest.java && java $(TESTCP) org.junit.runner.JUnitCore cc.drawall.SVGTest
-
 deps:
 	jdeps -v -p cc.drawall bin/cc/drawall/*.class | grep -v '^ '
 
@@ -50,4 +46,4 @@ sonar: build
 	DISPLAY=:0 xdg-open .sonar/issues-report/issues-report-light.html
 
 .SECONDARY:
-.PHONY: all doc cache test format build clean run test bench sonar
+.PHONY: all doc build clean run bench sonar
