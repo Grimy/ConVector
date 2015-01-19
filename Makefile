@@ -19,9 +19,9 @@ bin/%.class: src/%.java
 bin/%: src/%
 	cp -r $< $@
 
-jar: build
+convector.jar: $(CLASSES) $(subst src/, bin/, $(RESOURCES))
 	for file in $$(cd src; find * -type f -not -name '*.java'); do cp "src/$$file" "bin/$$file"; done
-	cd bin; zip -r convector.jar *
+	cd bin; zip -r ../$@ *
 
 # "make doc": generate the documentation using Doxygen
 doc:
