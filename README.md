@@ -1,63 +1,61 @@
-DraWall
-=======
+ConVector
+=========
 
-DraWall est un traceur vertical. Il permet de reproduire une image sur un mur ou une autre surface verticale de n'importe quelle largeur (testé de 4cm à 5m).
+![The ConVector logo](http://drawall.cc/wordpress/wp-content/uploads/2015/01/convector_logo21.png)
 
-Les principaux objectifs de ce projet sont :
-- de simplifier l'utilisation du robot, au moyen d'une mise en œuvre simple et rapide et via un programme facilitant la création du dessin : aucune connaissance en programmation n'est nécessaire ;
-- de faciliter sa réalisation, grâce à une documentation détaillée en français ;
-- de s'appuyer sur une conception modulaire, en dissociant chaque étape du processus de réalisation d'un dessin, afin de laisser à l'utilisateur la liberté d'intervenir sur chacune d'entre elles s'il le souhaite ;
-- de faire évoluer constamment ce projet en ajoutant régulièrement de nouvelles fonctionnalités et en améliorant celles déjà implémentées, en se basant sur les retours des utilisateurs ;
-- de publier tous les éléments de ce projet sous licence libre afin que chacun puisse comprendre comment il fonctionne, le copier, le redistribuer et le modifier ;
-- par ces différents critères, de développer autour de ce projet une communauté composée d'artistes, de *makers* et toute les autres personnes trouvant ce projet intéressant.
+ConVector converts vector images between various formats. At the moment, it supports the following formats:
+- DOV (output only)
+- SVG
+- PostScript
+- GCode
+- PDF (output only)
 
-**Pour obtenir de l'aide sur l'installation et l'utilisation de la partie logicielle du robot, reportez-vous au [fichier d’instruction][ins].**
+For more informations about the DOV format, please see [the specifications](https://github.com/DraWallPlotter/ConVector/blob/master/doc/Specs.md).
 
-**Pour obtenir de l'aide à la réalisation d'un prototype de traceur, reportez-vous au dossier [documentation][doc]**.
+Quick Start
+===========
 
-Ce projet comporte un simulateur qui affiche les déplacements du robot en temps réel sur une interface graphique. Il permet ainsi de tester la bonne prise en charge d'un dessin avant de lancer sa reproduction et facilite également le développement du projet.
+- Download the [latest release](https://github.com/DraWallPlotter/ConVector/releases/download/v0.4.0/convector-0.4.0.jar)
+- Double-click the downloaded file. If you get an error, you have to install [Java 1.8](https://www.java.com/en/download/manual.jsp)
+- Click “Import”
+- Pick an image in one of the supported input formats (for example, an SVG file)
+- After a small wait, the image should be displayed
+- Click “Export”
+- Enter a filename, using the extension for the desired output format (for example, "name.dov")
 
-Ce projet est libre et évoluera grâce aux retours des utilisateurs. Questions, demande d'informations et suggestions sont donc les bienvenues.
+You can also [try ConVector online](http://convector.drawall.cc).
 
-Principe de fonctionnement
---------------------------
+Advanced Use
+============
 
-Le projet est composé d'un programme qui convertit une image vectorielle ou bitmap en fichier G-code exploitable par le robot. G-code est un format de fichier utilisé dans l'industrie pour commander les machines-outil à commande numérique (plus d'information [ici](http://fr.wikipedia.org/wiki/G-code)). Une fois ce fichier généré, il est nécessaire de le copier sur une carte SD, puis d'insérer celle-ci dans le lecteur de carte du robot. Ensuite, le robot reproduit l'image en interprétant les instructions du fichier G-code. Le fait de passer par un fichier intermédiaire permet une très grande liberté quand à la manière dont est dessinée l'image.
+Besides the graphical interface, ConVector can also be run from the command-line. This can be useful for batch processing, or to run ConVector as a web service.
+To convert a file :
 
-Description des dossiers et fichiers du dépôt
----------------------------------------------
+```sh
+java -jar convector.jar inputfile.svg outputfile.dov
+```
 
-- [documentation][doc] : Dossier contenant de la documentation relative à la réalisation d'un prototype du robot.
-- [library][lib] : Dossier de la librairie, contenant les fichiers à charger sur la carte Arduino.
-- [simulator][sim] : Dossier du programme simulateur du robot à lancer via le logiciel Processing.
-- [computer][com] : Dossier du programme à exécuter sur le PC, permettant notamment de générer, à partir d'une image, le fichier G-code qui sera analysé par le robot.
-- [instructions.md][ins] : Instructions d'installation et d'utilisation du robot, concernant la partie logicielle.
-- [COPYING.txt][cop] : Texte de licence GPL v3, sous laquelle est publié ce projet.
-- [SD_files][sd] : Dossier contenant les fichiers à placer sur la carte SD :
-	- [drawall.dcf][dcf] : fichier de configuration du dessin à éditer régulièrement en fonction de vos besoin ;
-	- [drawing.ngc][ngc] : fichier G-code de test, permettant de tester le bon fonctionnement du traceur.
-	_**Note :** Dans une prochaine version du programme, il sera possible d'envoyer ces fichiers sur la carte SD directement à travers la liaison série._
+Note that the extensions are used to guess the filetype of both files. If the output file already exists, it is replaced without warning.
 
-Contact et conditions d'utilisations
-------------------------------------
+To start a web server :
 
-Contact : contact@drawall.cc.
+```sh
+java -jar convector.jar 3434
+```
 
-Ce projet est libre : vous pouvez le redistribuer ou le modifier suivant les termes de la GNU GPLv3. L'ensemble du projet est publié sous cette licence, ce qui inclut les schémas électroniques, les schémas des pièces matérielles, la documentation utilisateur et développeur, ainsi que l'intégralité du code-source (incluant le programme chargé dans la puce, le simulateur et le logiciel PC). Pour plus de détails, consultez la [*GNU General Public License*][cop].
+You should see the following message:
 
-Remerciements
--------------
+```
+Listening on port 3434
+```
 
-- Le *[FabLab de Toulouse](http://www.artilect.fr/)*, pour m'avoir permis de partager mes expériences ;
-- L'équipe du projet *[Datacentre d'art](http://www.ordigami.net/circuit-beant.php)*, pour ma première collaboration avec une équipe tierce et pour avoir intégré mon projet à un véritable projet artistique.
+You can then point your browser (or curl) to [localhost:3434](http://localhost:3434). Here’s an example curl command :
+```sh
+curl --data-binary @inputfile.svg localhost:3434/svg/dov > outputfile.dov
+```
 
-[doc]: https://github.com/roipoussiere/Drawall/tree/master/documentation
-[dev]: https://github.com/roipoussiere/DraWall/blob/master/instructions.md#note-aux-d%C3%A9veloppeurs
-[ins]: http://instructions.drawbot.cc/
-[sim]: https://github.com/roipoussiere/Drawall/tree/master/simulator
-[lib]: https://github.com/roipoussiere/Drawall/tree/master/library
-[com]: https://github.com/roipoussiere/Drawall/tree/master/computer
-[cop]: https://github.com/roipoussiere/Drawall/blob/master/COPYING.txt
-[sd]: https://github.com/roipoussiere/Drawall/blob/master/library/SD_files
-[dcf]: library/SD_files/drawall.dcf
-[ngc]: library/SD_files/drawall.ngc
+DraWall Project
+===============
+
+ConVector is part of the DraWall project. DraWall is a robot that draws vector graphics on walls (or any vertical surface, actually).
+More information (in French) can be found on the [project site](http://www.drawall.cc).

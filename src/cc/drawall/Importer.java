@@ -8,18 +8,33 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU
  * General Public License along with DraWall. If not, see <http://www.gnu.org/licenses/>.
  * © 2012–2014 Nathanaël Jourdane
- * © 2014 Victor Adam
+ * © 2014-2015 Victor Adam
  */
 
 package cc.drawall;
 
-import java.io.InputStream;
+import java.nio.channels.ReadableByteChannel;
+import java.util.InputMismatchException;
+import java.util.ServiceLoader;
 
 /** Base interface for plugins. */
 @FunctionalInterface
-
 public interface Importer {
+	/** Interprets bytes read from `input` and draws on `output`. Each implementing class is a way
+	  * to interpret bytes as a vector image.
+	  * @param input the channel in which to read the data to be parsed
+	  * @return the resulting vector */
+	Graphics process(final ReadableByteChannel input);
 
-	/** Interprets `input` and draws on `output`. */
-	public void process(final InputStream input, final WriterGraphics2D output);
+	/** Parses the specified InputStream using a plugin appropriate for the
+	  * specified filetype, and returns the resulting Drawing. */
+	static Drawing importStream(final ReadableByteChannel input, final String filetype) {
+		for (Importer importer: ServiceLoader.load(Importer.class)) {
+			if (importer.getClass().getSimpleName().replace("Importer", "")
+					.equalsIgnoreCase(filetype)) {
+				return importer.process(input).drawing;
+			}
+		}
+		throw new InputMismatchException("No suitable importer found");
+	}
 }

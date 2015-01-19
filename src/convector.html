@@ -1,0 +1,53 @@
+HTTP/1.1 200 OK
+Content-Type: text/html
+Encoding: UTF-8
+
+<!DOCTYPE HTML>
+<html>
+	<head>
+		 <meta charset=UTF-8>
+	</head>
+	<body>
+		<label for=file>File to convert:</label>
+		<input type=file id=file />
+		<label for=type>Convert to:</label>
+		<select id=type>
+			<option value=dov>DOV</option>
+			<option value=gcode>GCode</option>
+			<option value=pdf>PDF</option>
+			<option value=ps>PostScript</option>
+			<option value=svg>SVG</option>
+		</select>
+		<input type=button id=submit value=Convert />
+		<a id=result></a>
+		<script>
+document.getElementById('submit').onclick = function() {
+	var xhr = new XMLHttpRequest();
+	var reader = new FileReader();
+	var file = document.getElementById('file').files[0];
+	var result = document.getElementById('result');
+	var lastPos = 0;
+
+	xhr.onload = function() {
+		// new Uint16Array(arrayBuffer);
+		var blob = new Blob([xhr.response], {type: 'application/octet-stream'});
+		result.href = URL.createObjectURL(blob);
+		result.textContent = 'Save';
+	}
+
+	reader.onload = function() {
+		var i = file.name.lastIndexOf('.');
+		var srcType = file.name.substr(i + 1);
+		var dstType = document.getElementById('type').value;
+		result.download = file.name.substr(0, i) + '.' + dstType;
+		xhr.open('POST', srcType + '/' + dstType, true);
+		xhr.responseType = "arraybuffer";
+		xhr.send(reader.result);
+	}
+
+	result.textContent = '';
+	reader.readAsArrayBuffer(file);
+}
+		</script>
+	</body>
+</html>
