@@ -15,16 +15,28 @@ package cc.drawall;
 
 import java.io.IOError;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
 class WebService implements Runnable {
 	private static final Logger log = Logger.getLogger(WebService.class.getName());
+	private static final ByteBuffer html = ByteBuffer.allocate(4096);
+
+	static {
+		try (final InputStream in = WebService.class.getResourceAsStream("/convector.html");
+			final ReadableByteChannel chan = Channels.newChannel(in)) {
+			chan.read(html);
+			html.flip();
+		} catch (final IOException e) {
+			throw new IOError(e);
+		}
+	}
 
 	private SocketChannel client;
 
@@ -45,20 +57,11 @@ class WebService implements Runnable {
 		}
 	}
 
-	private static ByteBuffer getHTML() {
-		try (final RandomAccessFile file = new RandomAccessFile(
-					WebService.class.getResource("/convector.html").getFile(), "rw");
-				final FileChannel chan = file.getChannel()) {
-			return chan.map(FileChannel.MapMode.READ_ONLY, 0, file.length());
-		} catch (final IOException e) {
-			throw new IOError(e);
-		}
-	}
-	
 	private static ByteBuffer process(final HTTPChannel chan) {
 		final String[] filetypes = chan.url.split("/");
 		if (filetypes.length < 3) {
-			return getHTML();
+			html.position(0);
+			return html;
 		}
 		final ByteBuffer result = ByteBuffer.allocate(10 << 20);
 		log.warning(chan + ", " + filetypes[1]);
