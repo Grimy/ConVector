@@ -78,7 +78,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v)));
 		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v)));
 		attrHandlers.put("font-family", v -> g.setFont(v));
-		// font-weight:bold;text-align:center;text-anchor:middle;
+		// font-weight, text-align, text-anchor
 	}
 
 	private void handleAttr(final String name, final String value) {
@@ -111,7 +111,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	/** Parses a floating-point number, respecting SVG units. */
 	private static float parseLength(final String floatString) {
-		if (floatString.equals("medium")) {
+		if ("medium".equals(floatString)) {
 			return 12;
 		}
 		final int index = floatString.length() - 2;  // all SVG units are 2 chars long
@@ -306,14 +306,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	@Override
-	public void characters(char[] ch, int start, int length) {
-		if (g.getFont() == null) {
-			return;
+	public void characters(final char[] ch, final int start, final int length) {
+		if (g.getFont() != null) {
+			g.moveTo(false, getFloat("x", 0f), getFloat("y", 0f));
+			g.charpath(new String(ch, start, length));
+			g.draw();
 		}
-		String str = new String(ch, start, length);
-		log.warning("Writing: " + str);
-		g.moveTo(false, getFloat("x", 0f), getFloat("y", 0f));
-		g.charpath(str);
-		g.draw();
 	}
 }

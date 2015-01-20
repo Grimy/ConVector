@@ -198,7 +198,7 @@ public class Graphics {
 	  * @param text the text to be outlined */
 	public void charpath(final String text) {
 		assert font != null : "Undefined font";
-		AffineTransform t = relativeTransform();
+		final AffineTransform t = relativeTransform();
 		t.scale(1, -1);
 		path.append(t.createTransformedShape(font.createGlyphVector(
 			new FontRenderContext(null, true, false), text).getOutline()), false);
