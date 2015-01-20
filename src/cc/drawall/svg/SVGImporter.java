@@ -16,7 +16,6 @@ package cc.drawall.svg;
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.StringReader;
@@ -229,9 +228,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				cmd = '!';
 				break;
 			case 'A':
-				g.arcTo(relative, new Point2D.Float(scanner.nextFloat(), scanner.nextFloat()),
-						scanner.nextFloat(), scanner.nextInt() != 0, scanner.nextInt() != 0,
-						scanner.nextFloat(), scanner.nextFloat());
+				final float rx = scanner.nextFloat(), ry = scanner.nextFloat();
+				g.arcTo(relative, scanner.nextFloat(),
+						scanner.nextInt() != 0, scanner.nextInt() != 0,
+						rx, ry, scanner.nextFloat(), scanner.nextFloat());
 				break;
 			case 'H': // horizontal
 				g.lineTo(relative, scanner.nextFloat(), Float.NaN);

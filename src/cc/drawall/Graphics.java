@@ -83,8 +83,7 @@ public class Graphics {
 	  * For example, if only one pair is given, the result is a first-order Bézier curve,
 	  * aka a straight line.
 	  * @param relative whether to interpret coordinates as relative to the current point
-	  * @param points the array containing the control point coordinates of the desired curve.
-	  */
+	  * @param points the array containing the control point coordinates of the desired curve */
 	public void lineTo(final boolean relative, final float... points) {
 		transform(relative, points);
 		if (points.length == 2) {
@@ -100,15 +99,15 @@ public class Graphics {
 
 	/** Appends an elliptical arc specified by endpoint parameterization to the current path.
 	  * @param relative whether to interpret coordinates as relative to the current point
-	  * @param radius TODO
 	  * @param xAxisRotation indicates how the ellipse as a whole is rotated
 	  * @param largeArcFlag whether to choose one of the larger arc sweeps
 	  * @param sweepFlag whether to choose one of the counterclockwise arc sweeps
-	  * @param points TODO
-	  */
-	public void arcTo(final boolean relative, final Point2D radius, final float xAxisRotation,
+	  * @param points the coordinates of the center and end point of the ellipse to be drawn */
+	public void arcTo(final boolean relative, final float xAxisRotation,
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
-		transform(relative, points);
+		final Point2D radius = new Point2D.Float(points[0], points[1]);
+		final float[] end = {points[2], points[3]};
+		transform(relative, end);
 		ctm.deltaTransform(radius, radius);
 		final Point2D p0 = path.getCurrentPoint();
 		final double x0 = p0.getX();
@@ -116,17 +115,15 @@ public class Graphics {
 		double rx = Math.abs(radius.getX());
 		double ry = Math.abs(radius.getY());
 		final double angle = Math.toRadians(xAxisRotation % 360.0);
-		final double x2 = points[0];
-		final double y2 = points[1];
 
 		// Based on w3c’s SVG specification, Appendix F.6.5
 		// Step 1 : Compute (x1, y1)
-		final double dx2 = (x0 - x2) / 2.0;
-		final double dy2 = (y0 - y2) / 2.0;
-		final double cosAngle = Math.cos(angle);
-		final double sinAngle = Math.sin(angle);
-		final double x1 = cosAngle * dx2 + sinAngle * dy2;
-		final double y1 = -sinAngle * dx2 + cosAngle * dy2;
+		final double dx2 = (x0 - end[0]) / 2.0;
+		final double dy2 = (y0 - end[1]) / 2.0;
+		final double cos = Math.cos(angle);
+		final double sin = Math.sin(angle);
+		final double x1 =  cos * dx2 + sin * dy2;
+		final double y1 = -sin * dx2 + cos * dy2;
 
 		// Ensure radii are large enough
 		final double radiiCheck = x1 * x1 / (rx * rx) + y1 * y1 / (ry * ry);
@@ -142,21 +139,20 @@ public class Graphics {
 		final double cy1 = coef * -ry * x1 / rx;
 
 		// Step 3 : Compute (cx, cy) from (cx1, cy1)
-		final double cx = (x0 + x2) / 2.0 + cosAngle * cx1 - sinAngle * cy1;
-		final double cy = (y0 + y2) / 2.0 + sinAngle * cx1 + cosAngle * cy1;
+		final double cx = (x0 + end[0]) / 2.0 + cos * cx1 - sin * cy1;
+		final double cy = (y0 + end[1]) / 2.0 + sin * cx1 + cos * cy1;
 
 		// Step 4 : Compute the angleStart and the angleExtent
-		// TODO use atan2 or AffineTransform
 		final double ux = (x1 - cx1) / rx;
 		final double uy = (y1 - cy1) / ry;
-		double n = Math.sqrt(ux * ux + uy * uy);
-		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d) * Math.acos(ux / n));
+		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d) * Math.acos(
+				ux / Math.sqrt(ux * ux + uy * uy)));
 		final double vx = (-x1 - cx1) / rx;
 		final double vy = (-y1 - cy1) / ry;
-		n = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
 		final double p = ux * vx + uy * vy;
 		final double angleExtent = (Math.toDegrees((ux * vy < uy * vx ? -1.0 : 1.0)
-				* Math.acos(p / n)) + (sweepFlag ? 360.0 : -360.0)) % 360.0;
+				* Math.acos(p / Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))))
+				+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
 
 		// We can now build the resulting Arc2D in double precision
 		path.append(AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(

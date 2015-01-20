@@ -26,8 +26,11 @@ public interface Importer {
 	  * @return the resulting vector */
 	Graphics process(final ReadableByteChannel input);
 
-	/** Parses the specified InputStream using a plugin appropriate for the
-	  * specified filetype, and returns the resulting Drawing. */
+	/** Parses the specified InputStream using a plugin appropriate for the specified filetype
+	  * and returns the resulting Drawing.
+	  * @param input the channel in which to read the data to be parsed
+	  * @param filetype indicates how to interpret read data
+	  * @return the resulting vector */
 	static Drawing importStream(final ReadableByteChannel input, final String filetype) {
 		for (Importer importer: ServiceLoader.load(Importer.class)) {
 			if (importer.getClass().getSimpleName().replace("Importer", "")
@@ -35,6 +38,6 @@ public interface Importer {
 				return importer.process(input).drawing;
 			}
 		}
-		throw new InputMismatchException("No suitable importer found");
+		throw new InputMismatchException("No suitable importer found for " + filetype);
 	}
 }
