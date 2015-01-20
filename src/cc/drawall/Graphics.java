@@ -16,8 +16,6 @@ package cc.drawall;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontFormatException;
-import java.awt.GraphicsEnvironment;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
@@ -27,7 +25,6 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -201,7 +198,9 @@ public class Graphics {
 	  * @param text the text to be outlined */
 	public void charpath(final String text) {
 		assert font != null : "Undefined font";
-		path.append(relativeTransform().createTransformedShape(font.createGlyphVector(
+		AffineTransform t = relativeTransform();
+		t.scale(1, -1);
+		path.append(t.createTransformedShape(font.createGlyphVector(
 			new FontRenderContext(null, true, false), text).getOutline()), false);
 	}
 
@@ -340,27 +339,20 @@ public class Graphics {
 	  * If no fitting font is found in the system, an attempt is made to load one
 	  * from the ressource files. */
 	public void setFont(final String fontDescriptor) {
-		final String fontName = fontDescriptor.split(" ")[0];
-		final GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		if (!Arrays.asList(env.getAvailableFontFamilyNames()).contains(fontName)) {
-			try {
-				log.info("Loading font " + fontDescriptor);
-				env.registerFont(Font.createFont(Font.TYPE1_FONT,
-					getClass().getResourceAsStream("/fonts/" + fontName)));
-			} catch (final IOException | FontFormatException e) {
-				// Fallback to another font
-				log.warning("Cannot load font " + fontName + ": " + e);
-			}
-		}
-		// TODO: revert font only when necessary
+		log.warning("Setting font to: " + fontDescriptor);
 		font = new Font(fontDescriptor, 0, (int) fontSize)
 			.deriveFont(AffineTransform.getScaleInstance(1, -1));
+	}
+
+	public Font getFont() {
+		return font;
 	}
 
 	/** Set the font size.
 	  * @param fontSize the desired font size, in points */
 	public void setFontSize(final float fontSize) {
 		this.fontSize = fontSize;
+		font = font == null ? null : font.deriveFont(fontSize);
 	}
 
 	/** Pushes a snapshot of the graphical state on the save stack.
