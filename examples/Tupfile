@@ -1,7 +1,7 @@
 JAR=../convector.jar
-: foreach *.svg | $(JAR) |> java -jar $(JAR) %f %o |> svg/%b.svg <all>
-: foreach *.svg | $(JAR) |> java -jar $(JAR) %f %o |> ps/%b.ps   <all>
-: foreach *.svg | $(JAR) |> java -jar $(JAR) %f %o |> pdf/%b.pdf <all>
+: foreach *.svg | $(JAR) |> java -ea -jar $(JAR) %f %o |> svg/%b.svg <all>
+: foreach *.svg | $(JAR) |> java -ea -jar $(JAR) %f %o |> ps/%b.ps   <all>
+: foreach *.svg | $(JAR) |> java -ea -jar $(JAR) %f %o |> pdf/%b.pdf <all>
 : foreach *.svg | <all> |> \
 		montage -background white \
 		\( -border 1 "%b" \) \
