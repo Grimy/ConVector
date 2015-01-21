@@ -29,7 +29,7 @@ public abstract class Exporter {
 	private static final Charset ASCII = Charset.forName("US-ASCII");
 
 	// Buffer to hold PathIterator coordinates
-	private static final double[] coords = new double[6];
+	private final double[] coords = new double[6];
 
 	/** Flag indicating the generated image should be vertically reversed.
 	  * Set this if the ouput filetype has the 0,0 point at the bottom-left corner. */

@@ -31,7 +31,7 @@ import java.util.Map;
   * so that the latter ones can hide the first ones by drawing over them. */
 class Drawing implements Iterable<Drawing.Splash> {
 	/* Buffer used for temporary storage of coordinates. */
-	private static final double[] coords = new double[6];
+	private final double[] coords = new double[6];
 
 	/* The bounding rectangle of this Drawing (initially empty). */
 	private Rectangle2D bounds = new Rectangle2D.Double(0, 0, -1, -1);
@@ -151,7 +151,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 	}
 
 	/* Returns the distance between the first points of two Shapes. */
-	private static double getDistance(final Shape a, final Shape b) {
+	private double getDistance(final Shape a, final Shape b) {
 		a.getPathIterator(null).currentSegment(coords);
 		final double ax = coords[0], ay = coords[1];
 		b.getPathIterator(null).currentSegment(coords);
@@ -160,7 +160,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 	}
 
 	/* Returns the surface of the specified area. */
-	static double computeSurface(final Area area) {
+	double computeSurface(final Area area) {
 		double surface = 0.0;
 		double x = 0.0, y = 0.0, startX = 0.0, startY = 0.0, prevX, prevY;
 		for (final PathIterator i = area.getPathIterator(null, 0); !i.isDone(); i.next()) {
