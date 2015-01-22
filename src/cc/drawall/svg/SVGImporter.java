@@ -47,6 +47,17 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Logger log = Logger.getLogger(SVGImporter.class.getName());
 
 	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
+
+	private static final Map<String, Float> fontSizes = new HashMap<>(); {
+		fontSizes.put("xx-small", 125 / 18f);
+		fontSizes.put("x-small", 25 / 3f);
+		fontSizes.put("small", 10f);
+		fontSizes.put("medium", 12f);
+		fontSizes.put("large", 14.4f);
+		fontSizes.put("x-large", 17.28f);
+		fontSizes.put("xx-large", 20.736f);
+	}
+
 	private static final Map<String, Float> unitMap = new HashMap<>(); {
 		// Conversion ratios to pixels, as given by the SVG spec in 7.10: Units
 		unitMap.put("px", 1f);
@@ -64,6 +75,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private String currentGradient;
 	private final Map<String, Color> gradients = new HashMap<>();
 	private Attributes attributes;
+	private boolean inText;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
@@ -111,8 +123,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	/** Parses a floating-point number, respecting SVG units. */
 	private static float parseLength(final String floatString) {
-		if ("medium".equals(floatString)) {
-			return 12;
+		if (fontSizes.containsKey(floatString)) {
+			return fontSizes.get(floatString);
 		}
 		final int index = floatString.length() - 2;  // all SVG units are 2 chars long
 		final Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
@@ -134,7 +146,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			handleAttr(attributes.getLocalName(i), attributes.getValue(i));
 		}
 
-		String d = null;
 		switch (name) {
 		case "svg":
 			g.append(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
@@ -146,8 +157,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			currentGradient = "url(#" + attributes.getValue("id") + ")";
 			break;
 		case "line":
-			d = "M " + getFloat("x1", 0f) + "," + getFloat("y1", 0f)
-			   + "," + getFloat("x2", 0f) + "," + getFloat("y2", 0f);
+			parsePathData("M " + getFloat("x1", 0f) + "," + getFloat("y1", 0f)
+			   + "," + getFloat("x2", 0f) + "," + getFloat("y2", 0f));
 			break;
 		case "circle":
 		case "ellipse":
@@ -157,13 +168,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			final float cy = getFloat("cy", 0f);
 			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
 					cx - rx, cy - ry, 2 * rx, 2 * ry)));
-			g.draw();
 			break;
 		case "polygon":
-			d = "M" + attributes.getValue("points") + "z";
+			parsePathData("M" + attributes.getValue("points") + "z");
 			break;
 		case "polyline":
-			d = "M" + attributes.getValue("points");
+			parsePathData("M" + attributes.getValue("points"));
 			break;
 		case "rect":
 			if (getFloat("rx", 0f) > 0f || getFloat("ry", 0f) > 0f) {
@@ -172,26 +182,30 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			g.append(g.getTransform().createTransformedShape(new Rectangle2D.Float(
 					getFloat("x", 0f), getFloat("y", 0f),
 					getFloat("width", 0f), getFloat("height", 0f))));
-			g.draw();
+			break;
+		case "text":
+		case "tspan":
+			g.moveTo(false, getFloat("x", Float.NaN), getFloat("y", Float.NaN));
+			inText = true;
 			break;
 		case "defs":
 		case "clipPath":
 			g.setColor(null);
 			g.setFillColor(null);
 			break;
+		case "path":
+			parsePathData(attributes.getValue("d"));
+			break;
 		default:
-			d = attributes.getValue("d");
-		}
-		if (d != null) {
-			parsePathData(d);
-		}
-		if (g.getCurrentPoint() != null) {
-			g.draw();
 		}
 	}
 
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
+		if (g.getCurrentPoint() != null) {
+			g.draw();
+		}
+		inText &= !"text".equals(name);
 		g.restore();
 	}
 
@@ -264,7 +278,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (gradients.containsKey(colorName)) {
 			return gradients.get(colorName);
 		}
-
 		try {
 			final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
 			return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
@@ -307,10 +320,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	@Override
 	public void characters(final char[] ch, final int start, final int length) {
-		if (g.getFont() != null) {
-			g.moveTo(false, getFloat("x", 0f), getFloat("y", 0f));
-			g.charpath(new String(ch, start, length));
-			g.draw();
+		log.warning("Writing: " + new String(ch, start, length) + " at " + g.getCurrentPoint());
+		if (inText) {
+			String text = new String(ch, start, length).trim();
+			if (!text.isEmpty()) {
+				g.charpath(text);
+			}
 		}
 	}
 }
