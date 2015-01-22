@@ -339,7 +339,7 @@ public class Graphics {
 	  * If no fitting font is found in the system, an attempt is made to load one
 	  * from the ressource files. */
 	public void setFont(final String fontDescriptor) {
-		log.warning("Setting font to: " + fontDescriptor);
+		log.fine("Setting font to: " + fontDescriptor);
 		font = new Font(fontDescriptor, 0, (int) fontSize)
 			.deriveFont(AffineTransform.getScaleInstance(1, -1));
 	}

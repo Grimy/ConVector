@@ -1,9 +1,1 @@
-preload src/
-preload src/cc/
-preload src/cc/drawall
-preload src/cc/drawall/dov
-preload src/cc/drawall/ps
-preload src/cc/drawall/svg
-preload src/cc/drawall/gcode
-run ./javac.pl
-: {bin} |> cd bin; zip -r -FS ../%o *; cd ../src; zip -r ../%o * |> convector.jar
+: |> make |> convector.jar
