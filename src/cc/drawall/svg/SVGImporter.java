@@ -184,9 +184,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 					getFloat("width", 0f), getFloat("height", 0f))));
 			break;
 		case "text":
+			g.moveTo(false, getFloat("x", 0), getFloat("y", 0));
+			inText = true;
+			break;
 		case "tspan":
 			g.moveTo(false, getFloat("x", Float.NaN), getFloat("y", Float.NaN));
-			inText = true;
 			break;
 		case "defs":
 		case "clipPath":
@@ -205,7 +207,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (g.getCurrentPoint() != null) {
 			g.draw();
 		}
-		inText &= !"text".equals(name);
+		inText &= !name.equals("text");
 		g.restore();
 	}
 
@@ -320,10 +322,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	@Override
 	public void characters(final char[] ch, final int start, final int length) {
-		log.warning("Writing: " + new String(ch, start, length) + " at " + g.getCurrentPoint());
 		if (inText) {
 			String text = new String(ch, start, length).trim();
 			if (!text.isEmpty()) {
+				log.warning("Writing: " + new String(ch, start, length) + " at " + g.getCurrentPoint());
 				g.charpath(text);
 			}
 		}
