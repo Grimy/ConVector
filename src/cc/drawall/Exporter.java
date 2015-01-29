@@ -19,7 +19,6 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.ServiceLoader;
 
 /** The base class for all Exporter plugins.
   * Provides a common template for all output filetypes. Abstract methods should be overriden
@@ -134,16 +133,5 @@ public abstract class Exporter {
 	  * @return the number of bytes written to the output stream so far */
 	protected final int bytesWritten() {
 		return out.position();
-	}
-
-	/** Writes a drawing to a stream, using a plugin appropriate for the specified filetype. */
-	static void exportStream(final ByteBuffer output, final String filetype,
-			final Drawing drawing) {
-		for (final Exporter exporter: ServiceLoader.load(Exporter.class)) {
-			if (exporter.getClass().getSimpleName().replace("Exporter", "")
-					.equalsIgnoreCase(filetype)) {
-				exporter.output(drawing, output);
-			}
-		}
 	}
 }
