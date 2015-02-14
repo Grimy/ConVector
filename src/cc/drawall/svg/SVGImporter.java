@@ -79,7 +79,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
-		attrHandlers.put("stroke", v -> g.setColor(parseColor(v)));
+		attrHandlers.put("stroke", v -> g.setStrokeColor(parseColor(v)));
 		attrHandlers.put("stop-color", v -> gradients.put(currentGradient, parseColor(v)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
@@ -101,7 +101,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public Graphics process(final ReadableByteChannel input) {
 		g.setFillColor(Color.BLACK);
-		g.setColor(null);
+		g.setStrokeColor(null);
 		try {
 			SAXParserFactory.newInstance().newSAXParser().parse(
 					Channels.newInputStream(input), this);
@@ -192,7 +192,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			break;
 		case "defs":
 		case "clipPath":
-			g.setColor(null);
+			g.setStrokeColor(null);
 			g.setFillColor(null);
 			break;
 		case "path":
@@ -204,10 +204,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
-		if (g.getCurrentPoint() != null) {
-			g.draw();
-		}
 		inText &= !name.equals("text");
+		g.draw();
 		g.restore();
 	}
 
@@ -248,6 +246,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				break;
 			case 'Z':
 				g.closePath();
+				g.draw();
 				cmd = '!';
 				break;
 			case 'A':
@@ -325,7 +324,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (inText) {
 			String text = new String(ch, start, length).trim();
 			if (!text.isEmpty()) {
-				log.warning("Writing: " + new String(ch, start, length) + " at " + g.getCurrentPoint());
 				g.charpath(text);
 			}
 		}

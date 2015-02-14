@@ -48,7 +48,7 @@ public class GCodeImporter implements Importer {
 
 	private final Map<Integer, Runnable> gcodes = new HashMap<>(); {
 		gcodes.put(0, () -> {
-			g.draw();
+			g.stroke().reset();
 			g.moveTo(relative, readPos('X'), readPos('Y'));
 		});
 		gcodes.put(1, () -> g.lineTo(relative, readPos('X'), readPos('Y')));
@@ -81,8 +81,8 @@ public class GCodeImporter implements Importer {
 	}
 
 	private final Map<Integer, Runnable> mcodes = new HashMap<>(); {
-		mcodes.put(2,  () -> g.draw());
-		mcodes.put(30, () -> g.draw());
+		mcodes.put(2,  () -> g.stroke());
+		mcodes.put(30, () -> g.stroke());
 	}
 
 	@Override

@@ -47,7 +47,7 @@ public class Graphics {
 				-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private final Path2D path = new Path2D.Float();
-	private Color color = Color.BLACK;
+	private Color strokeColor = Color.BLACK;
 	private Color fillColor;
 	private Font font;
 	private float fontSize = 1;
@@ -229,41 +229,49 @@ public class Graphics {
 	// Drawing operations //
 	////////////////////////
 
-	/** Stroke and/or fill the current path, then reset it. */
-	public void draw() {
-		if (fillColor != null) {
-			path.closePath();
-			paintArea(fillColor, new Area(path));
+	/** Stroke the current path with the stroking Color. */
+	public Graphics stroke() {
+		if (strokeColor == null || path.getCurrentPoint() == null) {
+			return this;
 		}
-		if (color != null) {
-			try {
-				final Shape inverse = ctm.createInverse().createTransformedShape(path);
-				final Shape stroked = stroke.createStrokedShape(inverse);
-				paintArea(color, new Area(ctm.createTransformedShape(stroked)));
-			} catch (final NoninvertibleTransformException e) {
-				// Non-invertible transforms squash any shape to empty areas
-				log.finer(e.toString());
-			}
+		try {
+			final Shape inverse = ctm.createInverse().createTransformedShape(path);
+			final Shape stroked = stroke.createStrokedShape(inverse);
+			drawing.paint(strokeColor, clipped(ctm.createTransformedShape(stroked)));
+		} catch (final NoninvertibleTransformException e) {
+			// Non-invertible transforms squash any shape to empty areas
+			log.finer(e.toString());
 		}
-		path.reset();
+		return this;
 	}
 
-	/** Fill the current path with the main color, then reset it.
+	/** Fill the current path with the filling Color.
 	  * @param windingRule the winding rule to use
 	  * @see java.awt.geom.GeneralPath */
-	public void fill(final int windingRule) {
-		if (path.getCurrentPoint() == null) {
-			return;
+	public Graphics fill(final int windingRule) {
+		if (fillColor == null || path.getCurrentPoint() == null) {
+			return this;
 		}
 		path.closePath();
 		path.setWindingRule(windingRule);
-		paintArea(color, new Area(path));
-		path.reset();
+		Area area = new Area(path);
+		area.intersect(clippath);
+		drawing.paint(fillColor, area);
+		return this;
 	}
 
-	private void paintArea(final Color color, final Area area) {
-		area.intersect(clippath);
-		drawing.paint(color, area);
+	public void draw() {
+		stroke();
+		fill(Path2D.WIND_EVEN_ODD);
+		Point2D p = path.getCurrentPoint();
+		path.reset();
+		path.moveTo(p == null ? 0 : p.getX(), p == null ? 0 : p.getY());
+	}
+
+	private Area clipped(Shape shape) {
+		Area result = new Area(shape);
+		result.intersect(clippath);
+		return result;
 	}
 
 	///////////////////////
@@ -319,12 +327,12 @@ public class Graphics {
 		}
 	}
 
-	public void setColor(final Color color) {
-		this.color = color;
+	public void setStrokeColor(final Color strokeColor) {
+		this.strokeColor = strokeColor;
 	}
 
-	public void setFillColor(final Color color) {
-		this.fillColor = color;
+	public void setFillColor(final Color fillColor) {
+		this.fillColor = fillColor;
 	}
 
 	public AffineTransform getTransform() {
@@ -373,7 +381,7 @@ public class Graphics {
 	private void copy(final Graphics that) {
 		this.ctm.setTransform(that.ctm);
 		this.clippath = (Area) that.clippath.clone();
-		this.color = that.color;
+		this.strokeColor = that.strokeColor;
 		this.fillColor = that.fillColor;
 		this.font = that.font;
 		this.stroke = new BasicStroke(stroke.getLineWidth(), stroke.getEndCap(),

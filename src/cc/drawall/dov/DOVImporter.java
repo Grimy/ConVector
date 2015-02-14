@@ -51,7 +51,7 @@ public class DOVImporter implements Importer {
 			}
 			g.lineTo(false, x, y);
 		}
-		g.draw();
+		g.stroke();
 		return g;
 	}
 }

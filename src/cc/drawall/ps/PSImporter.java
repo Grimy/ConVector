@@ -260,13 +260,13 @@ public class PSImporter implements Importer {
 		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
 		builtin("setdash",       () -> g.setStrokeDash(popArray(), p(1)));
 		builtin("showpage", NOOP);
-		builtin("setrgbcolor", () -> g.setColor(new Color(p(3), p(), p())));
-		builtin("sethsbcolor", () -> g.setColor(Color.getHSBColor(p(3), p(), p())));
+		builtin("setrgbcolor", () -> g.setStrokeColor(new Color(p(3), p(), p())));
+		builtin("sethsbcolor", () -> g.setStrokeColor(Color.getHSBColor(p(3), p(), p())));
 		builtin("setcmykcolor", () -> stack.push(new Color(
 				ColorSpace.getInstance(ColorSpace.TYPE_CMYK),
 				new float[] {p(4), p(), p(), p()}, 1.0f)));
 		builtin("setcmykcolor", () -> substack(4).clear());
-		builtin("setgray", () -> g.setColor(new Color((int) (0xFFFFFF * p(1)))));
+		builtin("setgray", () -> g.setStrokeColor(new Color((int) (0xFFFFFF * p(1)))));
 		builtin("clippath", () -> {
 			g.reset();
 			g.append(g.getClip());
@@ -310,9 +310,9 @@ public class PSImporter implements Importer {
 		});
 
 		// Painting
-		builtin("stroke", () -> g.draw());
-		builtin("fill", () -> g.fill(Path2D.WIND_NON_ZERO));
-		builtin("eofill", () -> g.fill(Path2D.WIND_EVEN_ODD));
+		builtin("stroke", () -> g.stroke().reset());
+		builtin("fill", () -> g.fill(Path2D.WIND_NON_ZERO).reset());
+		builtin("eofill", () -> g.fill(Path2D.WIND_EVEN_ODD).reset());
 		builtin("clip", () -> g.clip());
 
 		// Insideness-testing
