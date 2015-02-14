@@ -148,7 +148,7 @@ class ConVector extends Canvas {
 			if (importer.getClass().getSimpleName().replace("Importer", "")
 					.equalsIgnoreCase(filetype)) {
 				return importer.process(input).drawing;
-					}
+			}
 		}
 		throw new InputMismatchException("No suitable importer found for " + filetype);
 	}
