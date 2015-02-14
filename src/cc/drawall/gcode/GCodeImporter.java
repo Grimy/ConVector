@@ -89,10 +89,16 @@ public class GCodeImporter implements Importer {
 	public Graphics process(final ReadableByteChannel input) {
 		scanner = new Scanner(input, "ascii");
 		g.moveTo(false, 0, 0);
-		g.setStrokeWidth(.01f);
 
 		// Ignore whitespace and comments
-		scanner.useDelimiter("(\\s|\\([^()]*\\)|^;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
+		scanner.useDelimiter("(\\s|\\([^()]*\\)|;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
+
+		scanner.skip("; (\\d+)x(\\d+)\n");
+		int width = Integer.parseInt(scanner.match().group(1));
+		int height = Integer.parseInt(scanner.match().group(2));
+		double ratio = Math.max(width, height) / 65535.0;
+		g.getTransform().scale(ratio, ratio);
+		g.setStrokeWidth((float) (1 / ratio));
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
