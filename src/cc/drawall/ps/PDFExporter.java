@@ -26,7 +26,7 @@ public class PDFExporter extends Exporter {
 
 	/** Constructor. */
 	public PDFExporter() {
-		super(REVERSE, "% % m", "% % l", null, "% % % % % % c", "h");
+		super(REVERSE, "% % m", "% % l", "", "% % % % % % c", "h");
 	}
 
 	@Override

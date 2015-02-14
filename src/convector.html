@@ -5,11 +5,58 @@ Encoding: UTF-8
 <!DOCTYPE HTML>
 <html>
 	<head>
-		 <meta charset=UTF-8>
+		<meta charset=UTF-8>
+		<style media="screen" type="text/css">
+* {
+	margin: 0px;
+	padding: 0px;
+}
+body {
+	font-style: normal;
+	font-family: "Lato","Helvetica Neue",Helvetica,sans-serif;
+	text-decoration: none;
+	font-weight: 400;
+	color: #272727;
+}
+label, input, select, a {
+	height: 30px;
+	line-height: 30px;
+	margin: 5px;
+}
+label {
+	display: inline-block;
+	width: 7em;
+}
+select {
+	width: 7em;
+}
+a {
+	display: none;
+	width: 6em;
+
+	text-decoration: none;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.15s linear 0s;
+	text-shadow: 0px 0.075em 0.075em rgba(0, 0, 0, 0.5);
+
+	background-color: #555;
+	border: 1px solid #AAA;
+	color: #FFF;
+}
+a:hover {
+	background-color: #ef2201;
+	border-color: #AC1100;
+}
+.nice_button {
+	display: inline-block;
+}
+		</style>
 	</head>
 	<body>
 		<label for=file>File to convert:</label>
 		<input type=file id=file />
+		<br/>
 		<label for=type>Convert to:</label>
 		<select id=type>
 			<option value=dov>DOV</option>
@@ -18,8 +65,8 @@ Encoding: UTF-8
 			<option value=ps>PostScript</option>
 			<option value=svg>SVG</option>
 		</select>
-		<input type=button id=submit value=Convert />
-		<a id=result></a>
+		<a id=submit class=nice_button>Convert</a>
+		<a id=result title="Click to get the generated file."></a>
 		<script>
 document.getElementById('submit').onclick = function() {
 	var xhr = new XMLHttpRequest();
@@ -33,6 +80,7 @@ document.getElementById('submit').onclick = function() {
 		var blob = new Blob([xhr.response], {type: 'application/octet-stream'});
 		result.href = URL.createObjectURL(blob);
 		result.textContent = 'Save';
+		result.className = 'nice_button';
 	}
 
 	reader.onload = function() {
