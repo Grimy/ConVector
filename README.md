@@ -1,7 +1,7 @@
 ConVector
 =========
 
-![The ConVector logo](http://drawall.cc/wordpress/wp-content/uploads/2015/01/convector_logo21.png)
+![The ConVector logo](http://drawall.cc/wordpress/wp-content/uploads/2015/01/convector_logo2.png)
 
 ConVector converts vector images between various formats. At the moment, it supports the following formats:
 - DOV (output only)
