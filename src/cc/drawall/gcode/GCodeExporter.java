@@ -20,7 +20,7 @@ public class GCodeExporter extends Exporter {
 
 	/** Constructor. */
 	public GCodeExporter() {
-		super(MERGE | SHORTEN | REVERSE, "G00 X% Y%", "G01 X% Y%", "G5.1 I% J% X% Y%", "G5 I% J% P% Q% X% Y%");
+		super(MERGE | SHORTEN | FLATTEN | REVERSE, "G00 X% Y%", "G01 X% Y%");
 	}
 
 	@Override
