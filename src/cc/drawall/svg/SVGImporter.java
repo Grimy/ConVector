@@ -167,6 +167,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
 						getFloat("height", Float.MAX_VALUE)));
 			break;
+		case "radialGradient":
+			gradients.put("url(#" + attributes.getValue("id") + ")", null);
+			break;
 		case "defs":
 		case "symbol":
 		case "clipPath":
@@ -299,7 +302,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private void parseColor(final String colorName, final Consumer<Color> callback) {
 		log.info("Parsing color: <" + colorName + ">");
 		if (gradients.containsKey(colorName)) {
-			log.info("Valid gradient!");
+			log.warning("Gradient " + colorName + " maps to " + gradients.get(colorName));
 			callback.accept(gradients.get(colorName));
 		}
 		if (colorName.startsWith("url")) {
