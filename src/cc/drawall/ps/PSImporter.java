@@ -251,9 +251,9 @@ public class PSImporter implements Importer {
 		).toArray()));
 
 		// Graphics State
-		builtin("gsave", () -> g.save());
-		builtin("grestore", () -> g.restore());
-		builtin("grestoreall", () -> g.restore());
+		builtin("gsave",         () -> g.save());
+		builtin("grestore",      () -> g.restore().reset());
+		builtin("grestoreall",   () -> g.restore().reset());
 		builtin("setlinecap",    () -> g.setLineCap(popFlag()));
 		builtin("setlinejoin",   () -> g.setLineJoin(popFlag()));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));

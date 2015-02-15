@@ -16,6 +16,7 @@ package cc.drawall.svg;
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.StringReader;
@@ -72,18 +73,23 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
 
 	private final Graphics g = new Graphics();
-	private String currentGradient;
+	private String currentID;
 	private final Map<String, Color> gradients = new HashMap<>();
+	private final Map<String, Path2D> paths = new HashMap<>();
 	private Attributes attributes;
 	private boolean inText;
+	private int inDefs;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
+		attrHandlers.put("clip-path", v -> {
+			g.setClip(g.getTransform().createTransformedShape(paths.get(v)));
+		});
 		attrHandlers.put("stroke", v -> g.setStrokeColor(parseColor(v)));
-		attrHandlers.put("stop-color", v -> gradients.put(currentGradient, parseColor(v)));
+		attrHandlers.put("stop-color", v -> gradients.put(currentID, parseColor(v)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
-				handleAttr(prop.split(":")[0].trim(), prop.split(":")[1].trim())));
+				handleAttr(prop.split(":")[0], prop.split(":")[1])));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(caps.indexOf(v)));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(joins.indexOf(v)));
@@ -95,9 +101,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private void handleAttr(final String name, final String value) {
 		log.fine(name + "=" + value);
-		attrHandlers.getOrDefault(name, v -> {/*NOOP*/}).accept(value);
+		attrHandlers.getOrDefault(name.trim(), v -> {/*NOOP*/}).accept(value.trim());
 	}
-
 
 	@Override
 	public Graphics process(final ReadableByteChannel input) {
@@ -141,6 +146,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void startElement(final String namespace, final String local,
 			final String name, final Attributes attributes) {
+		log.fine("<" + name + ">");
 		g.save();
 		this.attributes = attributes;
 		for (int i = 0; i < attributes.getLength(); i++) {
@@ -149,13 +155,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 		switch (name) {
 		case "svg":
-			g.append(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
+			g.setClip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
 						getFloat("height", Float.MAX_VALUE)));
-			g.clip();
-			g.reset();
 			break;
+		case "clipPath":
 		case "linearGradient":
-			currentGradient = "url(#" + attributes.getValue("id") + ")";
+			++inDefs;
+			currentID = "url(#" + attributes.getValue("id") + ")";
 			break;
 		case "line":
 			parsePathData("M " + getFloat("x1", 0f) + "," + getFloat("y1", 0f)
@@ -191,13 +197,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		case "tspan":
 			g.moveTo(false, getFloat("x", Float.NaN), getFloat("y", Float.NaN));
 			break;
-		case "defs":
-		case "clipPath":
-			g.setStrokeColor(null);
-			g.setFillColor(null);
-			break;
 		case "path":
 			parsePathData(attributes.getValue("d"));
+			break;
+		case "defs":
+			++inDefs;
 			break;
 		default:
 		}
@@ -205,9 +209,18 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
-		inText &= !name.equals("text");
 		log.fine("</" + name + ">");
-		g.draw();
+		if (name.equals("clipPath")) {
+			log.fine("Adding clippath: " + currentID);
+			paths.put(currentID, g.getPath());
+			g.reset();
+		}
+		if (inDefs == 0) {
+			g.draw();
+			g.reset();
+		}
+		inText &= !name.equals("text");
+		inDefs -= (name.equals("defs") || name.equals("clipPath") || name.equals("linearGradient") ? 1 : 0);
 		g.restore();
 	}
 
@@ -246,7 +259,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				break;
 			case 'Z':
 				g.closePath();
-				g.draw();
+				if (inDefs == 0) {
+					g.draw();
+				}
 				cmd = '!';
 				break;
 			case 'A':

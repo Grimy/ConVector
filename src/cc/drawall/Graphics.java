@@ -165,6 +165,7 @@ public class Graphics {
 
 	/** Resets the path to its initial, empty state. */
 	public void reset() {
+		log.fine("g.reset()");
 		path.reset();
 	}
 
@@ -261,6 +262,7 @@ public class Graphics {
 	}
 
 	public void draw() {
+		log.fine("g.draw()");
 		stroke();
 		fill(Path2D.WIND_EVEN_ODD);
 		Point2D p = path.getCurrentPoint();
@@ -335,6 +337,14 @@ public class Graphics {
 		this.fillColor = fillColor;
 	}
 
+	public Path2D getPath() {
+		return (Path2D) path.clone();
+	}
+
+	public void setClip(Shape s) {
+		clippath.intersect(new Area(s));
+	}
+
 	public AffineTransform getTransform() {
 		return ctm;
 	}
@@ -374,8 +384,9 @@ public class Graphics {
 	/** Reverts the graphical state to the latest snapshot.
 	  * The used snapshot is popped from the save stack, so that a later restore()
 	  * will restore an earlier snapshot. */
-	public void restore() {
+	public Graphics restore() {
 		copy(prev);
+		return this;
 	}
 
 	private void copy(final Graphics that) {
@@ -389,7 +400,5 @@ public class Graphics {
 				stroke.getDashPhase());
 		this.drawing = that.drawing;
 		this.prev = that.prev;
-		this.path.reset();
-		this.path.append(that.path, false);
 	}
 }
