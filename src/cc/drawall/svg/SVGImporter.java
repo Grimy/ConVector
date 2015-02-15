@@ -81,6 +81,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private int inDefs;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
+		attrHandlers.put("display", v -> {
+			if (v.equals("none")) {
+				g.setClip(new Rectangle2D.Float(0, 0, 0, 0));
+			}
+		});
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
 		attrHandlers.put("clip-path", v -> {
 			g.setClip(g.getTransform().createTransformedShape(paths.get(v)));
