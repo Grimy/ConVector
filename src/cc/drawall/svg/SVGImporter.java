@@ -16,7 +16,6 @@ package cc.drawall.svg;
 import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.io.StringReader;
@@ -48,6 +47,17 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Logger log = Logger.getLogger(SVGImporter.class.getName());
 
 	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
+
+	private static final Map<String, Float> fontSizes = new HashMap<>(); {
+		fontSizes.put("xx-small", 125 / 18f);
+		fontSizes.put("x-small", 25 / 3f);
+		fontSizes.put("small", 10f);
+		fontSizes.put("medium", 12f);
+		fontSizes.put("large", 14.4f);
+		fontSizes.put("x-large", 17.28f);
+		fontSizes.put("xx-large", 20.736f);
+	}
+
 	private static final Map<String, Float> unitMap = new HashMap<>(); {
 		// Conversion ratios to pixels, as given by the SVG spec in 7.10: Units
 		unitMap.put("px", 1f);
@@ -64,10 +74,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Graphics g = new Graphics();
 	private String currentGradient;
 	private final Map<String, Color> gradients = new HashMap<>();
+	private Attributes attributes;
+	private boolean inText;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
-		attrHandlers.put("stroke", v -> g.setColor(parseColor(v)));
+		attrHandlers.put("stroke", v -> g.setStrokeColor(parseColor(v)));
 		attrHandlers.put("stop-color", v -> gradients.put(currentGradient, parseColor(v)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
@@ -76,6 +88,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(caps.indexOf(v)));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(joins.indexOf(v)));
 		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v)));
+		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v)));
+		attrHandlers.put("font-family", v -> g.setFont(v));
+		// font-weight, text-align, text-anchor
 	}
 
 	private void handleAttr(final String name, final String value) {
@@ -86,7 +101,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public Graphics process(final ReadableByteChannel input) {
 		g.setFillColor(Color.BLACK);
-		g.setColor(null);
+		g.setStrokeColor(null);
 		try {
 			SAXParserFactory.newInstance().newSAXParser().parse(
 					Channels.newInputStream(input), this);
@@ -108,84 +123,89 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	/** Parses a floating-point number, respecting SVG units. */
 	private static float parseLength(final String floatString) {
+		if (fontSizes.containsKey(floatString)) {
+			return fontSizes.get(floatString);
+		}
 		final int index = floatString.length() - 2;  // all SVG units are 2 chars long
 		final Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
 		return multiplier == null ? Float.parseFloat(floatString)
 			: multiplier * Float.parseFloat(floatString.substring(0, index));
 	}
 
-	private static float getFloat(final Attributes attr, final String name,
-			final float def) {
-		final String value = attr.getValue(name);
+	private float getFloat(final String name, final float def) {
+		final String value = attributes.getValue(name);
 		return value == null ? def : parseLength(value);
 	}
 
 	@Override
 	public void startElement(final String namespace, final String local,
-			final String name, final Attributes attr) {
+			final String name, final Attributes attributes) {
 		g.save();
-		for (int i = 0; i < attr.getLength(); i++) {
-			handleAttr(attr.getLocalName(i), attr.getValue(i));
+		this.attributes = attributes;
+		for (int i = 0; i < attributes.getLength(); i++) {
+			handleAttr(attributes.getLocalName(i), attributes.getValue(i));
 		}
 
-		String d = null;
 		switch (name) {
 		case "svg":
-			g.append(new Rectangle2D.Float(0, 0, getFloat(attr, "width", Float.MAX_VALUE),
-						getFloat(attr, "height", Float.MAX_VALUE)));
+			g.append(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
+						getFloat("height", Float.MAX_VALUE)));
 			g.clip();
 			g.reset();
 			break;
 		case "linearGradient":
-			currentGradient = "url(#" + attr.getValue("id") + ")";
+			currentGradient = "url(#" + attributes.getValue("id") + ")";
 			break;
 		case "line":
-			d = "M " + attr.getValue("x1") + "," + attr.getValue("y1")
-			   + "," + attr.getValue("x2") + "," + attr.getValue("y2");
+			parsePathData("M " + getFloat("x1", 0f) + "," + getFloat("y1", 0f)
+			   + "," + getFloat("x2", 0f) + "," + getFloat("y2", 0f));
 			break;
 		case "circle":
 		case "ellipse":
-			final float rx = getFloat(attr, "rx", getFloat(attr, "r", 0f));
-			final float ry = getFloat(attr, "ry", getFloat(attr, "r", 0f));
-			final float cx = getFloat(attr, "cx", 0f);
-			final float cy = getFloat(attr, "cy", 0f);
+			final float rx = getFloat("rx", getFloat("r", 0f));
+			final float ry = getFloat("ry", getFloat("r", 0f));
+			final float cx = getFloat("cx", 0f);
+			final float cy = getFloat("cy", 0f);
 			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
 					cx - rx, cy - ry, 2 * rx, 2 * ry)));
-			g.draw();
 			break;
 		case "polygon":
-			d = "M" + attr.getValue("points") + "z";
+			parsePathData("M" + attributes.getValue("points") + "z");
 			break;
 		case "polyline":
-			d = "M" + attr.getValue("points");
+			parsePathData("M" + attributes.getValue("points"));
 			break;
 		case "rect":
-			if (getFloat(attr, "rx", 0f) > 0f || getFloat(attr, "ry", 0f) > 0f) {
+			if (getFloat("rx", 0f) > 0f || getFloat("ry", 0f) > 0f) {
 				log.severe("Rounded rectangles are not handled.");
 			}
 			g.append(g.getTransform().createTransformedShape(new Rectangle2D.Float(
-					getFloat(attr, "x", 0f), getFloat(attr, "y", 0f),
-					getFloat(attr, "width", 0f), getFloat(attr, "height", 0f))));
-			g.draw();
+					getFloat("x", 0f), getFloat("y", 0f),
+					getFloat("width", 0f), getFloat("height", 0f))));
+			break;
+		case "text":
+			g.moveTo(false, getFloat("x", 0), getFloat("y", 0));
+			inText = true;
+			break;
+		case "tspan":
+			g.moveTo(false, getFloat("x", Float.NaN), getFloat("y", Float.NaN));
 			break;
 		case "defs":
 		case "clipPath":
-			g.setColor(null);
+			g.setStrokeColor(null);
 			g.setFillColor(null);
 			break;
+		case "path":
+			parsePathData(attributes.getValue("d"));
+			break;
 		default:
-			d = attr.getValue("d");
-		}
-		if (d != null) {
-			parsePathData(d);
-		}
-		if (g.getCurrentPoint() != null) {
-			g.draw();
 		}
 	}
 
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
+		inText &= !name.equals("text");
+		g.draw();
 		g.restore();
 	}
 
@@ -226,12 +246,14 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				break;
 			case 'Z':
 				g.closePath();
+				g.draw();
 				cmd = '!';
 				break;
 			case 'A':
-				g.arcTo(relative, new Point2D.Float(scanner.nextFloat(), scanner.nextFloat()),
-						scanner.nextFloat(), scanner.nextInt() != 0, scanner.nextInt() != 0,
-						scanner.nextFloat(), scanner.nextFloat());
+				final float rx = scanner.nextFloat(), ry = scanner.nextFloat();
+				g.arcTo(relative, scanner.nextFloat(),
+						scanner.nextInt() != 0, scanner.nextInt() != 0,
+						rx, ry, scanner.nextFloat(), scanner.nextFloat());
 				break;
 			case 'H': // horizontal
 				g.lineTo(relative, scanner.nextFloat(), Float.NaN);
@@ -257,7 +279,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (gradients.containsKey(colorName)) {
 			return gradients.get(colorName);
 		}
-
 		try {
 			final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
 			return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
@@ -296,5 +317,15 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			}
 		}
 		return result;
+	}
+
+	@Override
+	public void characters(final char[] ch, final int start, final int length) {
+		if (inText) {
+			String text = new String(ch, start, length).trim();
+			if (!text.isEmpty()) {
+				g.charpath(text);
+			}
+		}
 	}
 }

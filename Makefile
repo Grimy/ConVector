@@ -1,53 +1,20 @@
-MAKEFLAGS += -j
-CLASSPATH = -classpath bin
-TESTCP = -classpath bin:/usr/share/java/*:test
+MAKEFLAGS += --no-builtin-rules --silent
 
-JAVAC = javac $(CLASSPATH) -sourcepath src -source 1.8 -d bin
-JAVA = java -ea $(CLASSPATH) -Xss228m $(JAVA_ARGS)
-CLASSES   = $(shell find src -name '*.java' | sed -r 's!src!bin!;s!java$$!class!')
-RESOURCES = $(shell find src/* -maxdepth 0 -not -name cc)
-IMAGES := $(shell find examples/* -maxdepth 0 -type f)
-IMAGES := $(subst examples,output,$(IMAGES))
-IMAGES := $(IMAGES:=.png)
+convector.jar: $(shell find src -name '*.java')
+	mkdir tmp
+	pkill -xf 'java -ea -jar convector.jar 3434' || true
+	LANG=en_US.UTF-8 javac -classpath bin -sourcepath src -source 1.8 -d tmp $?
+	cd tmp; zip -q -r -m ../$@ *; cd ../src; zip -q ../$@ `find . -type f -not -name '*.java'`
+	rmdir tmp
 
-# "make build": use ecj to compile .java files into .class files
-build: $(CLASSES) $(subst src/, bin/, $(RESOURCES))
+serve:
+	while true; do java -ea -jar convector.jar 3434; done
 
-bin/%.class: src/%.java
-	$(JAVAC) $<
-
-bin/%: src/%
-	cp -r $< $@
-
-convector.jar: $(CLASSES) $(subst src/, bin/, $(RESOURCES))
-	for file in $$(cd src; find * -type f -not -name '*.java'); do cp "src/$$file" "bin/$$file"; done
-	cd bin; zip -r ../$@ *
-
-# "make doc": generate the documentation using Doxygen
 doc:
 	doxygen doc/Doxyfile
 
-# "make clean": remove generated files
-clean:
-	rm -rf bin/*
-
-# "make run ARGS=[...]": invokes java on the main class with specified arguments
-run: build
-	$(JAVA) cc.drawall.ConVector $(ARGS)
-
-# "make bench": runs benchmarks
-bench:
-	$(JAVA) -Xprof cc.drawall.ConVector $(ARGS)
-
-test:
-	javac $(TESTCP) test/cc/drawall/SVGTest.java && java $(TESTCP) org.junit.runner.JUnitCore cc.drawall.SVGTest
-
-deps:
-	jdeps -v -p cc.drawall bin/cc/drawall/*.class | grep -v '^ '
-
-sonar: build
+sonar: convector.jar
 	sonar-runner
 	DISPLAY=:0 xdg-open .sonar/issues-report/issues-report-light.html
 
-.SECONDARY:
-.PHONY: all doc cache test format build clean run test bench sonar
+.PHONY: serve doc sonar

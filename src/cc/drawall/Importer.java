@@ -14,8 +14,6 @@
 package cc.drawall;
 
 import java.nio.channels.ReadableByteChannel;
-import java.util.InputMismatchException;
-import java.util.ServiceLoader;
 
 /** Base interface for plugins. */
 @FunctionalInterface
@@ -26,15 +24,4 @@ public interface Importer {
 	  * @return the resulting vector */
 	Graphics process(final ReadableByteChannel input);
 
-	/** Parses the specified InputStream using a plugin appropriate for the
-	  * specified filetype, and returns the resulting Drawing. */
-	static Drawing importStream(final ReadableByteChannel input, final String filetype) {
-		for (Importer importer: ServiceLoader.load(Importer.class)) {
-			if (importer.getClass().getSimpleName().replace("Importer", "")
-					.equalsIgnoreCase(filetype)) {
-				return importer.process(input).drawing;
-			}
-		}
-		throw new InputMismatchException("No suitable importer found");
-	}
 }

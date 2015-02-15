@@ -24,7 +24,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.util.InputMismatchException;
 import java.util.Locale;
+import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
@@ -73,7 +76,7 @@ class ConVector extends Canvas {
 	private static Drawing importFile(final File file) {
 		try (final FileInputStream input = new FileInputStream(file);
 				final FileChannel chan = input.getChannel()) {
-			return Importer.importStream(chan, getExtension(file));
+			return importStream(chan, getExtension(file));
 		} catch (final IOException e) {
 			log.severe("Problem reading file " + file.getName() + ": " + e);
 			return new Drawing();
@@ -84,7 +87,7 @@ class ConVector extends Canvas {
 		try (final RandomAccessFile handle = new RandomAccessFile(file, "rw");
 				final FileChannel chan = handle.getChannel()) {
 			final ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 10 << 20);
-			Exporter.exportStream(output, getExtension(file), drawing);
+			exportStream(output, getExtension(file), drawing);
 			chan.truncate(output.position());
 		} catch (final IOException e) {
 			log.severe("Can’t open file for writing: " + file.getName());
@@ -132,6 +135,32 @@ class ConVector extends Canvas {
 		for (final Drawing.Splash splash: drawing) {
 			g.setColor(splash.color);
 			g.fill(splash.shape);
+		}
+	}
+
+	/** Parses the specified InputStream using a plugin appropriate for the specified filetype
+	  * and returns the resulting Drawing.
+	  * @param input the channel in which to read the data to be parsed
+	  * @param filetype indicates how to interpret read data
+	  * @return the resulting vector */
+	static Drawing importStream(final ReadableByteChannel input, final String filetype) {
+		for (Importer importer: ServiceLoader.load(Importer.class)) {
+			if (importer.getClass().getSimpleName().replace("Importer", "")
+					.equalsIgnoreCase(filetype)) {
+				return importer.process(input).drawing;
+			}
+		}
+		throw new InputMismatchException("No suitable importer found for " + filetype);
+	}
+
+	/** Writes a drawing to a stream, using a plugin appropriate for the specified filetype. */
+	static void exportStream(final ByteBuffer output, final String filetype,
+			final Drawing drawing) {
+		for (final Exporter exporter: ServiceLoader.load(Exporter.class)) {
+			if (exporter.getClass().getSimpleName().replace("Exporter", "")
+					.equalsIgnoreCase(filetype)) {
+				exporter.output(drawing, output);
+			}
 		}
 	}
 }

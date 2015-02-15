@@ -16,8 +16,6 @@ package cc.drawall;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontFormatException;
-import java.awt.GraphicsEnvironment;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
@@ -27,7 +25,6 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -50,7 +47,7 @@ public class Graphics {
 				-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private final Path2D path = new Path2D.Float();
-	private Color color = Color.BLACK;
+	private Color strokeColor = Color.BLACK;
 	private Color fillColor;
 	private Font font;
 	private float fontSize = 1;
@@ -83,8 +80,7 @@ public class Graphics {
 	  * For example, if only one pair is given, the result is a first-order Bézier curve,
 	  * aka a straight line.
 	  * @param relative whether to interpret coordinates as relative to the current point
-	  * @param points the array containing the control point coordinates of the desired curve.
-	  */
+	  * @param points the array containing the control point coordinates of the desired curve */
 	public void lineTo(final boolean relative, final float... points) {
 		transform(relative, points);
 		if (points.length == 2) {
@@ -100,15 +96,15 @@ public class Graphics {
 
 	/** Appends an elliptical arc specified by endpoint parameterization to the current path.
 	  * @param relative whether to interpret coordinates as relative to the current point
-	  * @param radius TODO
 	  * @param xAxisRotation indicates how the ellipse as a whole is rotated
 	  * @param largeArcFlag whether to choose one of the larger arc sweeps
 	  * @param sweepFlag whether to choose one of the counterclockwise arc sweeps
-	  * @param points TODO
-	  */
-	public void arcTo(final boolean relative, final Point2D radius, final float xAxisRotation,
+	  * @param points the coordinates of the center and end point of the ellipse to be drawn */
+	public void arcTo(final boolean relative, final float xAxisRotation,
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
-		transform(relative, points);
+		final Point2D radius = new Point2D.Float(points[0], points[1]);
+		final float[] end = {points[2], points[3]};
+		transform(relative, end);
 		ctm.deltaTransform(radius, radius);
 		final Point2D p0 = path.getCurrentPoint();
 		final double x0 = p0.getX();
@@ -116,17 +112,15 @@ public class Graphics {
 		double rx = Math.abs(radius.getX());
 		double ry = Math.abs(radius.getY());
 		final double angle = Math.toRadians(xAxisRotation % 360.0);
-		final double x2 = points[0];
-		final double y2 = points[1];
 
 		// Based on w3c’s SVG specification, Appendix F.6.5
 		// Step 1 : Compute (x1, y1)
-		final double dx2 = (x0 - x2) / 2.0;
-		final double dy2 = (y0 - y2) / 2.0;
-		final double cosAngle = Math.cos(angle);
-		final double sinAngle = Math.sin(angle);
-		final double x1 = cosAngle * dx2 + sinAngle * dy2;
-		final double y1 = -sinAngle * dx2 + cosAngle * dy2;
+		final double dx2 = (x0 - end[0]) / 2.0;
+		final double dy2 = (y0 - end[1]) / 2.0;
+		final double cos = Math.cos(angle);
+		final double sin = Math.sin(angle);
+		final double x1 =  cos * dx2 + sin * dy2;
+		final double y1 = -sin * dx2 + cos * dy2;
 
 		// Ensure radii are large enough
 		final double radiiCheck = x1 * x1 / (rx * rx) + y1 * y1 / (ry * ry);
@@ -142,21 +136,20 @@ public class Graphics {
 		final double cy1 = coef * -ry * x1 / rx;
 
 		// Step 3 : Compute (cx, cy) from (cx1, cy1)
-		final double cx = (x0 + x2) / 2.0 + cosAngle * cx1 - sinAngle * cy1;
-		final double cy = (y0 + y2) / 2.0 + sinAngle * cx1 + cosAngle * cy1;
+		final double cx = (x0 + end[0]) / 2.0 + cos * cx1 - sin * cy1;
+		final double cy = (y0 + end[1]) / 2.0 + sin * cx1 + cos * cy1;
 
 		// Step 4 : Compute the angleStart and the angleExtent
-		// TODO use atan2 or AffineTransform
 		final double ux = (x1 - cx1) / rx;
 		final double uy = (y1 - cy1) / ry;
-		double n = Math.sqrt(ux * ux + uy * uy);
-		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d) * Math.acos(ux / n));
+		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d) * Math.acos(
+				ux / Math.sqrt(ux * ux + uy * uy)));
 		final double vx = (-x1 - cx1) / rx;
 		final double vy = (-y1 - cy1) / ry;
-		n = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
 		final double p = ux * vx + uy * vy;
 		final double angleExtent = (Math.toDegrees((ux * vy < uy * vx ? -1.0 : 1.0)
-				* Math.acos(p / n)) + (sweepFlag ? 360.0 : -360.0)) % 360.0;
+				* Math.acos(p / Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))))
+				+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
 
 		// We can now build the resulting Arc2D in double precision
 		path.append(AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(
@@ -205,7 +198,9 @@ public class Graphics {
 	  * @param text the text to be outlined */
 	public void charpath(final String text) {
 		assert font != null : "Undefined font";
-		path.append(relativeTransform().createTransformedShape(font.createGlyphVector(
+		final AffineTransform t = relativeTransform();
+		t.scale(1, -1);
+		path.append(t.createTransformedShape(font.createGlyphVector(
 			new FontRenderContext(null, true, false), text).getOutline()), false);
 	}
 
@@ -234,41 +229,49 @@ public class Graphics {
 	// Drawing operations //
 	////////////////////////
 
-	/** Stroke and/or fill the current path, then reset it. */
-	public void draw() {
-		if (fillColor != null) {
-			path.closePath();
-			paintArea(fillColor, new Area(path));
+	/** Stroke the current path with the stroking Color. */
+	public Graphics stroke() {
+		if (strokeColor == null || path.getCurrentPoint() == null) {
+			return this;
 		}
-		if (color != null) {
-			try {
-				final Shape inverse = ctm.createInverse().createTransformedShape(path);
-				final Shape stroked = stroke.createStrokedShape(inverse);
-				paintArea(color, new Area(ctm.createTransformedShape(stroked)));
-			} catch (final NoninvertibleTransformException e) {
-				// Non-invertible transforms squash any shape to empty areas
-				log.finer(e.toString());
-			}
+		try {
+			final Shape inverse = ctm.createInverse().createTransformedShape(path);
+			final Shape stroked = stroke.createStrokedShape(inverse);
+			drawing.paint(strokeColor, clipped(ctm.createTransformedShape(stroked)));
+		} catch (final NoninvertibleTransformException e) {
+			// Non-invertible transforms squash any shape to empty areas
+			log.finer(e.toString());
 		}
-		path.reset();
+		return this;
 	}
 
-	/** Fill the current path with the main color, then reset it.
+	/** Fill the current path with the filling Color.
 	  * @param windingRule the winding rule to use
 	  * @see java.awt.geom.GeneralPath */
-	public void fill(final int windingRule) {
-		if (path.getCurrentPoint() == null) {
-			return;
+	public Graphics fill(final int windingRule) {
+		if (fillColor == null || path.getCurrentPoint() == null) {
+			return this;
 		}
 		path.closePath();
 		path.setWindingRule(windingRule);
-		paintArea(color, new Area(path));
-		path.reset();
+		Area area = new Area(path);
+		area.intersect(clippath);
+		drawing.paint(fillColor, area);
+		return this;
 	}
 
-	private void paintArea(final Color color, final Area area) {
-		area.intersect(clippath);
-		drawing.paint(color, area);
+	public void draw() {
+		stroke();
+		fill(Path2D.WIND_EVEN_ODD);
+		Point2D p = path.getCurrentPoint();
+		path.reset();
+		path.moveTo(p == null ? 0 : p.getX(), p == null ? 0 : p.getY());
+	}
+
+	private Area clipped(Shape shape) {
+		Area result = new Area(shape);
+		result.intersect(clippath);
+		return result;
 	}
 
 	///////////////////////
@@ -324,12 +327,12 @@ public class Graphics {
 		}
 	}
 
-	public void setColor(final Color color) {
-		this.color = color;
+	public void setStrokeColor(final Color strokeColor) {
+		this.strokeColor = strokeColor;
 	}
 
-	public void setFillColor(final Color color) {
-		this.fillColor = color;
+	public void setFillColor(final Color fillColor) {
+		this.fillColor = fillColor;
 	}
 
 	public AffineTransform getTransform() {
@@ -344,27 +347,20 @@ public class Graphics {
 	  * If no fitting font is found in the system, an attempt is made to load one
 	  * from the ressource files. */
 	public void setFont(final String fontDescriptor) {
-		final String fontName = fontDescriptor.split(" ")[0];
-		final GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		if (!Arrays.asList(env.getAvailableFontFamilyNames()).contains(fontName)) {
-			try {
-				log.info("Loading font " + fontDescriptor);
-				env.registerFont(Font.createFont(Font.TYPE1_FONT,
-					getClass().getResourceAsStream("/fonts/" + fontName)));
-			} catch (final IOException | FontFormatException e) {
-				// Fallback to another font
-				log.warning("Cannot load font " + fontName + ": " + e);
-			}
-		}
-		// TODO: revert font only when necessary
+		log.fine("Setting font to: " + fontDescriptor);
 		font = new Font(fontDescriptor, 0, (int) fontSize)
 			.deriveFont(AffineTransform.getScaleInstance(1, -1));
+	}
+
+	public Font getFont() {
+		return font;
 	}
 
 	/** Set the font size.
 	  * @param fontSize the desired font size, in points */
 	public void setFontSize(final float fontSize) {
 		this.fontSize = fontSize;
+		font = font == null ? null : font.deriveFont(fontSize);
 	}
 
 	/** Pushes a snapshot of the graphical state on the save stack.
@@ -385,7 +381,7 @@ public class Graphics {
 	private void copy(final Graphics that) {
 		this.ctm.setTransform(that.ctm);
 		this.clippath = (Area) that.clippath.clone();
-		this.color = that.color;
+		this.strokeColor = that.strokeColor;
 		this.fillColor = that.fillColor;
 		this.font = that.font;
 		this.stroke = new BasicStroke(stroke.getLineWidth(), stroke.getEndCap(),

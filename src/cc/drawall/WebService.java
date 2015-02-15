@@ -1,5 +1,4 @@
-/*
- * This file is part of DraWall.
+/* This file is part of DraWall.
  * DraWall is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
@@ -40,7 +39,7 @@ class WebService implements Runnable {
 
 	private SocketChannel client;
 
-	WebService(SocketChannel client) {
+	WebService(final SocketChannel client) {
 		this.client = client;
 	}
 
@@ -52,7 +51,7 @@ class WebService implements Runnable {
 			send(reply);
 			log.info("Successfully sent " + reply.position() + "B of reply");
 			client.shutdownOutput();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new IOError(e);
 		}
 	}
@@ -64,10 +63,8 @@ class WebService implements Runnable {
 			return html;
 		}
 		final ByteBuffer result = ByteBuffer.allocate(10 << 20);
-		log.warning(chan + ", " + filetypes[1]);
-		final Drawing drawing = Importer.importStream(chan, filetypes[1]);
-		log.warning(result + ", " + filetypes[2] + ", " + drawing);
-		Exporter.exportStream(result, filetypes[2], drawing);
+		final Drawing drawing = ConVector.importStream(chan, filetypes[1]);
+		ConVector.exportStream(result, filetypes[2], drawing);
 		result.flip();
 		return result;
 	}
@@ -85,7 +82,7 @@ class WebService implements Runnable {
 			for (;;) {
 				new Thread(new WebService(serv.accept())).start();
 			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			throw new IOError(e);
 		}
 	}

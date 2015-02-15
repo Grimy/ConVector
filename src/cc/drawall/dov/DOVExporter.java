@@ -27,15 +27,18 @@ public class DOVExporter extends Exporter {
 
 	@Override
 	protected void writeHeader(final double width, final double height, final double ratio) {
-		write("#\u0039\u00FF\u00AF");
+		writeChar(0x2339);
+		writeChar(0xFFAF);
 		writeChar((int) width);
 		writeChar((int) height);
 	}
 
 	@Override
 	protected void writeSegment(final int type, final double[] coords) {
+		System.out.printf("%x, %x\n", (int) coords[0], (int) coords[1]);
 		switch (type) {
 		case PathIterator.SEG_MOVETO:
+			writeChar(0xFFFF);
 			writeChar(0x0001);
 			writeChar((int) coords[0]);
 			writeChar((int) coords[1]);
@@ -44,10 +47,8 @@ public class DOVExporter extends Exporter {
 			writeChar((int) coords[0]);
 			writeChar((int) coords[1]);
 			break;
-		case PathIterator.SEG_CLOSE:
-			break;
 		default:
-			assert false : "Unexpected segment type; try setting -Dflatness";
+			assert false : "Unexpected segment type";
 		}
 	}
 }

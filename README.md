@@ -1,7 +1,7 @@
 ConVector
 =========
 
-![The ConVector logo](http://drawall.cc/wordpress/wp-content/uploads/2015/01/convector_logo21.png)
+![The ConVector logo](http://drawall.cc/wordpress/wp-content/uploads/2015/01/convector_logo2.png)
 
 ConVector converts vector images between various formats. At the moment, it supports the following formats:
 - DOV (output only)
@@ -15,7 +15,7 @@ For more informations about the DOV format, please see [the specifications](http
 Quick Start
 ===========
 
-- Download the [latest release](https://github.com/DraWallPlotter/ConVector/releases/download/v0.4.0/convector-0.4.0.jar)
+- Download the [latest release](https://github.com/DraWallPlotter/ConVector/releases/download/v0.4.1/convector-0.4.1.jar)
 - Double-click the downloaded file. If you get an error, you have to install [Java 1.8](https://www.java.com/en/download/manual.jsp)
 - Click “Import”
 - Pick an image in one of the supported input formats (for example, an SVG file)
