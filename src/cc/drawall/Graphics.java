@@ -262,9 +262,8 @@ public class Graphics {
 	}
 
 	public void draw() {
-		log.fine("g.draw()");
 		stroke();
-		fill(Path2D.WIND_EVEN_ODD);
+		fill(Path2D.WIND_NON_ZERO);
 		Point2D p = path.getCurrentPoint();
 		path.reset();
 		path.moveTo(p == null ? 0 : p.getX(), p == null ? 0 : p.getY());

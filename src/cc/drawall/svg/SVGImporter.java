@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.List;
@@ -73,12 +75,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
 
 	private final Graphics g = new Graphics();
-	private String currentID;
+	private final Deque<String> idStack = new ArrayDeque<>();
 	private final Map<String, Color> gradients = new HashMap<>();
 	private final Map<String, Path2D> paths = new HashMap<>();
 	private Attributes attributes;
 	private boolean inText;
-	private int inDefs;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("display", v -> {
@@ -86,12 +87,15 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.clip(new Rectangle2D.Float(0, 0, 0, 0));
 			}
 		});
-		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
+		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
 		attrHandlers.put("clip-path", v -> {
-			g.clip(g.getTransform().createTransformedShape(paths.get(v)));
+			if (paths.containsKey(v)) {
+				g.clip(g.getTransform().createTransformedShape(paths.get(v)));
+			}
 		});
-		attrHandlers.put("stroke", v -> g.setStrokeColor(parseColor(v)));
-		attrHandlers.put("stop-color", v -> gradients.put(currentID, parseColor(v)));
+		attrHandlers.put("stroke", v -> parseColor(v, g::setStrokeColor));
+		attrHandlers.put("stop-color", v -> parseColor(v, color ->
+					gradients.put(idStack.peek(), color)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 				handleAttr(prop.split(":")[0], prop.split(":")[1])));
@@ -164,10 +168,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 						getFloat("height", Float.MAX_VALUE)));
 			break;
 		case "defs":
+		case "symbol":
 		case "clipPath":
 		case "linearGradient":
-			++inDefs;
-			currentID = "url(#" + attributes.getValue("id") + ")";
+			idStack.push("url(#" + attributes.getValue("id") + ")");
+			if (name.equals("linearGradient") && attributes.getValue("xlink:href") != null) {
+				gradients.put(idStack.peek(), gradients.get("url(" + attributes.getValue("xlink:href") + ")"));
+			}
 			break;
 		case "line":
 			parsePathData("M " + getFloat("x1", 0f) + "," + getFloat("y1", 0f)
@@ -207,23 +214,23 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			parsePathData(attributes.getValue("d"));
 			break;
 		default:
+			log.info("Unhandled tag: " + name);
 		}
 	}
 
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
 		log.fine("</" + name + ">");
-		if (name.equals("clipPath")) {
-			log.fine("Adding clippath: " + currentID);
-			paths.put(currentID, g.getPath());
-			g.reset();
-		}
-		if (inDefs == 0) {
+		if (idStack.isEmpty()) {
 			g.draw();
+			g.reset();
+		} else if (name.equals("clipPath") || name.equals("symbol")
+				|| name.equals("defs") || name.equals("linearGradient")) {
+			log.fine("Adding path: " + idStack.peek());
+			paths.put(idStack.pop(), g.getPath());
 			g.reset();
 		}
 		inText &= !name.equals("text");
-		inDefs -= (name.equals("defs") || name.equals("clipPath") || name.equals("linearGradient") ? 1 : 0);
 		g.restore();
 	}
 
@@ -262,9 +269,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				break;
 			case 'Z':
 				g.closePath();
-				if (inDefs == 0) {
-					g.draw();
-				}
 				cmd = '!';
 				break;
 			case 'A':
@@ -292,16 +296,22 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		}
 	}
 
-	private Color parseColor(final String colorName) {
+	private void parseColor(final String colorName, final Consumer<Color> callback) {
+		log.info("Parsing color: <" + colorName + ">");
 		if (gradients.containsKey(colorName)) {
-			return gradients.get(colorName);
+			log.info("Valid gradient!");
+			callback.accept(gradients.get(colorName));
 		}
-		try {
-			final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
-			return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
-		} catch (final IllegalArgumentException e) {
-			return null;
+		if (colorName.startsWith("url")) {
+			return;
 		}
+		if (colorName.equals("none")) {
+			callback.accept(null);
+			return;
+		}
+		final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
+		callback.accept(new Color((float) color.getRed(),
+					(float) color.getGreen(), (float) color.getBlue()));
 	}
 
 	private static AffineTransform parseTransform(final String transform) {
