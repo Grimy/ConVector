@@ -83,7 +83,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("stop-color", v -> gradients.put(currentGradient, parseColor(v)));
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
-				handleAttr(prop.split(":")[0], prop.split(":")[1])));
+				handleAttr(prop.split(":")[0].trim(), prop.split(":")[1].trim())));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(caps.indexOf(v)));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(joins.indexOf(v)));
@@ -94,7 +94,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private void handleAttr(final String name, final String value) {
-		attrHandlers.getOrDefault(name, v -> log.finest(v)).accept(value);
+		log.fine(name + "=" + value);
+		attrHandlers.getOrDefault(name, v -> {/*NOOP*/}).accept(value);
 	}
 
 
@@ -205,13 +206,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
 		inText &= !name.equals("text");
+		log.fine("</" + name + ">");
 		g.draw();
 		g.restore();
 	}
 
 	private void parsePathData(final String data) {
-		log.fine("Parsing path data: " + data);
-
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(data);
 		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|"
@@ -226,7 +226,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			if (g.getCurrentPoint() == null && relative) {
 				g.moveTo(false, 0, 0);
 			}
-			log.finer("cmd: " + cmd);
+			log.finest("cmd: " + cmd);
 			switch (Character.toUpperCase(cmd)) {
 			case 'M':
 				g.moveTo(relative, scanner.nextFloat(), scanner.nextFloat());
@@ -275,7 +275,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private Color parseColor(final String colorName) {
-		log.fine("Parsing color: " + colorName);
 		if (gradients.containsKey(colorName)) {
 			return gradients.get(colorName);
 		}
