@@ -73,6 +73,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private static final List<String> caps = Arrays.asList("butt", "round", "square");
 	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
+	private static final List<String> defs = Arrays.asList("defs", "symbol", "clipPath", "linearGradient");
 
 	private final Graphics g = new Graphics();
 	private final Deque<String> idStack = new ArrayDeque<>();
@@ -155,11 +156,18 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void startElement(final String namespace, final String local,
 			final String name, final Attributes attributes) {
-		log.fine("<" + name + ">");
 		g.save();
 		this.attributes = attributes;
 		for (int i = 0; i < attributes.getLength(); i++) {
 			handleAttr(attributes.getLocalName(i), attributes.getValue(i));
+		}
+
+		if (defs.contains(name) || !idStack.isEmpty()) {
+			idStack.push("url(#" + attributes.getValue("id") + ")");
+			log.info("<" + name + ">" + idStack);
+			if (name.equals("linearGradient") && attributes.getValue("xlink:href") != null) {
+				gradients.put(idStack.peek(), gradients.get("url(" + attributes.getValue("xlink:href") + ")"));
+			}
 		}
 
 		switch (name) {
@@ -167,17 +175,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
 						getFloat("height", Float.MAX_VALUE)));
 			break;
+		case "use":
+			g.append(paths.get("url(" + attributes.getValue("xlink:href") + ")"));
+			break;
 		case "radialGradient":
 			gradients.put("url(#" + attributes.getValue("id") + ")", null);
-			break;
-		case "defs":
-		case "symbol":
-		case "clipPath":
-		case "linearGradient":
-			idStack.push("url(#" + attributes.getValue("id") + ")");
-			if (name.equals("linearGradient") && attributes.getValue("xlink:href") != null) {
-				gradients.put(idStack.peek(), gradients.get("url(" + attributes.getValue("xlink:href") + ")"));
-			}
 			break;
 		case "line":
 			parsePathData("M " + getFloat("x1", 0f) + "," + getFloat("y1", 0f)
@@ -227,11 +229,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (idStack.isEmpty()) {
 			g.draw();
 			g.reset();
-		} else if (name.equals("clipPath") || name.equals("symbol")
-				|| name.equals("defs") || name.equals("linearGradient")) {
-			log.fine("Adding path: " + idStack.peek());
+		} else {
+			log.info("Adding path: " + idStack.peek());
 			paths.put(idStack.pop(), g.getPath());
-			g.reset();
+			log.info("Current point: " + g.getPath().getCurrentPoint());
+			if (defs.contains(name)) {
+				g.reset();
+			}
 		}
 		inText &= !name.equals("text");
 		g.restore();
