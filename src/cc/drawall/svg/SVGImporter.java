@@ -272,6 +272,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				break;
 			case 'Z':
 				g.closePath();
+				if (idStack.isEmpty() && g.getFillColor() == null) {
+					g.draw();
+				}
 				cmd = '!';
 				break;
 			case 'A':

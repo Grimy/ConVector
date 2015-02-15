@@ -336,6 +336,10 @@ public class Graphics {
 		this.fillColor = fillColor;
 	}
 
+	public Color getFillColor() {
+		return fillColor;
+	}
+
 	public Path2D getPath() {
 		return (Path2D) path.clone();
 	}
