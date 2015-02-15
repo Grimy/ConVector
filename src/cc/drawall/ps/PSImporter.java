@@ -313,7 +313,7 @@ public class PSImporter implements Importer {
 		builtin("stroke", () -> g.stroke().reset());
 		builtin("fill", () -> g.fill(Path2D.WIND_NON_ZERO).reset());
 		builtin("eofill", () -> g.fill(Path2D.WIND_EVEN_ODD).reset());
-		builtin("clip", () -> g.clip());
+		builtin("clip", () -> g.clip(g.getPath()));
 
 		// Insideness-testing
 

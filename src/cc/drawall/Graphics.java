@@ -184,8 +184,8 @@ public class Graphics {
 	/** Intersects the clipping area with the path.
 	  * This sets the clipping area to the intersection of its current value with the area
 	  * by the path, after closing it if necessary. */
-	public void clip() {
-		clippath.intersect(new Area(path));
+	public void clip(Shape s) {
+		clippath.intersect(new Area(s));
 	}
 
 	/** Returns the smallest rectangle that completely encloses the current path.
@@ -339,10 +339,6 @@ public class Graphics {
 
 	public Path2D getPath() {
 		return (Path2D) path.clone();
-	}
-
-	public void setClip(Shape s) {
-		clippath.intersect(new Area(s));
 	}
 
 	public AffineTransform getTransform() {

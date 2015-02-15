@@ -83,12 +83,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("display", v -> {
 			if (v.equals("none")) {
-				g.setClip(new Rectangle2D.Float(0, 0, 0, 0));
+				g.clip(new Rectangle2D.Float(0, 0, 0, 0));
 			}
 		});
 		attrHandlers.put("fill", v -> g.setFillColor(parseColor(v)));
 		attrHandlers.put("clip-path", v -> {
-			g.setClip(g.getTransform().createTransformedShape(paths.get(v)));
+			g.clip(g.getTransform().createTransformedShape(paths.get(v)));
 		});
 		attrHandlers.put("stroke", v -> g.setStrokeColor(parseColor(v)));
 		attrHandlers.put("stop-color", v -> gradients.put(currentID, parseColor(v)));
@@ -160,9 +160,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 		switch (name) {
 		case "svg":
-			g.setClip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
+			g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
 						getFloat("height", Float.MAX_VALUE)));
 			break;
+		case "defs":
 		case "clipPath":
 		case "linearGradient":
 			++inDefs;
@@ -204,9 +205,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			break;
 		case "path":
 			parsePathData(attributes.getValue("d"));
-			break;
-		case "defs":
-			++inDefs;
 			break;
 		default:
 		}
