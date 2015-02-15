@@ -134,7 +134,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private float getFloat(final String name, final float def) {
 		final String value = attributes.getValue(name);
-		return value == null ? def : parseLength(value);
+		return value == null ? def : parseLength(value.trim().split(" ")[0]);
 	}
 
 	@Override
