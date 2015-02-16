@@ -26,7 +26,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
 /** Graphics context for all drawing operations done by Importer plugins.
   * Provides methods for setting graphical state, constructing paths and drawing them.
@@ -99,48 +98,56 @@ public class Graphics {
 	  * @param points the coordinates of the center and end point of the ellipse to be drawn */
 	public void arcTo(final boolean relative, final float xAxisRotation,
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
-		final Point2D radius = new Point2D.Float(points[0], points[1]);
-		final float[] end = {points[2], points[3]};
-		transform(relative, end);
-		ctm.deltaTransform(radius, radius);
 		final Point2D p0 = path.getCurrentPoint();
+		try {
+			ctm.inverseTransform(p0, p0);
+		} catch (NoninvertibleTransformException e) {
+			assert false;
+		}
 		final double x0 = p0.getX();
 		final double y0 = p0.getY();
-		double rx = Math.abs(radius.getX());
-		double ry = Math.abs(radius.getY());
+		if (relative) {
+			points[2] += x0;
+			points[3] += y0;
+		}
 		final double angle = Math.toRadians(xAxisRotation % 360.0);
+		path.append(ctm.createTransformedShape(computeEllipse(
+			largeArcFlag, sweepFlag, angle, x0, y0, points)), true);
+	}
 
-		// Based on w3c’s SVG specification, Appendix F.6.5
+	// Based on w3c’s SVG specification, Appendix F.6.5
+	private static Shape computeEllipse(final boolean largeArcFlag, final boolean sweepFlag,
+			final double angle, final double x0, final double y0, final float[] points) {
 		// Step 1 : Compute (x1, y1)
-		final double dx2 = (x0 - end[0]) / 2.0;
-		final double dy2 = (y0 - end[1]) / 2.0;
+		final double dx2 = (x0 - points[2]) / 2.0;
+		final double dy2 = (y0 - points[3]) / 2.0;
 		final double cos = Math.cos(angle);
 		final double sin = Math.sin(angle);
 		final double x1 =  cos * dx2 + sin * dy2;
 		final double y1 = -sin * dx2 + cos * dy2;
 
 		// Ensure radii are large enough
-		final double radiiCheck = x1 * x1 / (rx * rx) + y1 * y1 / (ry * ry);
-		if (radiiCheck > 1) {
-			rx *= Math.sqrt(radiiCheck);
-			ry *= Math.sqrt(radiiCheck);
-		}
+		final double check = x1*x1 / (points[0]*points[0]) + y1*y1 / (points[1]*points[1]);
+		final double radiusCoeff = check > 1 ? Math.sqrt(check) : 1;
+		final double rx = Math.abs(points[0]) * radiusCoeff;
+		final double ry = Math.abs(points[1]) * radiusCoeff;
 
 		// Step 2 : Compute (cx1, cy1)
-		final double sq = (rx*rx * (ry*ry - y1*y1) - ry*ry * x1*x1) / (rx*rx * y1*y1 + ry*ry * x1*x1);
+		final double sq = (rx*rx * (ry*ry - y1*y1) - ry*ry * x1*x1)
+			/ (rx*rx * y1*y1 + ry*ry * x1*x1);
 		final double coef = (largeArcFlag == sweepFlag ? -1 : 1) * Math.sqrt(Math.max(sq, 0));
 		final double cx1 = coef * rx * y1 / ry;
 		final double cy1 = coef * -ry * x1 / rx;
 
 		// Step 3 : Compute (cx, cy) from (cx1, cy1)
-		final double cx = (x0 + end[0]) / 2.0 + cos * cx1 - sin * cy1;
-		final double cy = (y0 + end[1]) / 2.0 + sin * cx1 + cos * cy1;
+		final double cx = (x0 + points[2]) / 2.0 + cos * cx1 - sin * cy1;
+		final double cy = (y0 + points[3]) / 2.0 + sin * cx1 + cos * cy1;
 
 		// Step 4 : Compute the angleStart and the angleExtent
 		final double ux = (x1 - cx1) / rx;
 		final double uy = (y1 - cy1) / ry;
-		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d) * Math.acos(
-				ux / Math.sqrt(ux * ux + uy * uy)));
+		final double angleStart = Math.toDegrees((uy < 0 ? -1d : 1d)
+			* Math.acos(ux / Math.sqrt(ux * ux + uy * uy)));
 		final double vx = (-x1 - cx1) / rx;
 		final double vy = (-y1 - cy1) / ry;
 		final double p = ux * vx + uy * vy;
@@ -148,10 +155,9 @@ public class Graphics {
 				* Math.acos(p / Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))))
 				+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
 
-		// We can now build the resulting Arc2D in double precision
-		path.append(AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(
+		return AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(
 			new Arc2D.Double(cx - rx, cy - ry, rx * 2.0, ry * 2.0,
-				-angleStart, -angleExtent, Arc2D.OPEN)), true);
+				-angleStart, -angleExtent, Arc2D.OPEN));
 	}
 
 	/** Closes the current path by drawing a straight line back to the coordinates of the
@@ -169,6 +175,7 @@ public class Graphics {
 	  * The winding rule of the specified Shape is ignored.
 	  * @param shape whose geometry is appended to the path */
 	public void append(final Shape shape) {
+		// TODO: auto-apply ctm?
 		path.append(shape, false);
 	}
 
