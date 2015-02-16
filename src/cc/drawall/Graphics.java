@@ -26,7 +26,6 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
 /** Graphics context for all drawing operations done by Importer plugins.
   * Provides methods for setting graphical state, constructing paths and drawing them.
@@ -102,12 +101,18 @@ public class Graphics {
 		final Point2D radius = new Point2D.Float(points[0], points[1]);
 		final float[] end = {points[2], points[3]};
 		transform(relative, end);
-		ctm.deltaTransform(radius, radius);
+		// System.out.println("Radius pre delta:" + radius.getX() + ", " + radius.getY());
+		// System.out.println("Matrix: " + ctm.getScaleX() + ", " + ctm.getShearX());
+		// System.out.println("Matrix: " + ctm.getScaleY() + ", " + ctm.getShearY());
+		radius.setLocation(
+				radius.getX() * ctm.getScaleX(),
+				radius.getY() * ctm.getScaleY());
 		final Point2D p0 = path.getCurrentPoint();
 		final double x0 = p0.getX();
 		final double y0 = p0.getY();
 		double rx = Math.abs(radius.getX());
 		double ry = Math.abs(radius.getY());
+		// System.out.println("Radius post delta:" + rx + ", " + ry);
 		final double angle = Math.toRadians(xAxisRotation % 360.0);
 
 		// Based on w3c’s SVG specification, Appendix F.6.5
@@ -149,7 +154,8 @@ public class Graphics {
 				+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
 
 		// We can now build the resulting Arc2D in double precision
-		path.append(AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(
+		path.append(
+				AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(
 			new Arc2D.Double(cx - rx, cy - ry, rx * 2.0, ry * 2.0,
 				-angleStart, -angleExtent, Arc2D.OPEN)), true);
 	}
@@ -169,6 +175,7 @@ public class Graphics {
 	  * The winding rule of the specified Shape is ignored.
 	  * @param shape whose geometry is appended to the path */
 	public void append(final Shape shape) {
+		// TODO: auto-apply ctm?
 		path.append(shape, false);
 	}
 
