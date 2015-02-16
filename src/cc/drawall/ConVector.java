@@ -61,10 +61,11 @@ class ConVector extends Canvas {
 			new ConVector().createAndShowGUI();
 		} else if (args.length == 1) {
 			WebService.loop(Integer.parseInt(args[0]));
-		} else if (args.length == 2) {
-			exportFile(new File(args[1]), importFile(new File(args[0])));
 		} else {
-			log.severe("Too many arguments.");
+			Drawing drawing = importFile(new File(args[0]));
+			for (int i = 1; i < args.length; ++i) {
+				exportFile(new File(args[i]), drawing);
+			}
 		}
 	}
 
