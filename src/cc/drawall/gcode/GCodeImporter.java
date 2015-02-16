@@ -19,7 +19,6 @@ import java.util.InputMismatchException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import cc.drawall.Graphics;
@@ -27,8 +26,6 @@ import cc.drawall.Importer;
 
 /** Importer used to parse GCode. */
 public class GCodeImporter implements Importer {
-	private static final Logger log = Logger.getLogger(GCodeImporter.class.getName());
-
 	/* Conversion ratio. */
 	private static final double INCHES_TO_MM = 25.4;
 
@@ -58,17 +55,6 @@ public class GCodeImporter implements Importer {
 		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
 		gcodes.put(90, () -> relative = false);
 		gcodes.put(91, () -> relative = true);
-
-		final Runnable unsupported = () -> log.severe("Unsupported operation");
-		gcodes.put(2,  unsupported);
-		gcodes.put(3,  unsupported);
-		gcodes.put(7,  unsupported);
-		gcodes.put(8,  unsupported);
-		gcodes.put(18, unsupported);
-		gcodes.put(19, unsupported);
-		gcodes.put(28, unsupported);
-		gcodes.put(30, unsupported);
-		gcodes.put(92, unsupported);
 		// 2:  Helical motion, CW
 		// 3:  Helical motion, CCW
 		// 7:  Diameter mode
@@ -103,16 +89,15 @@ public class GCodeImporter implements Importer {
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
 			final String token = scanner.next(TOKEN).toUpperCase(Locale.US).replaceAll("\\s", "");
-			log.finest("Read token: " + token);
 			final float arg = parseFloat(token.substring(1));
 
 			switch (token.charAt(0)) {
 			case 'G':
-				gcodes.getOrDefault((int) arg, () -> log.finest("G" + arg)).run();
+				gcodes.getOrDefault((int) arg, () -> System.out.println("G" + arg)).run();
 				scanner.nextLine();
 				break;
 			case 'M':
-				mcodes.getOrDefault((int) arg, () -> log.finest("M" + arg)).run();
+				mcodes.getOrDefault((int) arg, () -> System.out.println("M" + arg)).run();
 				break;
 			case '#':
 				variables.put((int) arg, readArg('='));

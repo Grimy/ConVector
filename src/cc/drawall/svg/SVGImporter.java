@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -47,8 +46,6 @@ import cc.drawall.Importer;
 
 /** An Importer for SVG images. */
 public class SVGImporter extends DefaultHandler implements Importer {
-	private static final Logger log = Logger.getLogger(SVGImporter.class.getName());
-
 	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
 
 	private static final Map<String, Float> fontSizes = new HashMap<>(); {
@@ -110,7 +107,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private void handleAttr(final String name, final String value) {
-		log.fine(name + "=" + value);
 		attrHandlers.getOrDefault(name.trim(), v -> {/*NOOP*/}).accept(value.trim());
 	}
 
@@ -164,7 +160,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 		if (defs.contains(name) || !idStack.isEmpty()) {
 			idStack.push("url(#" + attributes.getValue("id") + ")");
-			log.info("<" + name + ">" + idStack);
 			if (name.equals("linearGradient") && attributes.getValue("xlink:href") != null) {
 				gradients.put(idStack.peek(), gradients.get("url(" + attributes.getValue("xlink:href") + ")"));
 			}
@@ -202,7 +197,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			break;
 		case "rect":
 			if (getFloat("rx", 0f) > 0f || getFloat("ry", 0f) > 0f) {
-				log.severe("Rounded rectangles are not handled.");
+				throw new InputMismatchException("Rounded rectangles are not handled.");
 			}
 			g.append(g.getTransform().createTransformedShape(new Rectangle2D.Float(
 					getFloat("x", 0f), getFloat("y", 0f),
@@ -219,20 +214,16 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			parsePathData(attributes.getValue("d"));
 			break;
 		default:
-			log.info("Unhandled tag: " + name);
 		}
 	}
 
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
-		log.fine("</" + name + ">");
 		if (idStack.isEmpty()) {
 			g.draw();
 			g.reset();
 		} else {
-			log.info("Adding path: " + idStack.peek());
 			paths.put(idStack.pop(), g.getPath());
-			log.info("Current point: " + g.getPath().getCurrentPoint());
 			if (defs.contains(name)) {
 				g.reset();
 			}
@@ -256,7 +247,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			if (g.getCurrentPoint() == null && relative) {
 				g.moveTo(false, 0, 0);
 			}
-			log.finest("cmd: " + cmd);
 			switch (Character.toUpperCase(cmd)) {
 			case 'M':
 				g.moveTo(relative, scanner.nextFloat(), scanner.nextFloat());
@@ -307,9 +297,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private void parseColor(final String colorName, final Consumer<Color> callback) {
-		log.info("Parsing color: <" + colorName + ">");
 		if (gradients.containsKey(colorName)) {
-			log.warning("Gradient " + colorName + " maps to " + gradients.get(colorName));
 			callback.accept(gradients.get(colorName));
 		}
 		if (colorName.startsWith("url")) {
@@ -350,7 +338,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			case "skewX":
 			case "skewY":
 			default:
-				log.severe("Unhandled transform: " + transform);
+				throw new InputMismatchException("Unhandled transform: " + transform);
 			}
 		}
 		return result;

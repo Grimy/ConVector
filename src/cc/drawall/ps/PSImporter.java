@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.xml.bind.DatatypeConverter;
@@ -42,8 +41,6 @@ import cc.drawall.Importer;
 
 /** Importer used to parse PostScript. */
 public class PSImporter implements Importer {
-	private static final Logger log = Logger.getLogger(PSImporter.class.getName());
-
 	/** PostScript® is a trademark of Adobe Systems Incorporated. */
 
 	/** The correspondance between PostScript type and Java types is as follow:
@@ -58,7 +55,7 @@ public class PSImporter implements Importer {
 	  **/
 
 	/** A Runnable that does nothing, used for ignored instructions. */
-	private static final Runnable NOOP = () -> log.finest("No-op");
+	private static final Runnable NOOP = () -> {/*NOOP*/};
 
 	/* ==PATTERNS== */
 	private static final Pattern NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+([eE][-+]?\\d+)?");
@@ -240,8 +237,8 @@ public class PSImporter implements Importer {
 		builtin("executeonly", NOOP);
 
 		// File operators
-		builtin("==", () -> log.info(stack.pop().toString()));
-		builtin("stack", () -> stack.stream().forEach(o -> log.info(o.toString())));
+		builtin("==", () -> System.out.println(stack.pop().toString()));
+		builtin("stack", () -> stack.stream().forEach(o -> System.out.println(o.toString())));
 
 		// Miscellaneous
 		vars.put("ps_level", 1f);
@@ -288,7 +285,7 @@ public class PSImporter implements Importer {
 
 		// Coordinate systems
 		builtin("matrix", () -> stack.push(new float[]{1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f}));
-		builtin("currentmatrix", () -> log.severe("Unsupported operator: currentmatrix"));
+		// currentmatrix
 		builtin("setmatrix", () -> g.getTransform().setTransform(popMatrix()));
 		builtin("concat", () -> g.getTransform().concatenate(popMatrix()));
 		builtin("rotate", () -> g.getTransform().rotate(Math.toRadians(p(1))));
@@ -384,7 +381,6 @@ public class PSImporter implements Importer {
 	}
 
 	private void execute(final Object object) {
-		log.finest("Executing: " + object);
 		if (literals.containsKey(object)) {
 			stack.push(object);
 		} else if (object instanceof Runnable) {      // built-in operator

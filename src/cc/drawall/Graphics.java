@@ -27,7 +27,6 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /** Graphics context for all drawing operations done by Importer plugins.
   * Provides methods for setting graphical state, constructing paths and drawing them.
@@ -37,8 +36,6 @@ import java.util.logging.Logger;
   * and text.
   * Path drawing is either stroking, filling or both. */
 public class Graphics {
-	private static final Logger log = Logger.getLogger(Graphics.class.getName());
-
 	Drawing drawing = new Drawing();
 
 	/* Graphical state information */
@@ -165,7 +162,6 @@ public class Graphics {
 
 	/** Resets the path to its initial, empty state. */
 	public void reset() {
-		log.fine("g.reset()");
 		path.reset();
 	}
 
@@ -213,7 +209,6 @@ public class Graphics {
 	}
 
 	private void transform(final boolean relative, final float[] points) {
-		log.finest(Arrays.toString(points));
 		final int nbPoints = points.length / 2;
 		(relative ? relativeTransform() : ctm).transform(points, 0, points, 0, nbPoints);
 		final Point2D point = nbPoints > 1 && smooth != null ? smooth : path.getCurrentPoint();
@@ -241,7 +236,6 @@ public class Graphics {
 			drawing.paint(strokeColor, clipped(ctm.createTransformedShape(stroked)));
 		} catch (final NoninvertibleTransformException e) {
 			// Non-invertible transforms squash any shape to empty areas
-			log.finer(e.toString());
 		}
 		return this;
 	}
@@ -356,7 +350,6 @@ public class Graphics {
 	  * If no fitting font is found in the system, an attempt is made to load one
 	  * from the ressource files. */
 	public void setFont(final String fontDescriptor) {
-		log.fine("Setting font to: " + fontDescriptor);
 		font = new Font(fontDescriptor, 0, (int) fontSize)
 			.deriveFont(AffineTransform.getScaleInstance(1, -1));
 	}
