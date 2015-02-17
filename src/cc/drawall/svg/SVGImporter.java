@@ -336,7 +336,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				result.scale(xScale, yScale);
 				break;
 			case "skewX":
+				result.concatenate(AffineTransform.getShearInstance(
+							Math.tan(Math.toRadians(scanner.nextFloat())), 0));
+				break;
 			case "skewY":
+				result.concatenate(AffineTransform.getShearInstance(
+							0, Math.tan(Math.toRadians(scanner.nextFloat()))));
+				break;
 			default:
 				throw new InputMismatchException("Unhandled transform: " + transform);
 			}
