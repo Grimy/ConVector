@@ -171,7 +171,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 						getFloat("height", Float.MAX_VALUE)));
 			break;
 		case "use":
-			g.append(paths.get("url(" + attributes.getValue("xlink:href") + ")"));
+			g.append(paths.getOrDefault("url(" + attributes.getValue("xlink:href") + ")", new Path2D.Float()));
 			break;
 		case "radialGradient":
 			gradients.put("url(#" + attributes.getValue("id") + ")", null);
