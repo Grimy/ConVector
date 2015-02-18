@@ -315,7 +315,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static AffineTransform parseTransform(final String transform) {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(transform);
-		scanner.useDelimiter("[(, )]+");
+		scanner.useDelimiter("[(,\\s)]*(?:[(,\\s)]|(?<![eE])(?=[-+]))");
 		final AffineTransform result = new AffineTransform();
 		while (scanner.hasNext()) {
 			switch (scanner.next()) {
@@ -325,15 +325,17 @@ public class SVGImporter extends DefaultHandler implements Importer {
 						scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat()));
 				break;
 			case "translate":
-				result.translate(scanner.nextFloat(), scanner.nextFloat());
+				result.translate(scanner.nextFloat(),
+					scanner.hasNextFloat() ? scanner.nextFloat() : 0);
 				break;
 			case "rotate":
-				result.rotate(Math.toRadians(scanner.nextFloat()));
+				result.concatenate(AffineTransform.getRotateInstance(scanner.nextFloat(),
+					scanner.hasNextFloat() ? scanner.nextFloat() : 0,
+					scanner.hasNextFloat() ? scanner.nextFloat() : 0));
 				break;
 			case "scale":
 				final float xScale = scanner.nextFloat();
-				final float yScale = scanner.hasNextFloat() ? scanner.nextFloat() : xScale;
-				result.scale(xScale, yScale);
+				result.scale(xScale, scanner.hasNextFloat() ? scanner.nextFloat() : xScale);
 				break;
 			case "skewX":
 				result.concatenate(AffineTransform.getShearInstance(
