@@ -86,6 +86,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			}
 		});
 		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
+		attrHandlers.put("fill-rule", v -> {/*TODO (evenodd, nonzero; default?)*/});
 		attrHandlers.put("clip-path", v -> {
 			if (paths.containsKey(v)) {
 				g.clip(g.getTransform().createTransformedShape(paths.get(v)));
@@ -97,6 +98,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 				handleAttr(prop.split(":")[0], prop.split(":")[1])));
+		attrHandlers.put("stroke-dasharray", v -> {/*TODO*/});
+		attrHandlers.put("stroke-dashoffset", v -> {/*TODO*/});
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(caps.indexOf(v)));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(joins.indexOf(v)));
@@ -114,6 +117,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	public Graphics process(final ReadableByteChannel input) {
 		g.setFillColor(Color.BLACK);
 		g.setStrokeColor(null);
+		// TODO: default stroke-width?
+		g.setFont("Serif");
 		try {
 			SAXParserFactory.newInstance().newSAXParser().parse(
 					Channels.newInputStream(input), this);
@@ -140,7 +145,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		}
 		final int index = floatString.length() - 2;  // all SVG units are 2 chars long
 		final Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
-		return multiplier == null ? Float.parseFloat(floatString)
+		// TODO handle % correctly
+		return multiplier == null ? Float.parseFloat(floatString.replace("%", ""))
 			: multiplier * Float.parseFloat(floatString.substring(0, index));
 	}
 
@@ -169,6 +175,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		case "svg":
 			g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
 						getFloat("height", Float.MAX_VALUE)));
+			// TODO: handle viewBox
 			break;
 		case "use":
 			g.append(paths.getOrDefault("url(" + attributes.getValue("xlink:href") + ")", new Path2D.Float()));
@@ -197,6 +204,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			break;
 		case "rect":
 			if (getFloat("rx", 0f) > 0f || getFloat("ry", 0f) > 0f) {
+				// TODO
 				throw new InputMismatchException("Rounded rectangles are not handled.");
 			}
 			g.append(g.getTransform().createTransformedShape(new Rectangle2D.Float(
@@ -300,8 +308,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (gradients.containsKey(colorName)) {
 			callback.accept(gradients.get(colorName));
 		}
-		if (colorName.startsWith("url")) {
+		if (colorName.startsWith("url") || colorName.equals("inherit")) {
 			return;
+		}
+		if (colorName.equals("currentColor")) {
+			// TODO
 		}
 		if (colorName.equals("none")) {
 			callback.accept(null);
