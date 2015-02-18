@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DraWallPlotter/ConVector.svg?branch=travis)](https://travis-ci.org/DraWallPlotter/ConVector)
+
 ConVector
 =========
 
