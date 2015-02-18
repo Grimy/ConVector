@@ -394,6 +394,7 @@ public class Graphics {
 		this.strokeColor = that.strokeColor;
 		this.fillColor = that.fillColor;
 		this.font = that.font;
+		final BasicStroke stroke = that.stroke;
 		this.stroke = new BasicStroke(stroke.getLineWidth(), stroke.getEndCap(),
 				stroke.getLineJoin(), stroke.getMiterLimit(), stroke.getDashArray(),
 				stroke.getDashPhase());
