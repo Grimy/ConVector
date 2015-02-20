@@ -78,6 +78,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Map<String, Path2D> paths = new HashMap<>();
 	private Attributes attributes;
 	private boolean inText;
+	private boolean hasViewBox;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("display", v -> {
@@ -96,6 +97,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.clip(g.getTransform().createTransformedShape(paths.get(v)));
 			}
 		});
+		attrHandlers.put("viewBox", v -> parseViewBox(v));
 		attrHandlers.put("stroke", v -> parseColor(v, g::setStrokeColor));
 		attrHandlers.put("stop-color", v -> parseColor(v, color ->
 					gradients.put(idStack.peek(), color)));
@@ -177,9 +179,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 		switch (name) {
 		case "svg":
-			g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
-						getFloat("height", Float.MAX_VALUE)));
-			// TODO: handle viewBox
+			if (!hasViewBox) {
+				g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
+					getFloat("height", Float.MAX_VALUE)));
+			}
 			break;
 		case "use":
 			g.append(paths.getOrDefault("url(" + attributes.getValue("xlink:href") + ")", new Path2D.Float()));
@@ -366,6 +369,14 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			}
 		}
 		return result;
+	}
+
+	private void parseViewBox(String viewBox) {
+		@SuppressWarnings("resource")
+		final Scanner scanner = new Scanner(viewBox);
+		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
+		g.clip(new Rectangle2D.Float(0, 0, scanner.nextFloat(), scanner.nextFloat()));
+		hasViewBox = true;
 	}
 
 	@Override
