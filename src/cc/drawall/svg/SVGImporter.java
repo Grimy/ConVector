@@ -82,7 +82,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("display", v -> {
 			if (v.equals("none")) {
-				g.clip(new Rectangle2D.Float(0, 0, 0, 0));
+				g.clip(new Path2D.Float());
 			}
 		});
 		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
@@ -188,8 +188,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			gradients.put("url(#" + attributes.getValue("id") + ")", null);
 			break;
 		case "line":
-			parsePathData("M " + getFloat("x1", 0f) + "," + getFloat("y1", 0f)
-			   + "," + getFloat("x2", 0f) + "," + getFloat("y2", 0f));
+			g.moveTo(false, getFloat("x1", 0f), getFloat("y1", 0f));
+			g.lineTo(false, getFloat("x2", 0f), getFloat("y2", 0f));
 			break;
 		case "circle":
 		case "ellipse":
@@ -207,13 +207,14 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			parsePathData("M" + attributes.getValue("points"));
 			break;
 		case "rect":
-			if (getFloat("rx", 0f) > 0f || getFloat("ry", 0f) > 0f) {
-				// TODO
-				throw new InputMismatchException("Rounded rectangles are not handled.");
-			}
-			g.append(g.getTransform().createTransformedShape(new Rectangle2D.Float(
-					getFloat("x", 0f), getFloat("y", 0f),
-					getFloat("width", 0f), getFloat("height", 0f))));
+			final float x = getFloat("x", 0f), y = getFloat("y", 0f);
+			final float width = getFloat("width", 0f), height = getFloat("height", 0f);
+			// final float rx = getFloat("rx", 0f), ry = getFloat("ry", 0f);
+			g.moveTo(false, x, y);
+			g.lineTo(false, x + width, y);
+			g.lineTo(false, x + width, y + height);
+			g.lineTo(false, x, y + height);
+			g.closePath();
 			break;
 		case "text":
 			g.moveTo(false, getFloat("x", 0), getFloat("y", 0));
