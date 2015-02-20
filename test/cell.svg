@@ -1,0 +1,65 @@
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/></head><body><svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" height="180" width="440" version="1.1" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+
+	<metadata>
+
+		<rdf:rdf>
+
+			<cc:work rdf:about="">
+
+				<dc:format>image/svg+xml</dc:format>
+
+				<dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"></dc:type>
+
+				<dc:title></dc:title>
+
+			</cc:work>
+
+		</rdf:rdf>
+
+	</metadata>
+
+	<g transform="translate(5,0)">
+
+		<path style="stroke-linejoin:miter;stroke:#000000;stroke-width:1.04570556px;stroke-linecap:butt;fill:#ffdd55;" d="M5,55,20,40,33,55,47,40,60,55,74,40l13,15,14-15,14,15,15-15,13,15,13-15,13,15v78h-164z"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#000000;stroke-width:1px;stroke-linecap:butt;fill:#002255;" d="m33,71,14,0,0-56-14,0,0,56"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#000000;stroke-width:1px;stroke-linecap:butt;fill:#002255;" d="m130,71,13,0,0-56-13,0,0,56"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#000000;stroke-width:1.04570556px;stroke-linecap:butt;fill:#00aad4;" d="M169,86,5,85,5,70,20,55,33,71,47,55,60,70,74,55l13,15,14-15,14,15,15-15,13,15,13-15,13,15z"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#000000;stroke-width:1.04570556px;stroke-linecap:butt;fill:#cdde87;" d="M5,110,5,85,20,70,33,85,47,70,60,85,74,70l13,15,14-15,14,15,15-15,13,15,13-15,13,15v25"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#000000;stroke-width:1px;stroke-linecap:butt;fill:#89a02c;" d="m5,110,164,0,0,12-164,0z"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#000000;stroke-width:1px;stroke-linecap:butt;fill:#000000;" d="m5,122,0,13,164,0,0-13z"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#e75c00;stroke-linecap:round;stroke-dasharray:none;stroke-miterlimit:4;stroke-width:2;fill:none;" d="m140,35,50-25,15,0"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#e75c00;stroke-linecap:round;stroke-dasharray:none;stroke-miterlimit:4;stroke-width:2;fill:none;" d="m155,50,30-10,20,0"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#e75c00;stroke-linecap:round;stroke-dasharray:none;stroke-miterlimit:4;stroke-width:2;fill:none;" d="m155,65,30,5,20,0"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#e75c00;stroke-linecap:round;stroke-dasharray:none;stroke-miterlimit:4;stroke-width:2;fill:none;" d="m155,90,30,10,20,0"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#e75c00;stroke-linecap:round;stroke-dasharray:none;stroke-miterlimit:4;stroke-width:2;fill:none;" d="m155,115,35,15,15,0"></path>
+
+		<path style="stroke-linejoin:miter;stroke:#e75c00;stroke-linecap:round;stroke-dasharray:none;stroke-miterlimit:4;stroke-width:2;fill:none;" d="m155,130,40,30,10,0"></path>
+
+		<text y="15" x="210" style="font-size:20px;font-weight:normal;writing-mode:lr-tb;letter-spacing:0px;text-anchor:start;font-style:normal;word-spacing:0px;font-stretch:normal;font-variant:normal;text-align:start;font-family:Garamond;line-height:125%;fill:#000000;" xml:space="preserve"><tspan y="15" x="210">(1) Surface Contact</tspan></text>
+
+		<text y="45" x="210" style="font-size:20px;font-weight:normal;writing-mode:lr-tb;letter-spacing:0px;text-anchor:start;font-style:normal;word-spacing:0px;font-stretch:normal;font-variant:normal;text-align:start;font-family:Garamond;line-height:125%;fill:#000000;" xml:space="preserve"><tspan y="45" x="210">(2) Anti-Reflection Coating</tspan></text>
+
+		<text y="75" x="210" style="font-size:20px;font-weight:normal;writing-mode:lr-tb;letter-spacing:0px;text-anchor:start;font-style:normal;word-spacing:0px;font-stretch:normal;font-variant:normal;text-align:start;font-family:Garamond;line-height:125%;fill:#000000;" xml:space="preserve"><tspan y="75" x="210">(3) n type Silicon</tspan></text>
+
+		<text y="105" x="210" style="font-size:20px;font-weight:normal;writing-mode:lr-tb;letter-spacing:0px;text-anchor:start;font-style:normal;word-spacing:0px;font-stretch:normal;font-variant:normal;text-align:start;font-family:Garamond;line-height:125%;fill:#000000;" xml:space="preserve"><tspan y="105" x="210">(4) p type Silicon</tspan></text>
+
+		<text y="135" x="210" style="font-size:20px;font-weight:normal;writing-mode:lr-tb;letter-spacing:0px;text-anchor:start;font-style:normal;word-spacing:0px;font-stretch:normal;font-variant:normal;text-align:start;font-family:Garamond;line-height:125%;fill:#000000;" xml:space="preserve"><tspan y="135" x="210">(5) p+ type Silicon</tspan></text>
+
+		<text y="165" x="210" style="font-size:20px;font-weight:normal;writing-mode:lr-tb;letter-spacing:0px;text-anchor:start;font-style:normal;word-spacing:0px;font-stretch:normal;font-variant:normal;text-align:start;font-family:Garamond;line-height:125%;fill:#000000;" xml:space="preserve"><tspan y="165" x="210">(6) Back contact</tspan></text>
+
+	</g>
+
+</svg></body></html>
