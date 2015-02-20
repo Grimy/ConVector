@@ -248,15 +248,12 @@ public class Graphics {
 		return this;
 	}
 
-	/** Fill the current path with the filling Color.
-	  * @param windingRule the winding rule to use
-	  * @see java.awt.geom.GeneralPath */
-	public Graphics fill(final int windingRule) {
+	/** Fill the current path with the filling Color. */
+	public Graphics fill() {
 		if (fillColor == null || path.getCurrentPoint() == null) {
 			return this;
 		}
 		path.closePath();
-		path.setWindingRule(windingRule);
 		Area area = new Area(path);
 		area.intersect(clippath);
 		drawing.paint(fillColor, area);
@@ -264,8 +261,8 @@ public class Graphics {
 	}
 
 	public void draw() {
+		fill();
 		stroke();
-		fill(Path2D.WIND_NON_ZERO);
 		Point2D p = path.getCurrentPoint();
 		path.reset();
 		path.moveTo(p == null ? 0 : p.getX(), p == null ? 0 : p.getY());
@@ -340,6 +337,13 @@ public class Graphics {
 		this.fillColor = fillColor;
 	}
 
+	/* @see java.awt.geom.GeneralPath */
+	public Graphics setWindingRule(final int rule) {
+		assert rule == Path2D.WIND_NON_ZERO || rule == Path2D.WIND_EVEN_ODD;
+		path.setWindingRule(rule);
+		return this;
+	}
+
 	public Color getFillColor() {
 		return fillColor;
 	}
@@ -397,10 +401,10 @@ public class Graphics {
 		this.strokeColor = that.strokeColor;
 		this.fillColor = that.fillColor;
 		this.font = that.font;
-		final BasicStroke stroke = that.stroke;
-		this.stroke = new BasicStroke(stroke.getLineWidth(), stroke.getEndCap(),
-				stroke.getLineJoin(), stroke.getMiterLimit(), stroke.getDashArray(),
-				stroke.getDashPhase());
+		this.path.setWindingRule(that.path.getWindingRule());
+		this.stroke = new BasicStroke(that.stroke.getLineWidth(), that.stroke.getEndCap(),
+				that.stroke.getLineJoin(), that.stroke.getMiterLimit(),
+				stroke.getDashArray(), stroke.getDashPhase());
 		this.drawing = that.drawing;
 		this.prev = that.prev;
 	}

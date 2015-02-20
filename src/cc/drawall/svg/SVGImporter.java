@@ -86,7 +86,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			}
 		});
 		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
-		attrHandlers.put("fill-rule", v -> {/*TODO (evenodd, nonzero; default?)*/});
+		attrHandlers.put("fill-rule", v -> {
+			if (v.equals("evenodd")) {
+				g.setWindingRule(Path2D.WIND_EVEN_ODD);
+			}
+		});
 		attrHandlers.put("clip-path", v -> {
 			if (paths.containsKey(v)) {
 				g.clip(g.getTransform().createTransformedShape(paths.get(v)));

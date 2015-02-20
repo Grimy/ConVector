@@ -308,8 +308,8 @@ public class PSImporter implements Importer {
 
 		// Painting
 		builtin("stroke", () -> g.stroke().reset());
-		builtin("fill", () -> g.fill(Path2D.WIND_NON_ZERO).reset());
-		builtin("eofill", () -> g.fill(Path2D.WIND_EVEN_ODD).reset());
+		builtin("fill", () -> g.setWindingRule(Path2D.WIND_NON_ZERO).fill().reset());
+		builtin("eofill", () -> g.setWindingRule(Path2D.WIND_EVEN_ODD).fill().reset());
 		builtin("clip", () -> g.clip(g.getPath()));
 
 		// Insideness-testing
@@ -321,11 +321,11 @@ public class PSImporter implements Importer {
 		builtin("setfont", () -> g.setFont((String) stack.pop()));
 		builtin("show", () -> {
 			g.charpath((String) stack.pop());
-			g.fill(Path2D.WIND_EVEN_ODD);
+			g.fill();
 		});
 		builtin("ashow", () -> {
 			g.charpath((String) stack.pop());
-			g.fill(Path2D.WIND_EVEN_ODD);
+			g.fill();
 			p(2);
 			p();
 		});
