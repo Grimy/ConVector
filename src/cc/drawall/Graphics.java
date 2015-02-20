@@ -201,6 +201,7 @@ public class Graphics {
 	  * Text is rendered using the current font and starting at the current point.
 	  * @param text the text to be outlined */
 	public void charpath(final String text) {
+		// TODO: interact correctly with ctm
 		assert font != null : "Undefined font";
 		final AffineTransform t = relativeTransform();
 		t.scale(1, -1);
@@ -300,6 +301,7 @@ public class Graphics {
 	  * @param cap either BasicStroke.CAP_BUTT, BasicStroke.CAP_ROUND or BasicStroke.CAP_SQUARE
 	  * @see java.awt.BasicStroke */
 	public void setLineCap(final int cap) {
+		assert cap >= 0 && cap < 3;
 		setStroke("cap", cap);
 	}
 
@@ -307,6 +309,7 @@ public class Graphics {
 	  * @param join either BasicStroke.JOIN_BEVEL, BasicStroke.JOIN_MITER BasicStroke.JOIN_ROUND
 	  * @see java.awt.BasicStroke */
 	public void setLineJoin(final int join) {
+		assert join >= 0 && join < 3;
 		setStroke("join", join);
 	}
 
