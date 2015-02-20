@@ -116,7 +116,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private void handleAttr(final String name, final String value) {
-		attrHandlers.getOrDefault(name.trim(), v -> {/*NOOP*/}).accept(value.trim());
+		if (!value.equals("inherit")) {
+			attrHandlers.getOrDefault(name.trim(), v -> {/*NOOP*/}).accept(value.trim());
+		}
 	}
 
 	@Override
@@ -316,11 +318,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (gradients.containsKey(colorName)) {
 			callback.accept(gradients.get(colorName));
 		}
-		if (colorName.startsWith("url") || colorName.equals("inherit")) {
+		if (colorName.startsWith("url")) {
 			return;
 		}
 		if (colorName.equals("currentColor")) {
 			// TODO
+			return;
 		}
 		if (colorName.equals("none")) {
 			callback.accept(null);
