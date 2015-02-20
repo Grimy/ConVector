@@ -22,36 +22,31 @@ import cc.drawall.Importer;
 
 /** Importer used to parse GCode. */
 public class DOVImporter implements Importer {
-	private final Graphics g = new Graphics();
-	private Scanner scanner;
 
 	@Override
 	public Graphics process(final ReadableByteChannel input) {
-		scanner = new Scanner(input, "UnicodeBig");
+		final Graphics g = new Graphics();
+		@SuppressWarnings("resource")
+		final Scanner scanner = new Scanner(input, "UnicodeBig");
 		scanner.useDelimiter("");
 		scanner.skip("\u2339\uFFAF");
-		int width = scanner.next().charAt(0);
-		int height = scanner.next().charAt(0);
-		double ratio = Math.max(width, height) / 65535.0;
+		final int width = scanner.next().charAt(0);
+		final int height = scanner.next().charAt(0);
+		final double ratio = Math.max(width, height) / 65535.0;
 		g.getTransform().scale(ratio, ratio);
 		g.setStrokeWidth((float) (1 / ratio));
 		while (scanner.hasNext()) {
-			int x = scanner.next().charAt(0);
-			int y = scanner.next().charAt(0);
-			System.out.printf("%x, %x\n", x, y);
-			if (y == 0xFFFF) {
+			final int x = scanner.next().charAt(0);
+			final int y = scanner.next().charAt(0);
+			if (x == 0xFFFF && y == 0x0001) {
+				g.moveTo(scanner.next().charAt(0), scanner.next().charAt(0));
+				continue;
+			} else if (x == 0xFFFF || y == 0xFFFF) {
 				throw new InputMismatchException();
 			}
-			if (x == 0xFFFF) {
-				if (y == 0x0001) {
-					g.moveTo(false, scanner.next().charAt(0), scanner.next().charAt(0));
-					continue;
-				}
-				throw new InputMismatchException();
-			}
-			g.lineTo(false, x, y);
+			g.lineTo(x, y);
 		}
-		g.stroke().reset();
+		g.stroke().resetPath();
 		return g;
 	}
 }

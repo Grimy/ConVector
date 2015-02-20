@@ -37,7 +37,7 @@ class WebService implements Runnable {
 		}
 	}
 
-	private SocketChannel client;
+	private final SocketChannel client;
 
 	WebService(final SocketChannel client) {
 		this.client = client;

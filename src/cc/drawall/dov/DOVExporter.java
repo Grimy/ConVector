@@ -35,7 +35,6 @@ public class DOVExporter extends Exporter {
 
 	@Override
 	protected void writeSegment(final int type, final double[] coords) {
-		System.out.printf("%x, %x\n", (int) coords[0], (int) coords[1]);
 		switch (type) {
 		case PathIterator.SEG_MOVETO:
 			writeChar(0xFFFF);

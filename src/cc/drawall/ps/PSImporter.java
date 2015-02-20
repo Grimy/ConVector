@@ -249,8 +249,8 @@ public class PSImporter implements Importer {
 
 		// Graphics State
 		builtin("gsave",         () -> g.save());
-		builtin("grestore",      () -> g.restore().reset());
-		builtin("grestoreall",   () -> g.restore().reset());
+		builtin("grestore",      () -> g.resetPath().restore());
+		builtin("grestoreall",   () -> g.resetPath().restore());
 		builtin("setlinecap",    () -> g.setLineCap(popFlag()));
 		builtin("setlinejoin",   () -> g.setLineJoin(popFlag()));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
@@ -265,7 +265,7 @@ public class PSImporter implements Importer {
 		builtin("setcmykcolor", () -> substack(4).clear());
 		builtin("setgray", () -> g.setStrokeColor(new Color((int) (0xFFFFFF * p(1)))));
 		builtin("clippath", () -> {
-			g.reset();
+			g.resetPath();
 			g.append(g.getClip());
 		});
 		builtin("pathbbox", () -> {
@@ -293,12 +293,12 @@ public class PSImporter implements Importer {
 		builtin("translate", () -> g.getTransform().translate(p(2), p()));
 
 		// Path construction
-		builtin("newpath", () -> g.reset());
-		builtin("moveto", () -> g.moveTo(false, p(2), p()));
-		builtin("rmoveto", () -> g.moveTo(true, p(2), p()));
-		builtin("lineto", () -> g.lineTo(false, p(2), p()));
-		builtin("rlineto", () -> g.lineTo(true, p(2), p()));
-		builtin("curveto", () -> g.lineTo(false, p(6), p(), p(), p(), p(), p()));
+		builtin("newpath", () -> g.resetPath());
+		builtin("moveto", () -> g.setRelative(false).moveTo(p(2), p()));
+		builtin("rmoveto", () -> g.setRelative(true).moveTo(p(2), p()));
+		builtin("lineto", () -> g.setRelative(false).lineTo(p(2), p()));
+		builtin("rlineto", () -> g.setRelative(true).lineTo(p(2), p()));
+		builtin("curveto", () -> g.setRelative(false).lineTo(p(6), p(), p(), p(), p(), p()));
 		builtin("closepath", () -> g.closePath());
 		builtin("currentpoint", () -> {
 			final Point2D point = g.getCurrentPoint();
@@ -307,9 +307,9 @@ public class PSImporter implements Importer {
 		});
 
 		// Painting
-		builtin("stroke", () -> g.stroke().reset());
-		builtin("fill", () -> g.setWindingRule(Path2D.WIND_NON_ZERO).fill().reset());
-		builtin("eofill", () -> g.setWindingRule(Path2D.WIND_EVEN_ODD).fill().reset());
+		builtin("stroke", () -> g.stroke().resetPath());
+		builtin("fill", () -> g.setWindingRule(Path2D.WIND_NON_ZERO).fill().resetPath());
+		builtin("eofill", () -> g.setWindingRule(Path2D.WIND_EVEN_ODD).fill().resetPath());
 		builtin("clip", () -> g.clip(g.getPath()));
 
 		// Insideness-testing

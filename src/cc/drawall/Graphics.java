@@ -42,6 +42,7 @@ public class Graphics {
 	private Area clippath = new Area(new Rectangle2D.Float(
 				-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
 				Float.MAX_VALUE, Float.MAX_VALUE));
+	private boolean relative;
 	private final Path2D path = new Path2D.Float();
 	private Color strokeColor = Color.BLACK;
 	private Color fillColor;
@@ -59,13 +60,18 @@ public class Graphics {
 	// Path construction //
 	///////////////////////
 
+	public Graphics setRelative(final boolean relative) {
+		this.relative = relative;
+		return this;
+	}
+
 	/** Set the current point without drawing anything.
 	  * @param relative whether to interpret coordinates as relative to the current point
 	  * @param x the target abscissa
 	  * @param y the target ordinate */
-	public void moveTo(final boolean relative, final float x, final float y) {
+	public void moveTo(final float x, final float y) {
 		final float[] points = {x, y};
-		transform(relative, points);
+		transform(points);
 		path.moveTo(points[0], points[1]);
 	}
 
@@ -77,8 +83,8 @@ public class Graphics {
 	  * aka a straight line.
 	  * @param relative whether to interpret coordinates as relative to the current point
 	  * @param points the array containing the control point coordinates of the desired curve */
-	public void lineTo(final boolean relative, final float... points) {
-		transform(relative, points);
+	public void lineTo(final float... points) {
+		transform(points);
 		if (points.length == 2) {
 			path.lineTo(points[0], points[1]);
 		} else if (points.length == 4) {
@@ -96,12 +102,12 @@ public class Graphics {
 	  * @param largeArcFlag whether to choose one of the larger arc sweeps
 	  * @param sweepFlag whether to choose one of the counterclockwise arc sweeps
 	  * @param points the coordinates of the center and end point of the ellipse to be drawn */
-	public void arcTo(final boolean relative, final float xAxisRotation,
+	public void arcTo(final float xAxisRotation,
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
 		final Point2D p0 = path.getCurrentPoint();
 		try {
 			ctm.inverseTransform(p0, p0);
-		} catch (NoninvertibleTransformException e) {
+		} catch (final NoninvertibleTransformException e) {
 			assert false;
 		}
 		final double x0 = p0.getX();
@@ -166,9 +172,18 @@ public class Graphics {
 		path.closePath();
 	}
 
-	/** Resets the path to its initial, empty state. */
-	public void reset() {
+	/** Resets the path to its initial, empty state.
+	  * @return this Graphics */
+	public Graphics resetPath() {
 		path.reset();
+		return this;
+	}
+
+	/** Resets the path to its initial, empty state. */
+	public void resetKeepPos() {
+		final Point2D p = path.getCurrentPoint();
+		path.reset();
+		path.moveTo(p == null ? 0 : p.getX(), p == null ? 0 : p.getY());
 	}
 
 	/** Appends the geometry of the specified Shape to the path.
@@ -184,10 +199,9 @@ public class Graphics {
 		return path.getCurrentPoint();
 	}
 
-	/** Intersects the clipping area with the path.
-	  * This sets the clipping area to the intersection of its current value with the area
-	  * by the path, after closing it if necessary. */
-	public void clip(Shape s) {
+	/** Intersects the clipping area with the interior of the specified shape.
+	  * @param s the Shape to be intersected with the current Clip  */
+	public void clip(final Shape s) {
 		clippath.intersect(new Area(s));
 	}
 
@@ -216,14 +230,12 @@ public class Graphics {
 			ctm.getShearX(), ctm.getScaleY(), point.getX(), point.getY());
 	}
 
-	private void transform(final boolean relative, final float[] points) {
+	private void transform(final float[] points) {
 		final int nbPoints = points.length / 2;
 		(relative ? relativeTransform() : ctm).transform(points, 0, points, 0, nbPoints);
 		final Point2D point = nbPoints > 1 && smooth != null ? smooth : path.getCurrentPoint();
-		if (point != null) {
-			points[0] = Float.isNaN(points[0]) ? (float) point.getX() : points[0];
-			points[1] = Float.isNaN(points[1]) ? (float) point.getY() : points[1];
-		}
+		points[0] = Float.isNaN(points[0]) ? (float) point.getX() : points[0];
+		points[1] = Float.isNaN(points[1]) ? (float) point.getY() : points[1];
 		smooth = nbPoints == 1 ? null : new Point2D.Float(
 				2 * points[points.length - 2] - points[points.length - 4],
 				2 * points[points.length - 1] - points[points.length - 3]);
@@ -233,7 +245,8 @@ public class Graphics {
 	// Drawing operations //
 	////////////////////////
 
-	/** Stroke the current path with the stroking Color. */
+	/** Stroke the current path with the stroking Color.
+	  * @return this Graphics */
 	public Graphics stroke() {
 		if (strokeColor == null || path.getCurrentPoint() == null) {
 			return this;
@@ -248,28 +261,21 @@ public class Graphics {
 		return this;
 	}
 
-	/** Fill the current path with the filling Color. */
+	/** Fill the current path with the filling Color.
+	  * @return this Graphics */
 	public Graphics fill() {
 		if (fillColor == null || path.getCurrentPoint() == null) {
 			return this;
 		}
 		path.closePath();
-		Area area = new Area(path);
+		final Area area = new Area(path);
 		area.intersect(clippath);
 		drawing.paint(fillColor, area);
 		return this;
 	}
 
-	public void draw() {
-		fill();
-		stroke();
-		Point2D p = path.getCurrentPoint();
-		path.reset();
-		path.moveTo(p == null ? 0 : p.getX(), p == null ? 0 : p.getY());
-	}
-
-	private Area clipped(Shape shape) {
-		Area result = new Area(shape);
+	private Area clipped(final Shape shape) {
+		final Area result = new Area(shape);
 		result.intersect(clippath);
 		return result;
 	}
@@ -337,7 +343,10 @@ public class Graphics {
 		this.fillColor = fillColor;
 	}
 
-	/* @see java.awt.geom.GeneralPath */
+	/** Sets the winding rule for filling operations.
+	  * @see java.awt.geom.GeneralPath
+	  * @param rule the winding rule to use
+	  * @return this Graphics */
 	public Graphics setWindingRule(final int rule) {
 		assert rule == Path2D.WIND_NON_ZERO || rule == Path2D.WIND_EVEN_ODD;
 		path.setWindingRule(rule);
@@ -390,9 +399,8 @@ public class Graphics {
 	/** Reverts the graphical state to the latest snapshot.
 	  * The used snapshot is popped from the save stack, so that a later restore()
 	  * will restore an earlier snapshot. */
-	public Graphics restore() {
+	public void restore() {
 		copy(prev);
-		return this;
 	}
 
 	private void copy(final Graphics that) {

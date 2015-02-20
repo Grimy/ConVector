@@ -26,11 +26,14 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -70,7 +73,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private static final List<String> caps = Arrays.asList("butt", "round", "square");
 	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
-	private static final List<String> defs = Arrays.asList("defs", "symbol", "clipPath", "linearGradient");
+	private static final Set<String> defs = new HashSet<>(Arrays.asList(
+				"defs", "symbol", "clipPath", "linearGradient"));
 
 	private final Graphics g = new Graphics();
 	private final Deque<String> idStack = new ArrayDeque<>();
@@ -92,16 +96,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.setWindingRule(Path2D.WIND_EVEN_ODD);
 			}
 		});
-		attrHandlers.put("clip-path", v -> {
-			if (paths.containsKey(v)) {
-				g.clip(g.getTransform().createTransformedShape(paths.get(v)));
-			}
-		});
+		attrHandlers.put("clip-path", v -> getURL(paths, v, path ->
+				g.clip(g.getTransform().createTransformedShape(path))));
 		attrHandlers.put("viewBox", v -> parseViewBox(v));
 		attrHandlers.put("stroke", v -> parseColor(v, g::setStrokeColor));
 		attrHandlers.put("stop-color", v -> parseColor(v, color ->
 					gradients.put(idStack.peek(), color)));
-		attrHandlers.put("transform", v -> g.getTransform().concatenate(parseTransform(v)));
+		attrHandlers.put("transform", v -> parseTransform(v));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 				handleAttr(prop.split(":")[0], prop.split(":")[1])));
 		attrHandlers.put("stroke-dasharray", v -> {/*TODO*/});
@@ -113,6 +114,108 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v)));
 		attrHandlers.put("font-family", v -> g.setFont(v));
 		// font-weight, text-align, text-anchor
+	}
+
+	private final Map<String, Runnable> tagHandlers = new HashMap<>(); {
+		tagHandlers.put("svg", () -> {
+			if (!hasViewBox) {
+				g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
+							getFloat("height", Float.MAX_VALUE)));
+			}
+		});
+		tagHandlers.put("use", () -> g.append(paths.getOrDefault(
+			attributes.getValue("xlink:href"), new Path2D.Float())));
+		tagHandlers.put("line", () -> {
+			g.moveTo(getFloat("x1", 0f), getFloat("y1", 0f));
+			g.lineTo(getFloat("x2", 0f), getFloat("y2", 0f));
+		});
+		tagHandlers.put("ellipse", () -> {
+			final float rx = getFloat("rx", getFloat("r", 0f));
+			final float ry = getFloat("ry", getFloat("r", 0f));
+			final float cx = getFloat("cx", 0f);
+			final float cy = getFloat("cy", 0f);
+			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
+							cx - rx, cy - ry, 2 * rx, 2 * ry)));
+		});
+		tagHandlers.put("circle", tagHandlers.get("ellipse"));
+		tagHandlers.put("polygon", () -> parsePathData(attributes.getValue("points") + "z"));
+		tagHandlers.put("polyline", () -> parsePathData(attributes.getValue("points")));
+		tagHandlers.put("rect", () -> {
+			final float x = getFloat("x", 0f), y = getFloat("y", 0f);
+			final float width = getFloat("width", 0f), height = getFloat("height", 0f);
+			// TODO: rounded rect final float rx = getFloat("rx", 0f), ry = getFloat("ry", 0f)
+			g.moveTo(x, y);
+			g.lineTo(x + width, y);
+			g.lineTo(x + width, y + height);
+			g.lineTo(x, y + height);
+			g.closePath();
+		});
+		tagHandlers.put("text", () -> {
+			g.moveTo(getFloat("x", 0), getFloat("y", 0));
+			inText = true;
+		});
+		tagHandlers.put("tspan", () -> g.moveTo(getFloat("x", Float.NaN), getFloat("y", Float.NaN)));
+		tagHandlers.put("path", () -> parsePathData(attributes.getValue("d")));
+		tagHandlers.put("linearGradient", () -> gradients.put(
+			idStack.peek(), gradients.get(attributes.getValue("xlink:href"))));
+		tagHandlers.put("radialGradient", () -> gradients.put(
+			'#' + attributes.getValue("id"), null));
+	}
+
+	private final Map<Character, Consumer<Scanner>> pathHandlers = new HashMap<>(); {
+		pathHandlers.put('M', s -> g.moveTo(s.nextFloat(), s.nextFloat()));
+		pathHandlers.put('L', s -> g.lineTo(s.nextFloat(), s.nextFloat()));
+		pathHandlers.put('Q', s -> g.lineTo(s.nextFloat(), s.nextFloat(),
+				s.nextFloat(), s.nextFloat()));
+		pathHandlers.put('C', s -> g.lineTo(s.nextFloat(), s.nextFloat(),
+				s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
+		pathHandlers.put('Z', s -> {
+			g.closePath();
+			if (idStack.isEmpty() && g.getFillColor() == null) {
+				g.stroke().resetKeepPos();
+			}
+		});
+		pathHandlers.put('A', s -> {
+			final float rx = s.nextFloat(), ry = s.nextFloat();
+			g.arcTo(s.nextFloat(), s.nextInt() != 0, s.nextInt() != 0,
+					rx, ry, s.nextFloat(), s.nextFloat());
+		});
+		pathHandlers.put('H', s -> g.lineTo(s.nextFloat(), Float.NaN));
+		pathHandlers.put('V', s -> g.lineTo(Float.NaN, s.nextFloat()));
+		pathHandlers.put('T', s -> g.lineTo(Float.NaN, Float.NaN,
+			s.nextFloat(), s.nextFloat()));
+		pathHandlers.put('S', s -> g.lineTo(Float.NaN, Float.NaN,
+				s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
+	}
+
+	private static final Map<String, Function<Scanner, AffineTransform>>
+		transformHandlers = new HashMap<>(); static {
+		transformHandlers.put("matrix", s -> new AffineTransform(
+			s.nextFloat(), s.nextFloat(), s.nextFloat(),
+			s.nextFloat(), s.nextFloat(), s.nextFloat()));
+		transformHandlers.put("translate", s -> AffineTransform.getTranslateInstance(
+			s.nextFloat(), s.hasNextFloat() ? s.nextFloat() : 0));
+		transformHandlers.put("rotate", s -> AffineTransform.getRotateInstance(
+			Math.toRadians(s.nextFloat()),
+			s.hasNextFloat() ? s.nextFloat() : 0,
+			s.hasNextFloat() ? s.nextFloat() : 0));
+		transformHandlers.put("scale", s -> {
+			final float xScale = s.nextFloat();
+			return AffineTransform.getScaleInstance(xScale,
+				s.hasNextFloat() ? s.nextFloat() : xScale);
+		});
+		transformHandlers.put("skewX", s -> AffineTransform.getShearInstance(
+			Math.tan(Math.toRadians(s.nextFloat())), 0));
+		transformHandlers.put("skewY", s -> AffineTransform.getShearInstance(
+			0, Math.tan(Math.toRadians(s.nextFloat()))));
+	}
+
+	private static <T> void getURL(final Map<String, T> map, final String url,
+			final Consumer<T> sink) {
+		final String id = url.substring(4, url.length() - 1);
+		if (map.containsKey(id)) {
+			sink.accept(map.get(id));
+		}
 	}
 
 	private void handleAttr(final String name, final String value) {
@@ -165,84 +268,25 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void startElement(final String namespace, final String local,
 			final String name, final Attributes attributes) {
-		g.save();
+		g.setRelative(false).save();
 		this.attributes = attributes;
 		for (int i = 0; i < attributes.getLength(); i++) {
 			handleAttr(attributes.getLocalName(i), attributes.getValue(i));
 		}
-
 		if (defs.contains(name) || !idStack.isEmpty()) {
-			idStack.push("url(#" + attributes.getValue("id") + ")");
-			if (name.equals("linearGradient") && attributes.getValue("xlink:href") != null) {
-				gradients.put(idStack.peek(), gradients.get("url(" + attributes.getValue("xlink:href") + ")"));
-			}
+			idStack.push('#' + attributes.getValue("id"));
 		}
-
-		switch (name) {
-		case "svg":
-			if (!hasViewBox) {
-				g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
-					getFloat("height", Float.MAX_VALUE)));
-			}
-			break;
-		case "use":
-			g.append(paths.getOrDefault("url(" + attributes.getValue("xlink:href") + ")", new Path2D.Float()));
-			break;
-		case "radialGradient":
-			gradients.put("url(#" + attributes.getValue("id") + ")", null);
-			break;
-		case "line":
-			g.moveTo(false, getFloat("x1", 0f), getFloat("y1", 0f));
-			g.lineTo(false, getFloat("x2", 0f), getFloat("y2", 0f));
-			break;
-		case "circle":
-		case "ellipse":
-			final float rx = getFloat("rx", getFloat("r", 0f));
-			final float ry = getFloat("ry", getFloat("r", 0f));
-			final float cx = getFloat("cx", 0f);
-			final float cy = getFloat("cy", 0f);
-			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
-					cx - rx, cy - ry, 2 * rx, 2 * ry)));
-			break;
-		case "polygon":
-			parsePathData("M" + attributes.getValue("points") + "z");
-			break;
-		case "polyline":
-			parsePathData("M" + attributes.getValue("points"));
-			break;
-		case "rect":
-			final float x = getFloat("x", 0f), y = getFloat("y", 0f);
-			final float width = getFloat("width", 0f), height = getFloat("height", 0f);
-			// final float rx = getFloat("rx", 0f), ry = getFloat("ry", 0f);
-			g.moveTo(false, x, y);
-			g.lineTo(false, x + width, y);
-			g.lineTo(false, x + width, y + height);
-			g.lineTo(false, x, y + height);
-			g.closePath();
-			break;
-		case "text":
-			g.moveTo(false, getFloat("x", 0), getFloat("y", 0));
-			inText = true;
-			break;
-		case "tspan":
-			g.moveTo(false, getFloat("x", Float.NaN), getFloat("y", Float.NaN));
-			break;
-		case "path":
-			parsePathData(attributes.getValue("d"));
-			break;
-		default:
-		}
+		tagHandlers.getOrDefault(name, () -> {/*NOOP*/}).run();
 	}
 
 	@Override
 	public void endElement(final String namespace, final String local, final String name) {
 		if (idStack.isEmpty()) {
-			g.draw();
-			g.reset();
+			g.fill().stroke().resetPath();
 		} else {
 			paths.put(idStack.pop(), g.getPath());
 			if (defs.contains(name)) {
-				g.reset();
+				g.resetPath();
 			}
 		}
 		inText &= !name.equals("text");
@@ -254,70 +298,26 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		final Scanner scanner = new Scanner(data);
 		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|"
 				+ "[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
-		char cmd = '!';
-
+		char cmd = 'M';
 		while (scanner.hasNext()) {
 			if (scanner.hasNext(SVG_COMMAND)) {
 				cmd = scanner.next(SVG_COMMAND).charAt(0);
 			}
-			final boolean relative = Character.isLowerCase(cmd);
-			if (g.getCurrentPoint() == null && relative) {
-				g.moveTo(false, 0, 0);
+			// TODO: remove this
+			if (g.getCurrentPoint() == null && Character.isLowerCase(cmd)) {
+				g.moveTo(0, 0);
 			}
-			switch (Character.toUpperCase(cmd)) {
-			case 'M':
-				g.moveTo(relative, scanner.nextFloat(), scanner.nextFloat());
+			g.setRelative(Character.isLowerCase(cmd));
+			pathHandlers.get(Character.toUpperCase(cmd)).accept(scanner);
+			if (Character.toUpperCase(cmd) == 'M') {
 				--cmd;
-				break;
-			case 'L':
-				g.lineTo(relative, scanner.nextFloat(), scanner.nextFloat());
-				break;
-			case 'Q':
-				g.lineTo(relative, scanner.nextFloat(), scanner.nextFloat(),
-						scanner.nextFloat(), scanner.nextFloat());
-				break;
-			case 'C':
-				g.lineTo(relative, scanner.nextFloat(), scanner.nextFloat(),
-						scanner.nextFloat(), scanner.nextFloat(),
-						scanner.nextFloat(), scanner.nextFloat());
-				break;
-			case 'Z':
-				g.closePath();
-				if (idStack.isEmpty() && g.getFillColor() == null) {
-					g.draw();
-				}
-				cmd = '!';
-				break;
-			case 'A':
-				final float rx = scanner.nextFloat(), ry = scanner.nextFloat();
-				g.arcTo(relative, scanner.nextFloat(),
-						scanner.nextInt() != 0, scanner.nextInt() != 0,
-						rx, ry, scanner.nextFloat(), scanner.nextFloat());
-				break;
-			case 'H': // horizontal
-				g.lineTo(relative, scanner.nextFloat(), Float.NaN);
-				break;
-			case 'V': // vertical
-				g.lineTo(relative, Float.NaN, scanner.nextFloat());
-				break;
-			case 'T': // smooth quadratic
-				g.lineTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(), scanner.nextFloat());
-				break;
-			case 'S': // smooth cubic
-				g.lineTo(relative, Float.NaN, Float.NaN, scanner.nextFloat(),
-						scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat());
-				break;
-			default:
-				assert false : "Unknown path operator: " + cmd;
 			}
 		}
 	}
 
 	private void parseColor(final String colorName, final Consumer<Color> callback) {
-		if (gradients.containsKey(colorName)) {
-			callback.accept(gradients.get(colorName));
-		}
-		if (colorName.startsWith("url")) {
+		if (colorName.startsWith("url(")) {
+			getURL(gradients, colorName, callback);
 			return;
 		}
 		if (colorName.equals("currentColor")) {
@@ -333,48 +333,15 @@ public class SVGImporter extends DefaultHandler implements Importer {
 					(float) color.getGreen(), (float) color.getBlue()));
 	}
 
-	private static AffineTransform parseTransform(final String transform) {
+	private void parseTransform(final String transform) {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(transform);
 		scanner.useDelimiter("[(,\\s)]*(?:[(,\\s)]|(?<![eE])(?=[-+]))");
-		final AffineTransform result = new AffineTransform();
-		while (scanner.hasNext()) {
-			switch (scanner.next()) {
-			case "matrix":
-				result.concatenate(new AffineTransform(
-						scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat(),
-						scanner.nextFloat(), scanner.nextFloat(), scanner.nextFloat()));
-				break;
-			case "translate":
-				result.translate(scanner.nextFloat(),
-					scanner.hasNextFloat() ? scanner.nextFloat() : 0);
-				break;
-			case "rotate":
-				result.concatenate(AffineTransform.getRotateInstance(
-					Math.toRadians(scanner.nextFloat()),
-					scanner.hasNextFloat() ? scanner.nextFloat() : 0,
-					scanner.hasNextFloat() ? scanner.nextFloat() : 0));
-				break;
-			case "scale":
-				final float xScale = scanner.nextFloat();
-				result.scale(xScale, scanner.hasNextFloat() ? scanner.nextFloat() : xScale);
-				break;
-			case "skewX":
-				result.concatenate(AffineTransform.getShearInstance(
-							Math.tan(Math.toRadians(scanner.nextFloat())), 0));
-				break;
-			case "skewY":
-				result.concatenate(AffineTransform.getShearInstance(
-							0, Math.tan(Math.toRadians(scanner.nextFloat()))));
-				break;
-			default:
-				throw new InputMismatchException("Unhandled transform: " + transform);
-			}
-		}
-		return result;
+		scanner.forEachRemaining(token -> g.getTransform().concatenate(
+			transformHandlers.get(token).apply(scanner)));
 	}
 
-	private void parseViewBox(String viewBox) {
+	private void parseViewBox(final String viewBox) {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(viewBox);
 		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
@@ -385,7 +352,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void characters(final char[] ch, final int start, final int length) {
 		if (inText) {
-			String text = new String(ch, start, length).trim();
+			final String text = new String(ch, start, length).trim();
 			if (!text.isEmpty()) {
 				g.charpath(text);
 			}

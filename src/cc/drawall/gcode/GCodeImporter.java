@@ -32,9 +32,6 @@ public class GCodeImporter implements Importer {
 	private static final Pattern TOKEN = Pattern.compile("[GMFTSO#]"
 			+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
 
-	/* Whether to compute coordinates relative to the current point. Set by G20 / G21 */
-	private boolean relative;
-
 	/** The scanner used to parse the input. */
 	private Scanner scanner;
 
@@ -45,16 +42,16 @@ public class GCodeImporter implements Importer {
 
 	private final Map<Integer, Runnable> gcodes = new HashMap<>(); {
 		gcodes.put(0, () -> {
-			g.stroke().reset();
-			g.moveTo(relative, readPos('X'), readPos('Y'));
+			g.stroke().resetPath();
+			g.moveTo(readPos('X'), readPos('Y'));
 		});
-		gcodes.put(1, () -> g.lineTo(relative, readPos('X'), readPos('Y')));
-		gcodes.put(5, () -> g.lineTo(relative, readArg('I'), readArg('J'),
+		gcodes.put(1, () -> g.lineTo(readPos('X'), readPos('Y')));
+		gcodes.put(5, () -> g.lineTo(readArg('I'), readArg('J'),
 					readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
 		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
 		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
-		gcodes.put(90, () -> relative = false);
-		gcodes.put(91, () -> relative = true);
+		gcodes.put(90, () -> g.setRelative(false));
+		gcodes.put(91, () -> g.setRelative(true));
 		// 2:  Helical motion, CW
 		// 3:  Helical motion, CCW
 		// 7:  Diameter mode
@@ -74,15 +71,15 @@ public class GCodeImporter implements Importer {
 	@Override
 	public Graphics process(final ReadableByteChannel input) {
 		scanner = new Scanner(input, "ascii");
-		g.moveTo(false, 0, 0);
+		g.moveTo(0, 0);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
 
 		scanner.skip("; (\\d+)x(\\d+)\n");
-		int width = Integer.parseInt(scanner.match().group(1));
-		int height = Integer.parseInt(scanner.match().group(2));
-		double ratio = Math.max(width, height) / 65535.0;
+		final int width = Integer.parseInt(scanner.match().group(1));
+		final int height = Integer.parseInt(scanner.match().group(2));
+		final double ratio = Math.max(width, height) / 65535.0;
 		g.getTransform().scale(ratio, ratio);
 		g.setStrokeWidth((float) (1 / ratio));
 
@@ -93,11 +90,11 @@ public class GCodeImporter implements Importer {
 
 			switch (token.charAt(0)) {
 			case 'G':
-				gcodes.getOrDefault((int) arg, () -> System.out.println("G" + arg)).run();
+				gcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
 				scanner.nextLine();
 				break;
 			case 'M':
-				mcodes.getOrDefault((int) arg, () -> System.out.println("M" + arg)).run();
+				mcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
 				break;
 			case '#':
 				variables.put((int) arg, readArg('='));

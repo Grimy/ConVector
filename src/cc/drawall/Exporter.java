@@ -98,7 +98,7 @@ public abstract class Exporter {
 	 * By default, this does nothing; subclasses should override this if the
 	 * target filetype requires some form of footer. */
 	protected void writeFooter() {
-		write("");
+		/* Do nothing by default */
 	}
 
 	/** Writes the necessary instructions to change the Color of the drawing.
@@ -106,7 +106,7 @@ public abstract class Exporter {
 	  * target filetype supports color.
 	  * @param color the new painting color */
 	protected void writeColor(final Color color) {
-		write("");
+		/* Do nothing by default */
 	}
 
 	/** Writes a single segment to the output stream.

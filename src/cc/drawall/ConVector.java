@@ -62,7 +62,7 @@ class ConVector extends Canvas {
 		} else if (args.length == 1) {
 			WebService.loop(Integer.parseInt(args[0]));
 		} else {
-			Drawing drawing = importFile(new File(args[0]));
+			final Drawing drawing = importFile(new File(args[0]));
 			for (int i = 1; i < args.length; ++i) {
 				exportFile(new File(args[i]), drawing);
 			}
@@ -145,7 +145,7 @@ class ConVector extends Canvas {
 	  * @param filetype indicates how to interpret read data
 	  * @return the resulting vector */
 	static Drawing importStream(final ReadableByteChannel input, final String filetype) {
-		for (Importer importer: ServiceLoader.load(Importer.class)) {
+		for (final Importer importer: ServiceLoader.load(Importer.class)) {
 			if (importer.getClass().getSimpleName().replace("Importer", "")
 					.equalsIgnoreCase(filetype)) {
 				return importer.process(input).drawing;
