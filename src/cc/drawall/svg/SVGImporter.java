@@ -350,7 +350,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 					scanner.hasNextFloat() ? scanner.nextFloat() : 0);
 				break;
 			case "rotate":
-				result.concatenate(AffineTransform.getRotateInstance(scanner.nextFloat(),
+				result.concatenate(AffineTransform.getRotateInstance(
+					Math.toRadians(scanner.nextFloat()),
 					scanner.hasNextFloat() ? scanner.nextFloat() : 0,
 					scanner.hasNextFloat() ? scanner.nextFloat() : 0));
 				break;
