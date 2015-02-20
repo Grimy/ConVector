@@ -125,8 +125,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	public Graphics process(final ReadableByteChannel input) {
 		g.setFillColor(Color.BLACK);
 		g.setStrokeColor(null);
-		// TODO: default stroke-width?
-		g.setFont("Serif");
+		g.setFont("DejaVu Serif");
 		try {
 			SAXParserFactory.newInstance().newSAXParser().parse(
 					Channels.newInputStream(input), this);
