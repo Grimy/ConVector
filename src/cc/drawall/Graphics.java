@@ -101,7 +101,7 @@ public class Graphics {
 	  * @param xAxisRotation indicates how the ellipse as a whole is rotated
 	  * @param largeArcFlag whether to choose one of the larger arc sweeps
 	  * @param sweepFlag whether to choose one of the counterclockwise arc sweeps
-	  * @param points the coordinates of the center and end point of the ellipse to be drawn */
+	  * @param points the coordinates of the radii and end point of the ellipse to be drawn */
 	public void arcTo(final float xAxisRotation,
 			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
 		final Point2D p0 = path.getCurrentPoint();

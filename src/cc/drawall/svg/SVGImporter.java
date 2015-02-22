@@ -98,14 +98,14 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			}
 		});
 		attrHandlers.put("clip-path", v -> getURL(paths, v, path ->
-				g.clip(g.getTransform().createTransformedShape(path))));
+			g.clip(g.getTransform().createTransformedShape(path))));
 		attrHandlers.put("viewBox", v -> parseViewBox(v));
 		attrHandlers.put("stroke", v -> parseColor(v, g::setStrokeColor));
 		attrHandlers.put("stop-color", v -> parseColor(v, color ->
-					gradients.put(idStack.peek(), color)));
+			gradients.put(idStack.peek(), color)));
 		attrHandlers.put("transform", v -> parseTransform(v));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
-				handleAttr(prop.split(":")[0], prop.split(":")[1])));
+			handleAttr(prop.split(":")[0], prop.split(":")[1])));
 		attrHandlers.put("stroke-dasharray", v -> {/*TODO*/});
 		attrHandlers.put("stroke-dashoffset", v -> {/*TODO*/});
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
@@ -121,7 +121,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		tagHandlers.put("svg", () -> {
 			if (!hasViewBox) {
 				g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
-							getFloat("height", Float.MAX_VALUE)));
+					getFloat("height", Float.MAX_VALUE)));
 			}
 		});
 		tagHandlers.put("use", () -> g.append(paths.getOrDefault(
@@ -136,7 +136,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			final float cx = getFloat("cx", 0f);
 			final float cy = getFloat("cy", 0f);
 			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
-							cx - rx, cy - ry, 2 * rx, 2 * ry)));
+				cx - rx, cy - ry, 2 * rx, 2 * ry)));
 		});
 		tagHandlers.put("circle", tagHandlers.get("ellipse"));
 		tagHandlers.put("polygon", () -> parsePathData(attributes.getValue("points") + "z"));
@@ -165,9 +165,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		pathHandlers.put('M', s -> g.moveTo(s.nextFloat(), s.nextFloat()));
 		pathHandlers.put('L', s -> g.lineTo(s.nextFloat(), s.nextFloat()));
 		pathHandlers.put('Q', s -> g.lineTo(s.nextFloat(), s.nextFloat(),
-				s.nextFloat(), s.nextFloat()));
+			s.nextFloat(), s.nextFloat()));
 		pathHandlers.put('C', s -> g.lineTo(s.nextFloat(), s.nextFloat(),
-				s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
+			s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
 		pathHandlers.put('Z', s -> {
 			g.closePath();
 			if (idStack.isEmpty() && g.getFillColor() == null) {
@@ -177,14 +177,14 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		pathHandlers.put('A', s -> {
 			final float rx = s.nextFloat(), ry = s.nextFloat();
 			g.arcTo(s.nextFloat(), s.nextInt() != 0, s.nextInt() != 0,
-					rx, ry, s.nextFloat(), s.nextFloat());
+				rx, ry, s.nextFloat(), s.nextFloat());
 		});
 		pathHandlers.put('H', s -> g.lineTo(s.nextFloat(), Float.NaN));
 		pathHandlers.put('V', s -> g.lineTo(Float.NaN, s.nextFloat()));
 		pathHandlers.put('T', s -> g.lineTo(Float.NaN, Float.NaN,
 			s.nextFloat(), s.nextFloat()));
 		pathHandlers.put('S', s -> g.lineTo(Float.NaN, Float.NaN,
-				s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
+			s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
 	}
 
 	private static final Map<String, Function<Scanner, AffineTransform>>
@@ -230,7 +230,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		g.setFont("DejaVu Serif");
 		try {
 			SAXParserFactory.newInstance().newSAXParser().parse(
-					Channels.newInputStream(input), this);
+				Channels.newInputStream(input), this);
 		} catch (final ParserConfigurationException | IOException e) {
 			assert false : "XML error : " + e;
 		} catch (final SAXException e) {
@@ -296,7 +296,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(data);
 		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|"
-				+ "[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
+			+ "[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
 		char cmd = 'M';
 		while (scanner.hasNext()) {
 			if (scanner.hasNext(SVG_COMMAND)) {
