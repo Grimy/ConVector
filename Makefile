@@ -14,7 +14,11 @@ test: convector.jar
 	cd test; mkdir -p pdf ps svg; for file in *.svg; do \
 		echo $$file; \
 		java -ea -jar ../$< $$file svg/$$file.svg ps/$$file.ps pdf/$$file.pdf; \
-	done; md5sum pdf/* ps/* svg/* >md5sums; diff md5sums.ok md5sums
+		grep -q `md5sum svg/$$file.svg` md5sums && \
+		grep -q `md5sum ps/$$file.ps`   md5sums && \
+		grep -q `md5sum pdf/$$file.pdf` md5sums || \
+		exit 1; \
+	done
 
 doc:
 	doxygen doc/Doxyfile
