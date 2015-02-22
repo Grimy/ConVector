@@ -57,6 +57,7 @@ f43d8c60cc0e6cfa792a6a270ac0c9e8  pdf/shapes-ellipse-02-t.svg.pdf
 a3f6d02f530e1c6fb85b2ab390363a8a  pdf/shapes-line-01-t.svg.pdf
 e9f267435389c48b070ca5d5c065d1b9  pdf/shapes-polygon-01-t.svg.pdf
 1d68169d00ab8756f1f61c69957f59ce  pdf/shapes-polyline-01-t.svg.pdf
+e2dc39fe3aa95cc79703152ab931b0c0  pdf/shapes-rect-01-t.svg.pdf
 dcce3b2c2d8d6dca9dcfe29d3ac57ae2  pdf/struct-defs-01-t.svg.pdf
 37494f3edca4a6b1064bd34f723ce916  pdf/struct-frag-02-t.svg.pdf
 37494f3edca4a6b1064bd34f723ce916  pdf/struct-frag-03-t.svg.pdf
@@ -126,6 +127,7 @@ d2b43aac7e5a9ab444d41e9aaafdb98e  ps/shapes-ellipse-02-t.svg.ps
 09ef319aaa44dee90729d73402b05353  ps/shapes-line-01-t.svg.ps
 89bf65c5b301a3a44e3a973e614b6859  ps/shapes-polygon-01-t.svg.ps
 9dd48b43b891ee87a240afd83a561270  ps/shapes-polyline-01-t.svg.ps
+fb9a55a6c9ac15e026b9c4267a25ecf6  ps/shapes-rect-01-t.svg.ps
 7b304d7cdef57b31a68acec2039a5c5b  ps/struct-defs-01-t.svg.ps
 a32f28ebc8cfe4f137f0da4e6c57574b  ps/struct-frag-02-t.svg.ps
 a32f28ebc8cfe4f137f0da4e6c57574b  ps/struct-frag-03-t.svg.ps
@@ -195,6 +197,7 @@ e7ac654a3d27e81190de9bbf90974bf3  svg/shapes-ellipse-01-t.svg.svg
 d8f3da9ce28be77fda3d95ac4970fcf3  svg/shapes-line-01-t.svg.svg
 ba9bf9bb78618787bf6098e23ffa2cfe  svg/shapes-polygon-01-t.svg.svg
 ce9b77182ac7fed99ee2d7a1c2e099fc  svg/shapes-polyline-01-t.svg.svg
+d384a39a6a423f41f24f4876ee4d5a66  svg/shapes-rect-01-t.svg.svg
 dffd4e8bca738168bd7ff8dcc8c50b69  svg/struct-defs-01-t.svg.svg
 c31856a96e7236fa21749137750bef72  svg/struct-frag-02-t.svg.svg
 c31856a96e7236fa21749137750bef72  svg/struct-frag-03-t.svg.svg

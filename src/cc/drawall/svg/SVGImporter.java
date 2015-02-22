@@ -18,6 +18,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.channels.Channels;
@@ -143,12 +144,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		tagHandlers.put("rect", () -> {
 			final float x = getFloat("x", 0f), y = getFloat("y", 0f);
 			final float width = getFloat("width", 0f), height = getFloat("height", 0f);
-			// TODO: rounded rect final float rx = getFloat("rx", 0f), ry = getFloat("ry", 0f)
-			g.moveTo(x, y);
-			g.lineTo(x + width, y);
-			g.lineTo(x + width, y + height);
-			g.lineTo(x, y + height);
-			g.closePath();
+			final float rx = getFloat("rx", getFloat("ry", 0f)), ry = getFloat("ry", rx);
+			g.append(g.getTransform().createTransformedShape(rx == 0 && ry == 0
+				? new Rectangle2D.Float(x, y, width, height)
+				: new RoundRectangle2D.Float(x, y, width, height, 2 * rx, 2 * ry)));
 		});
 		tagHandlers.put("text", () -> {
 			g.moveTo(getFloat("x", 0), getFloat("y", 0));
