@@ -302,11 +302,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			if (scanner.hasNext(SVG_COMMAND)) {
 				cmd = scanner.next(SVG_COMMAND).charAt(0);
 			}
-			// TODO: remove this
-			if (g.getCurrentPoint() == null && Character.isLowerCase(cmd)) {
-				g.moveTo(0, 0);
-			}
-			g.setRelative(Character.isLowerCase(cmd));
+			g.setRelative(Character.isLowerCase(cmd) && g.getCurrentPoint() != null);
 			pathHandlers.get(Character.toUpperCase(cmd)).accept(scanner);
 			if (Character.toUpperCase(cmd) == 'M') {
 				--cmd;
