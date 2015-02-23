@@ -103,8 +103,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("transform", v -> parseTransform(v));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 			handleAttr(prop.split(":")[0], prop.split(":")[1])));
-		attrHandlers.put("stroke-dasharray", v -> {/*TODO*/});
-		attrHandlers.put("stroke-dashoffset", v -> {/*TODO*/});
+		attrHandlers.put("stroke-dasharray", v -> g.setDashArray(parseArray(v)));
+		attrHandlers.put("stroke-dashoffset", v -> g.setDashOffset(Float.parseFloat(v)));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(
 			Graphics.LineCap.valueOf(v.toUpperCase())));
@@ -341,6 +341,19 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
 		g.clip(new Rectangle2D.Float(0, 0, scanner.nextFloat(), scanner.nextFloat()));
 		hasViewBox = true;
+	}
+
+	private static float[] parseArray(final String array) {
+		if (array.equals("none")) {
+			return null;
+		}
+		String[] tokens = array.split("[,\\s]+");
+		float[] result = new float[tokens.length];
+		float sum = 0;
+		for (int i = 0; i < tokens.length; ++i) {
+			sum += (result[i] = Float.parseFloat(tokens[i]));
+		}
+		return sum == 0 ? null : result;
 	}
 
 	@Override

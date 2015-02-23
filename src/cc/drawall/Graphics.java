@@ -296,11 +296,17 @@ public class Graphics {
 
 	/** Set the dashing style.
 	  * @param dash an array representing the dashing pattern
+	  * @see java.awt.BasicStroke */
+	public Graphics setDashArray(final float[] dash) {
+		setStroke("dash", dash);
+		return this;
+	}
+
+	/** Set the dash offset.
 	  * @param phase an offset from the start of the dashing pattern
 	  * @see java.awt.BasicStroke */
-	public void setStrokeDash(final float[] dash, final float phase) {
-		setStroke("dash", dash);
-		setStroke("phase", phase);
+	public void setDashOffset(final float phase) {
+		setStroke("dash_phase", phase);
 	}
 
 	/** Changes the line cap style.

@@ -255,7 +255,7 @@ public class PSImporter implements Importer {
 		builtin("setlinejoin",   () -> g.setLineJoin(Graphics.LineJoin.values()[(int) p(1)]));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
 		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
-		builtin("setdash",       () -> g.setStrokeDash(popArray(), p(1)));
+		builtin("setdash",       () -> g.setDashArray(popArray()).setDashOffset(p(1)));
 		builtin("showpage", NOOP);
 		builtin("setrgbcolor", () -> g.setStrokeColor(new Color(p(3), p(), p())));
 		builtin("sethsbcolor", () -> g.setStrokeColor(Color.getHSBColor(p(3), p(), p())));
