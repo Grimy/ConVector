@@ -13,9 +13,10 @@
 
 package cc.drawall.ps;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+
+import javafx.scene.paint.Color;
 
 import cc.drawall.Exporter;
 
@@ -40,8 +41,7 @@ public class PDFExporter extends Exporter {
 
 	@Override
 	protected void writeColor(final Color color) {
-		final float[] rgb = color.getRGBColorComponents(null);
-		write("h f %.3f %.3f %.3f rg\n", rgb[0], rgb[1], rgb[2]);
+		write("h f %.3f %.3f %.3f rg\n", color.getRed(), color.getGreen(), color.getBlue());
 	}
 
 	@Override

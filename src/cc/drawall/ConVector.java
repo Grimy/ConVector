@@ -17,7 +17,6 @@ import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -35,6 +34,8 @@ import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import com.sun.javafx.geom.RectBounds;
 
 /** User interface. */
 class ConVector extends Canvas {
@@ -128,15 +129,15 @@ class ConVector extends Canvas {
 		assert graphics instanceof Graphics2D;
 		final Graphics2D g = (Graphics2D) graphics;
 		super.paint(g);
-		final Rectangle2D bounds = drawing.getBounds();
+		final RectBounds bounds = drawing.getBounds();
 		final double ratio = Math.min(getWidth() / bounds.getWidth(),
 				getHeight() / bounds.getHeight());
 		g.scale(ratio, ratio);
-		g.translate(-bounds.getX(), -bounds.getY());
-		for (final Drawing.Splash splash: drawing) {
-			g.setColor(splash.color);
-			g.fill(splash.shape);
-		}
+		g.translate(-bounds.getMinX(), -bounds.getMinY());
+		// for (final Drawing.Splash splash: drawing) {
+		// 	g.setColor(splash.color);
+		// 	g.fill(splash.area);
+		// }
 	}
 
 	/** Parses the specified InputStream using a plugin appropriate for the specified filetype

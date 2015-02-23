@@ -1,4 +1,5 @@
 /*
+   import javafx.scene.shape.Shape;
  * This file is part of DraWall.
  * DraWall is free software: you can redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation, either version 3 of the
@@ -13,12 +14,6 @@
 
 package cc.drawall.svg;
 
-import java.awt.Color;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
-import java.awt.geom.RoundRectangle2D;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.channels.Channels;
@@ -29,13 +24,28 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.InputMismatchException;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.Pattern;
+
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Ellipse;
+import javafx.scene.shape.FillRule;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
+import javafx.scene.shape.Shape;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.transform.Affine;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Shear;
+import javafx.scene.transform.Transform;
+import javafx.scene.transform.Translate;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -50,8 +60,6 @@ import cc.drawall.Importer;
 
 /** An Importer for SVG images. */
 public class SVGImporter extends DefaultHandler implements Importer {
-	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
-
 	private static final Map<String, Float> fontSizes = new HashMap<>(); {
 		fontSizes.put("xx-small", 125 / 18f);
 		fontSizes.put("x-small", 25 / 3f);
@@ -72,15 +80,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		unitMap.put("in", 90f);
 	}
 
-	private static final List<String> caps = Arrays.asList("butt", "round", "square");
-	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
 	private static final Set<String> defs = new HashSet<>(Arrays.asList(
 				"defs", "symbol", "clipPath", "linearGradient"));
 
 	private final Graphics g = new Graphics();
 	private final Deque<String> idStack = new ArrayDeque<>();
 	private final Map<String, Color> gradients = new HashMap<>();
-	private final Map<String, Path2D> paths = new HashMap<>();
+	private final Map<String, Shape> paths = new HashMap<>();
 	private Attributes attributes;
 	private boolean inText;
 	private boolean hasViewBox;
@@ -88,17 +94,16 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("display", v -> {
 			if (v.equals("none")) {
-				g.clip(new Path2D.Float());
+				g.clip(new Path());
 			}
 		});
 		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
 		attrHandlers.put("fill-rule", v -> {
 			if (v.equals("evenodd")) {
-				g.setWindingRule(Path2D.WIND_EVEN_ODD);
+				g.setWindingRule(FillRule.EVEN_ODD);
 			}
 		});
-		attrHandlers.put("clip-path", v -> getURL(paths, v, path ->
-			g.clip(g.getTransform().createTransformedShape(path))));
+		attrHandlers.put("clip-path", v -> getURL(paths, v, path -> g.clip(path)));
 		attrHandlers.put("viewBox", v -> parseViewBox(v));
 		attrHandlers.put("stroke", v -> parseColor(v, g::setStrokeColor));
 		attrHandlers.put("stop-color", v -> parseColor(v, color ->
@@ -109,8 +114,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("stroke-dasharray", v -> {/*TODO*/});
 		attrHandlers.put("stroke-dashoffset", v -> {/*TODO*/});
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
-		attrHandlers.put("stroke-linecap", v -> g.setLineCap(caps.indexOf(v)));
-		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(joins.indexOf(v)));
+		attrHandlers.put("stroke-linecap", v -> g.setLineCap(
+			StrokeLineCap.valueOf(v.toUpperCase())));
+		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(
+			StrokeLineJoin.valueOf(v.toUpperCase())));
 		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v)));
 		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v)));
 		attrHandlers.put("font-family", v -> g.setFont(v));
@@ -120,34 +127,28 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Map<String, Runnable> tagHandlers = new HashMap<>(); {
 		tagHandlers.put("svg", () -> {
 			if (!hasViewBox) {
-				g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
+				g.clip(new Rectangle(0, 0, getFloat("width", Float.MAX_VALUE),
 					getFloat("height", Float.MAX_VALUE)));
 			}
 		});
 		tagHandlers.put("use", () -> g.append(paths.getOrDefault(
-			attributes.getValue("xlink:href"), new Path2D.Float())));
-		tagHandlers.put("line", () -> {
-			g.moveTo(getFloat("x1", 0f), getFloat("y1", 0f));
-			g.lineTo(getFloat("x2", 0f), getFloat("y2", 0f));
-		});
-		tagHandlers.put("ellipse", () -> {
-			final float rx = getFloat("rx", getFloat("r", 0f));
-			final float ry = getFloat("ry", getFloat("r", 0f));
-			final float cx = getFloat("cx", 0f);
-			final float cy = getFloat("cy", 0f);
-			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
-				cx - rx, cy - ry, 2 * rx, 2 * ry)));
-		});
+			attributes.getValue("xlink:href"), new Path())));
+		tagHandlers.put("line", () -> g.append(new Line(
+			getFloat("x1", 0f), getFloat("y1", 0f),
+			getFloat("x2", 0f), getFloat("y2", 0f))));
+		tagHandlers.put("ellipse", () -> g.append(new Ellipse(
+			getFloat("cx", 0f), getFloat("cy", 0f),
+			getFloat("rx", getFloat("r", 0f)), getFloat("ry", getFloat("r", 0f)))));
 		tagHandlers.put("circle", tagHandlers.get("ellipse"));
-		tagHandlers.put("polygon", () -> parsePathData(attributes.getValue("points") + "z"));
-		tagHandlers.put("polyline", () -> parsePathData(attributes.getValue("points")));
+		tagHandlers.put("polygon", () -> parsePathData("M" + attributes.getValue("points") + "z"));
+		tagHandlers.put("polyline", () -> parsePathData("M" + attributes.getValue("points")));
 		tagHandlers.put("rect", () -> {
-			final float x = getFloat("x", 0f), y = getFloat("y", 0f);
-			final float width = getFloat("width", 0f), height = getFloat("height", 0f);
+			final Rectangle rect = new Rectangle(getFloat("x", 0f), getFloat("y", 0f),
+				getFloat("width", 0f), getFloat("height", 0f));
 			final float rx = getFloat("rx", getFloat("ry", 0f)), ry = getFloat("ry", rx);
-			g.append(g.getTransform().createTransformedShape(rx == 0 && ry == 0
-				? new Rectangle2D.Float(x, y, width, height)
-				: new RoundRectangle2D.Float(x, y, width, height, 2 * rx, 2 * ry)));
+			rect.setArcWidth(2 * rx);
+			rect.setArcHeight(2 * ry);
+			g.append(rect);
 		});
 		tagHandlers.put("text", () -> {
 			g.moveTo(getFloat("x", 0), getFloat("y", 0));
@@ -161,51 +162,25 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			'#' + attributes.getValue("id"), null));
 	}
 
-	private final Map<Character, Consumer<Scanner>> pathHandlers = new HashMap<>(); {
-		pathHandlers.put('M', s -> g.moveTo(s.nextFloat(), s.nextFloat()));
-		pathHandlers.put('L', s -> g.lineTo(s.nextFloat(), s.nextFloat()));
-		pathHandlers.put('Q', s -> g.lineTo(s.nextFloat(), s.nextFloat(),
-			s.nextFloat(), s.nextFloat()));
-		pathHandlers.put('C', s -> g.lineTo(s.nextFloat(), s.nextFloat(),
-			s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
-		pathHandlers.put('Z', s -> {
-			g.closePath();
-			if (idStack.isEmpty() && g.getFillColor() == null) {
-				g.stroke().resetKeepPos();
-			}
-		});
-		pathHandlers.put('A', s -> {
-			final float rx = s.nextFloat(), ry = s.nextFloat();
-			g.arcTo(s.nextFloat(), s.nextInt() != 0, s.nextInt() != 0,
-				rx, ry, s.nextFloat(), s.nextFloat());
-		});
-		pathHandlers.put('H', s -> g.lineTo(s.nextFloat(), Float.NaN));
-		pathHandlers.put('V', s -> g.lineTo(Float.NaN, s.nextFloat()));
-		pathHandlers.put('T', s -> g.lineTo(Float.NaN, Float.NaN,
-			s.nextFloat(), s.nextFloat()));
-		pathHandlers.put('S', s -> g.lineTo(Float.NaN, Float.NaN,
-			s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
-	}
-
-	private static final Map<String, Function<Scanner, AffineTransform>>
+	private static final Map<String, Function<Scanner, Transform>>
 		transformHandlers = new HashMap<>(); static {
-		transformHandlers.put("matrix", s -> new AffineTransform(
+		transformHandlers.put("matrix", s -> new Affine(
 			s.nextFloat(), s.nextFloat(), s.nextFloat(),
 			s.nextFloat(), s.nextFloat(), s.nextFloat()));
-		transformHandlers.put("translate", s -> AffineTransform.getTranslateInstance(
+		transformHandlers.put("translate", s -> new Translate(
 			s.nextFloat(), s.hasNextFloat() ? s.nextFloat() : 0));
-		transformHandlers.put("rotate", s -> AffineTransform.getRotateInstance(
-			Math.toRadians(s.nextFloat()),
+		transformHandlers.put("rotate", s -> new Rotate(
+			s.nextFloat(),
 			s.hasNextFloat() ? s.nextFloat() : 0,
 			s.hasNextFloat() ? s.nextFloat() : 0));
 		transformHandlers.put("scale", s -> {
 			final float xScale = s.nextFloat();
-			return AffineTransform.getScaleInstance(xScale,
+			return new Scale(xScale,
 				s.hasNextFloat() ? s.nextFloat() : xScale);
 		});
-		transformHandlers.put("skewX", s -> AffineTransform.getShearInstance(
+		transformHandlers.put("skewX", s -> new Shear(
 			Math.tan(Math.toRadians(s.nextFloat())), 0));
-		transformHandlers.put("skewY", s -> AffineTransform.getShearInstance(
+		transformHandlers.put("skewY", s -> new Shear(
 			0, Math.tan(Math.toRadians(s.nextFloat()))));
 	}
 
@@ -267,13 +242,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	@Override
 	public void startElement(final String namespace, final String local,
 			final String name, final Attributes attributes) {
-		g.setRelative(false).save();
+		g.save();
 		this.attributes = attributes;
-		for (int i = 0; i < attributes.getLength(); i++) {
-			handleAttr(attributes.getLocalName(i), attributes.getValue(i));
-		}
 		if (defs.contains(name) || !idStack.isEmpty()) {
 			idStack.push('#' + attributes.getValue("id"));
+		}
+		for (int i = 0; i < attributes.getLength(); i++) {
+			handleAttr(attributes.getLocalName(i), attributes.getValue(i));
 		}
 		tagHandlers.getOrDefault(name, () -> {/*NOOP*/}).run();
 	}
@@ -283,7 +258,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (idStack.isEmpty()) {
 			g.fill().stroke().resetPath();
 		} else {
-			paths.put(idStack.pop(), g.getPath());
+			idStack.pop();
+			// paths.put(idStack.pop(), g.getPath());
 			if (defs.contains(name)) {
 				g.resetPath();
 			}
@@ -293,21 +269,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private void parsePathData(final String data) {
-		@SuppressWarnings("resource")
-		final Scanner scanner = new Scanner(data);
-		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|"
-			+ "[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
-		char cmd = 'M';
-		while (scanner.hasNext()) {
-			if (scanner.hasNext(SVG_COMMAND)) {
-				cmd = scanner.next(SVG_COMMAND).charAt(0);
-			}
-			g.setRelative(Character.isLowerCase(cmd) && g.getCurrentPoint() != null);
-			pathHandlers.get(Character.toUpperCase(cmd)).accept(scanner);
-			if (Character.toUpperCase(cmd) == 'M') {
-				--cmd;
-			}
-		}
+		final SVGPath path = new SVGPath();
+		path.setContent(data);
+		g.append(path);
 	}
 
 	private void parseColor(final String colorName, final Consumer<Color> callback) {
@@ -323,24 +287,22 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			callback.accept(null);
 			return;
 		}
-		final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
-		callback.accept(new Color((float) color.getRed(),
-					(float) color.getGreen(), (float) color.getBlue()));
+		callback.accept(Color.web(colorName));
 	}
 
 	private void parseTransform(final String transform) {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(transform);
 		scanner.useDelimiter("[(,\\s)]*(?:[(,\\s)]|(?<![eE])(?=[-+]))");
-		scanner.forEachRemaining(token -> g.getTransform().concatenate(
+		scanner.forEachRemaining(token -> g.transform(
 			transformHandlers.get(token).apply(scanner)));
 	}
 
 	private void parseViewBox(final String viewBox) {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(viewBox);
-		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
-		g.clip(new Rectangle2D.Float(0, 0, scanner.nextFloat(), scanner.nextFloat()));
+		g.transform(new Translate(-scanner.nextFloat(), -scanner.nextFloat()));
+		g.clip(new Rectangle(0, 0, scanner.nextFloat(), scanner.nextFloat()));
 		hasViewBox = true;
 	}
 

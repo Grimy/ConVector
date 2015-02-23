@@ -13,7 +13,7 @@
 
 package cc.drawall.ps;
 
-import java.awt.Color;
+import javafx.scene.paint.Color;
 
 import cc.drawall.Exporter;
 
@@ -39,8 +39,7 @@ public class PSExporter extends Exporter {
 
 	@Override
 	protected void writeColor(final Color color) {
-		final float[] rgb = color.getRGBColorComponents(null);
-		write("f %.3f %.3f %.3f rg\n", rgb[0], rgb[1], rgb[2]);
+		write("f %.3f %.3f %.3f rg\n", color.getRed(), color.getGreen(), color.getBlue());
 	}
 
 	@Override

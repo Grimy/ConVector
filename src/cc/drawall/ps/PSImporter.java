@@ -15,11 +15,6 @@ package cc.drawall.ps;
 
 import java.awt.Color;
 import java.awt.color.ColorSpace;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -249,31 +244,31 @@ public class PSImporter implements Importer {
 
 		// Graphics State
 		builtin("gsave",         () -> g.save());
-		builtin("grestore",      () -> g.resetPath().restore());
-		builtin("grestoreall",   () -> g.resetPath().restore());
-		builtin("setlinecap",    () -> g.setLineCap(popFlag()));
-		builtin("setlinejoin",   () -> g.setLineJoin(popFlag()));
+		// builtin("grestore",      () -> g.resetPath().restore());
+		// builtin("grestoreall",   () -> g.resetPath().restore());
+		/* builtin("setlinecap",    () -> g.setLineCap(popFlag())); */
+		/* builtin("setlinejoin",   () -> g.setLineJoin(popFlag())); */
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
 		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
 		builtin("setdash",       () -> g.setStrokeDash(popArray(), p(1)));
 		builtin("showpage", NOOP);
-		builtin("setrgbcolor", () -> g.setStrokeColor(new Color(p(3), p(), p())));
-		builtin("sethsbcolor", () -> g.setStrokeColor(Color.getHSBColor(p(3), p(), p())));
+		/* builtin("setrgbcolor", () -> g.setStrokeColor(new Color(p(3), p(), p()))); */
+		/* builtin("sethsbcolor", () -> g.setStrokeColor(Color.getHSBColor(p(3), p(), p()))); */
 		builtin("setcmykcolor", () -> stack.push(new Color(
 				ColorSpace.getInstance(ColorSpace.TYPE_CMYK),
 				new float[] {p(4), p(), p(), p()}, 1.0f)));
 		builtin("setcmykcolor", () -> substack(4).clear());
-		builtin("setgray", () -> g.setStrokeColor(new Color((int) (0xFFFFFF * p(1)))));
+		/* builtin("setgray", () -> g.setStrokeColor(new Color((int) (0xFFFFFF * p(1))))); */
 		builtin("clippath", () -> {
-			g.resetPath();
-			g.append(g.getClip());
+			// g.resetPath();
+			/* g.append(g.getClip()); */
 		});
 		builtin("pathbbox", () -> {
-			final Rectangle2D r = g.pathBounds();
-			stack.push((float) r.getMinX());
-			stack.push((float) r.getMinY());
-			stack.push((float) r.getMaxX());
-			stack.push((float) r.getMaxY());
+			/* final Rectangle2D r = g.pathBounds(); */
+			/* stack.push((float) r.getMinX()); */
+			/* stack.push((float) r.getMinY()); */
+			/* stack.push((float) r.getMaxX()); */
+			/* stack.push((float) r.getMaxY()); */
 		});
 
 		builtin("currentcolortransfer", () -> stack.push(NOOP));
@@ -286,31 +281,31 @@ public class PSImporter implements Importer {
 		// Coordinate systems
 		builtin("matrix", () -> stack.push(new float[]{1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f}));
 		// currentmatrix
-		builtin("setmatrix", () -> g.getTransform().setTransform(popMatrix()));
-		builtin("concat", () -> g.getTransform().concatenate(popMatrix()));
-		builtin("rotate", () -> g.getTransform().rotate(Math.toRadians(p(1))));
-		builtin("scale", () -> g.getTransform().scale(p(2), p()));
-		builtin("translate", () -> g.getTransform().translate(p(2), p()));
+		// builtin("setmatrix", () -> g.getTransform().setTransform(popMatrix()));
+		// builtin("concat", () -> g.getTransform().concatenate(popMatrix()));
+		// builtin("rotate", () -> g.getTransform().rotate(Math.toRadians(p(1))));
+		// builtin("scale", () -> g.getTransform().scale(p(2), p()));
+		// builtin("translate", () -> g.getTransform().translate(p(2), p()));
 
 		// Path construction
-		builtin("newpath", () -> g.resetPath());
-		builtin("moveto", () -> g.setRelative(false).moveTo(p(2), p()));
-		builtin("rmoveto", () -> g.setRelative(true).moveTo(p(2), p()));
-		builtin("lineto", () -> g.setRelative(false).lineTo(p(2), p()));
-		builtin("rlineto", () -> g.setRelative(true).lineTo(p(2), p()));
-		builtin("curveto", () -> g.setRelative(false).lineTo(p(6), p(), p(), p(), p(), p()));
-		builtin("closepath", () -> g.closePath());
+		// builtin("newpath", () -> g.resetPath());
+		/* builtin("moveto", () -> g.setRelative(false).moveTo(p(2), p())); */
+		/* builtin("rmoveto", () -> g.setRelative(true).moveTo(p(2), p())); */
+		/* builtin("lineto", () -> g.setRelative(false).lineTo(p(2), p())); */
+		/* builtin("rlineto", () -> g.setRelative(true).lineTo(p(2), p())); */
+		/* builtin("curveto", () -> g.setRelative(false).lineTo(p(6), p(), p(), p(), p(), p())); */
+		// builtin("closepath", () -> g.closePath());
 		builtin("currentpoint", () -> {
-			final Point2D point = g.getCurrentPoint();
-			stack.push((float) point.getX());
-			stack.push((float) point.getY());
+			/* final Point2D point = g.getCurrentPoint(); */
+			/* stack.push((float) point.getX()); */
+			/* stack.push((float) point.getY()); */
 		});
 
 		// Painting
-		builtin("stroke", () -> g.stroke().resetPath());
-		builtin("fill", () -> g.setWindingRule(Path2D.WIND_NON_ZERO).fill().resetPath());
-		builtin("eofill", () -> g.setWindingRule(Path2D.WIND_EVEN_ODD).fill().resetPath());
-		builtin("clip", () -> g.clip(g.getPath()));
+		// builtin("stroke", () -> g.stroke().resetPath());
+		/* builtin("fill", () -> g.setWindingRule(Path2D.WIND_NON_ZERO).fill().resetPath()); */
+		/* builtin("eofill", () -> g.setWindingRule(Path2D.WIND_EVEN_ODD).fill().resetPath()); */
+		// builtin("clip", () -> g.clip());
 
 		// Insideness-testing
 
@@ -363,7 +358,7 @@ public class PSImporter implements Importer {
 	@SuppressWarnings("resource")
 	public Graphics process(final ReadableByteChannel input) {
 		final Scanner scanner = new Scanner(input, "ascii");
-		g.getClip().intersect(new Area(new Rectangle2D.Float(0, 0, 612, 792)));
+		/* g.getClip().intersect(new Area(new Rectangle2D.Float(0, 0, 612, 792))); */
 
 		// See PLRM 3.1: Syntax
 		scanner.useDelimiter(String.format("(%1$s|(?=%2$s)|(?<=%2$s)|%%.*+)+",
@@ -477,11 +472,11 @@ public class PSImporter implements Importer {
 		return stack.subList(size - n, size);
 	}
 
-	private int popFlag() {
-		final float val = p(1);
-		assert val >= 0 && val < 3;
-		return (int) val;
-	}
+	/* private int popFlag() { */
+	/* 	final float val = p(1); */
+	/* 	assert val >= 0 && val < 3; */
+	/* 	return (int) val; */
+	/* } */
 
 	private float[] popArray() {
 		final Object[] array = (Object[]) stack.pop();
@@ -492,11 +487,11 @@ public class PSImporter implements Importer {
 		return result;
 	}
 
-	private AffineTransform popMatrix() {
-		final float[] matrix = popArray();
-		assert matrix.length == 6;
-		return new AffineTransform(matrix);
-	}
+	// private AffineTransform popMatrix() {
+	// 	final float[] matrix = popArray();
+	// 	assert matrix.length == 6;
+	// 	return new AffineTransform(matrix);
+	// }
 
 	static final class PSDict extends HashMap<Object, Object> {
 		@Override

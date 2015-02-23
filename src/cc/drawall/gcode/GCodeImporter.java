@@ -27,7 +27,7 @@ import cc.drawall.Importer;
 /** Importer used to parse GCode. */
 public class GCodeImporter implements Importer {
 	/* Conversion ratio. */
-	private static final double INCHES_TO_MM = 25.4;
+	// private static final double INCHES_TO_MM = 25.4;
 
 	private static final Pattern TOKEN = Pattern.compile("[GMFTSO#]"
 			+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
@@ -42,16 +42,16 @@ public class GCodeImporter implements Importer {
 
 	private final Map<Integer, Runnable> gcodes = new HashMap<>(); {
 		gcodes.put(0, () -> {
-			g.stroke().resetPath();
-			g.moveTo(readPos('X'), readPos('Y'));
+			// g.stroke().resetPath();
+			// g.moveTo(readPos('X'), readPos('Y'));
 		});
-		gcodes.put(1, () -> g.lineTo(readPos('X'), readPos('Y')));
-		gcodes.put(5, () -> g.lineTo(readArg('I'), readArg('J'),
-					readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
-		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
-		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
-		gcodes.put(90, () -> g.setRelative(false));
-		gcodes.put(91, () -> g.setRelative(true));
+		// gcodes.put(1, () -> g.lineTo(readPos('X'), readPos('Y')));
+		// gcodes.put(5, () -> g.lineTo(readArg('I'), readArg('J'),
+		// 			readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
+		// gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
+		// gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
+		/* gcodes.put(90, () -> g.setRelative(false)); */
+		/* gcodes.put(91, () -> g.setRelative(true)); */
 		// 2:  Helical motion, CW
 		// 3:  Helical motion, CCW
 		// 7:  Diameter mode
@@ -71,7 +71,7 @@ public class GCodeImporter implements Importer {
 	@Override
 	public Graphics process(final ReadableByteChannel input) {
 		scanner = new Scanner(input, "ascii");
-		g.moveTo(0, 0);
+		// g.moveTo(0, 0);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
@@ -80,7 +80,7 @@ public class GCodeImporter implements Importer {
 		final int width = Integer.parseInt(scanner.match().group(1));
 		final int height = Integer.parseInt(scanner.match().group(2));
 		final double ratio = Math.max(width, height) / 65535.0;
-		g.getTransform().scale(ratio, ratio);
+		// g.getTransform().scale(ratio, ratio);
 		g.setStrokeWidth((float) (1 / ratio));
 
 		// Main loop: iterate over tokens
@@ -114,9 +114,9 @@ public class GCodeImporter implements Importer {
 		return g;
 	}
 
-	private float readPos(final char axis) {
-		return scanner.hasNext(axis + ".*") ? readArg(axis) : Float.NaN;
-	}
+	// private float readPos(final char axis) {
+	// 	return scanner.hasNext(axis + ".*") ? readArg(axis) : Float.NaN;
+	// }
 
 	/**
 	 * Reads a named argument from the file.

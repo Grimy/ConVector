@@ -33,20 +33,20 @@ public class DOVImporter implements Importer {
 		final int width = scanner.next().charAt(0);
 		final int height = scanner.next().charAt(0);
 		final double ratio = Math.max(width, height) / 65535.0;
-		g.getTransform().scale(ratio, ratio);
+		// g.getTransform().scale(ratio, ratio);
 		g.setStrokeWidth((float) (1 / ratio));
 		while (scanner.hasNext()) {
 			final int x = scanner.next().charAt(0);
 			final int y = scanner.next().charAt(0);
 			if (x == 0xFFFF && y == 0x0001) {
-				g.moveTo(scanner.next().charAt(0), scanner.next().charAt(0));
+				// g.moveTo(scanner.next().charAt(0), scanner.next().charAt(0));
 				continue;
 			} else if (x == 0xFFFF || y == 0xFFFF) {
 				throw new InputMismatchException();
 			}
-			g.lineTo(x, y);
+			// g.lineTo(x, y);
 		}
-		g.stroke().resetPath();
+		// g.stroke().resetPath();
 		return g;
 	}
 }

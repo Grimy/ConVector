@@ -13,12 +13,15 @@
 
 package cc.drawall;
 
-import java.awt.Color;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.PathIterator;
-import java.awt.geom.Rectangle2D;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+
+import javafx.scene.paint.Color;
+
+import com.sun.javafx.geom.PathIterator;
+import com.sun.javafx.geom.RectBounds;
+import com.sun.javafx.geom.transform.Affine2D;
+import com.sun.javafx.geom.transform.BaseTransform;
 
 /** The base class for all Exporter plugins.
   * Provides a common template for all output filetypes. Abstract methods should be overriden
@@ -28,7 +31,7 @@ public abstract class Exporter {
 	private static final Charset ASCII = Charset.forName("US-ASCII");
 
 	// Buffer to hold PathIterator coordinates
-	private final double[] coords = new double[6];
+	private final float[] coords = new float[6];
 
 	/** Flag indicating the generated image should be vertically reversed.
 	  * Set this if the ouput filetype has the 0,0 point at the bottom-left corner. */
@@ -70,10 +73,11 @@ public abstract class Exporter {
 		if ((flags & SHORTEN) != 0) {
 			drawing.optimize();
 		}
-		final Rectangle2D bounds = drawing.getBounds();
+		final RectBounds bounds = drawing.getBounds();
 		final double ratio = 25000 / Math.max(bounds.getWidth(), bounds.getHeight());
 		final int reverse = (flags & REVERSE) == 0 ? 1 : -1;
-		final AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio * reverse,
+		final BaseTransform normalize =
+			new Affine2D(ratio, 0, 0, ratio * reverse,
 				0, (flags & REVERSE) * bounds.getHeight() * ratio);
 		writeHeader(bounds.getWidth(), bounds.getHeight(), 1 / ratio);
 		for (final Drawing.Splash splash: drawing) {
@@ -112,7 +116,7 @@ public abstract class Exporter {
 	/** Writes a single segment to the output stream.
 	  * By default, this formats the coordinates using one of the format strings
 	  * passed to the constructor. */
-	protected void writeSegment(final int type, final double[] coords) {
+	protected void writeSegment(final int type, final float[] coords) {
 		int i = 0;
 		for (final Character chr: format[type].toCharArray()) {
 			write(chr == '%' ? Integer.toString((int) coords[i++]) : Character.toString(chr));

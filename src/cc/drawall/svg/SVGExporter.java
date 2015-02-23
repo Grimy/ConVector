@@ -13,7 +13,7 @@
 
 package cc.drawall.svg;
 
-import java.awt.Color;
+import javafx.scene.paint.Color;
 
 import cc.drawall.Exporter;
 
@@ -35,7 +35,8 @@ public class SVGExporter extends Exporter {
 
 	@Override
 	protected void writeColor(final Color color) {
-		write("'/><path fill='#%06x' d='", color.getRGB() & 0xFFFFFF);
+		write("'/><path fill='#%02x%02x%02x' d='", (int) (color.getRed() * 256),
+			   (int) (color.getGreen() * 256), (int) (color.getBlue() * 256));
 	}
 
 	@Override
