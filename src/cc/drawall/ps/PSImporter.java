@@ -251,8 +251,8 @@ public class PSImporter implements Importer {
 		builtin("gsave",         () -> g.save());
 		builtin("grestore",      () -> g.resetPath().restore());
 		builtin("grestoreall",   () -> g.resetPath().restore());
-		builtin("setlinecap",    () -> g.setLineCap(popFlag()));
-		builtin("setlinejoin",   () -> g.setLineJoin(popFlag()));
+		builtin("setlinecap",    () -> g.setLineCap(Graphics.LineCap.values()[(int) p(1)]));
+		builtin("setlinejoin",   () -> g.setLineJoin(Graphics.LineJoin.values()[(int) p(1)]));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
 		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
 		builtin("setdash",       () -> g.setStrokeDash(popArray(), p(1)));
@@ -475,12 +475,6 @@ public class PSImporter implements Importer {
 	private List<Object> substack(final int n) {
 		final int size = stack.size();
 		return stack.subList(size - n, size);
-	}
-
-	private int popFlag() {
-		final float val = p(1);
-		assert val >= 0 && val < 3;
-		return (int) val;
 	}
 
 	private float[] popArray() {

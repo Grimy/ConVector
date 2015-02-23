@@ -291,6 +291,9 @@ public class Graphics {
 		setStroke("width", width);
 	}
 
+	public static enum LineCap { BUTT, ROUND, SQUARE; }
+	public static enum LineJoin { MITER, ROUND, BEVEL; }
+
 	/** Set the dashing style.
 	  * @param dash an array representing the dashing pattern
 	  * @param phase an offset from the start of the dashing pattern
@@ -303,17 +306,15 @@ public class Graphics {
 	/** Changes the line cap style.
 	  * @param cap either BasicStroke.CAP_BUTT, BasicStroke.CAP_ROUND or BasicStroke.CAP_SQUARE
 	  * @see java.awt.BasicStroke */
-	public void setLineCap(final int cap) {
-		assert cap >= 0 && cap < 3;
-		setStroke("cap", cap);
+	public void setLineCap(final LineCap cap) {
+		setStroke("cap", cap.ordinal());
 	}
 
 	/** Changes the line join style.
 	  * @param join either BasicStroke.JOIN_BEVEL, BasicStroke.JOIN_MITER BasicStroke.JOIN_ROUND
 	  * @see java.awt.BasicStroke */
-	public void setLineJoin(final int join) {
-		assert join >= 0 && join < 3;
-		setStroke("join", join);
+	public void setLineJoin(final LineJoin join) {
+		setStroke("join", join.ordinal());
 	}
 
 	/** Set the limit to trim a line join when the join style is JOIN_MITER.

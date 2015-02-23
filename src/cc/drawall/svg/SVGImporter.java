@@ -29,7 +29,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.InputMismatchException;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
@@ -72,8 +71,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		unitMap.put("in", 90f);
 	}
 
-	private static final List<String> caps = Arrays.asList("butt", "round", "square");
-	private static final List<String> joins = Arrays.asList("miter", "round", "bevel");
 	private static final Set<String> defs = new HashSet<>(Arrays.asList(
 				"defs", "symbol", "clipPath", "linearGradient"));
 
@@ -109,8 +106,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("stroke-dasharray", v -> {/*TODO*/});
 		attrHandlers.put("stroke-dashoffset", v -> {/*TODO*/});
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
-		attrHandlers.put("stroke-linecap", v -> g.setLineCap(caps.indexOf(v)));
-		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(joins.indexOf(v)));
+		attrHandlers.put("stroke-linecap", v -> g.setLineCap(
+			Graphics.LineCap.valueOf(v.toUpperCase())));
+		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(
+			Graphics.LineJoin.valueOf(v.toUpperCase())));
 		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v)));
 		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v)));
 		attrHandlers.put("font-family", v -> g.setFont(v));
