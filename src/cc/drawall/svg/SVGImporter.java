@@ -228,8 +228,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		g.setStrokeColor(null);
 		g.setFont("DejaVu Serif");
 		try {
-			SAXParserFactory.newInstance().newSAXParser().parse(
-				Channels.newInputStream(input), this);
+			SAXParserFactory factory = SAXParserFactory.newInstance();
+			factory.setNamespaceAware(true);
+			factory.newSAXParser().parse(Channels.newInputStream(input), this);
 		} catch (final ParserConfigurationException | IOException e) {
 			assert false : "XML error : " + e;
 		} catch (final SAXException e) {
@@ -264,9 +265,12 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	@Override
-	public void startElement(final String namespace, final String local,
-			final String name, final Attributes attributes) {
+	public void startElement(final String uri, final String name,
+			final String qname, final Attributes attributes) {
 		g.setRelative(false).save();
+		if (!uri.equals("http://www.w3.org/2000/svg")) {
+			return;
+		}
 		this.attributes = attributes;
 		for (int i = 0; i < attributes.getLength(); i++) {
 			handleAttr(attributes.getLocalName(i), attributes.getValue(i));
