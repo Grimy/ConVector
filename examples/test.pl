@@ -1,5 +1,5 @@
 #!/usr/bin/perl -lw
-for my $file (<*.svg>) {
+for my $file (<*.{svg,ps}>) {
 	my @all = ("svg/$file.svg", "ps/$file.ps", "pdf/$file.pdf");
 	print ": $file | ../convector.jar |> java -ea -jar ../convector.jar %f %o |> @all {$file}";
 	print ": $file {$file} |> montage -background white ",

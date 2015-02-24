@@ -317,7 +317,7 @@ public class Graphics {
 	}
 
 	/** Changes the line join style.
-	  * @param join either BasicStroke.JOIN_BEVEL, BasicStroke.JOIN_MITER BasicStroke.JOIN_ROUND
+	  * @param join the join style to use
 	  * @see java.awt.BasicStroke */
 	public void setLineJoin(final LineJoin join) {
 		setStroke("join", join.ordinal());
