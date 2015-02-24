@@ -61,7 +61,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		fontSizes.put("xx-large", 20.736f);
 	}
 
-	private static final Map<String, Float> unitMap = new HashMap<>(); {
+	private final Map<String, Float> unitMap = new HashMap<>(); {
 		// Conversion ratios to pixels, as given by the SVG spec in 7.10: Units
 		unitMap.put("px", 1f);
 		unitMap.put("pt", 1.25f);
@@ -80,7 +80,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private final Map<String, Path2D> paths = new HashMap<>();
 	private Attributes attributes;
 	private boolean inText;
-	private boolean hasViewBox;
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("display", v -> {
@@ -105,23 +104,28 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			handleAttr(prop.split(":")[0], prop.split(":")[1])));
 		attrHandlers.put("stroke-dasharray", v -> g.setDashArray(parseArray(v)));
 		attrHandlers.put("stroke-dashoffset", v -> g.setDashOffset(Float.parseFloat(v)));
-		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v)));
+		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v, '/')));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(
 			Graphics.LineCap.valueOf(v.toUpperCase())));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(
 			Graphics.LineJoin.valueOf(v.toUpperCase())));
-		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v)));
-		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v)));
+		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v, '/')));
+		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v, '/')));
 		attrHandlers.put("font-family", v -> g.setFont(v));
 		// font-weight, text-align, text-anchor
 	}
 
+	private static final float sqLen(float x, float y) {
+		return x * x + y * y;
+	}
+
 	private final Map<String, Runnable> tagHandlers = new HashMap<>(); {
 		tagHandlers.put("svg", () -> {
-			if (!hasViewBox) {
-				g.clip(new Rectangle2D.Float(0, 0, getFloat("width", Float.MAX_VALUE),
-					getFloat("height", Float.MAX_VALUE)));
-			}
+			unitMap.putIfAbsent("%w", getFloat("width", Float.MAX_VALUE) / 100);
+			unitMap.putIfAbsent("%h", getFloat("height", Float.MAX_VALUE) / 100);
+			unitMap.put("%/", (float) Math.sqrt(sqLen(unitMap.get("%w"), unitMap.get("%h")) / 2));
+			g.clip(new Rectangle2D.Float(0, 0, 100 * unitMap.get("%w"),
+				100 * unitMap.get("%h")));
 		});
 		tagHandlers.put("use", () -> g.append(paths.getOrDefault(
 			attributes.getValue("xlink:href"), new Path2D.Float())));
@@ -248,20 +252,23 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	/** Parses a floating-point number, respecting SVG units. */
-	private static float parseLength(final String floatString) {
+	private float parseLength(final String floatString, final char dim) {
 		if (fontSizes.containsKey(floatString)) {
 			return fontSizes.get(floatString);
 		}
-		final int index = floatString.length() - 2;  // all SVG units are 2 chars long
-		final Float multiplier = index < 0 ? null : unitMap.get(floatString.substring(index));
-		// TODO handle % correctly
-		return multiplier == null ? Float.parseFloat(floatString.replace("%", ""))
-			: multiplier * Float.parseFloat(floatString.substring(0, index));
+		String str = floatString.endsWith("%") ? floatString + dim : floatString;
+		final int index = str.length() - 2;  // all SVG unitMap are 2 chars long
+		final Float multiplier = index < 0 ? null : unitMap.get(str.substring(index));
+		float result = multiplier == null ? Float.parseFloat(str)
+			: multiplier * Float.parseFloat(str.substring(0, index));
+		return result;
 	}
 
 	private float getFloat(final String name, final float def) {
 		final String value = attributes.getValue(name);
-		return value == null ? def : parseLength(value.trim().split(" ")[0]);
+		final char dim = name.contains("x") || name.equals("width") ? 'w'
+			: name.contains("y") || name.equals("height") ? 'h' : '/';
+		return value == null ? def : parseLength(value.trim().split(" ")[0], dim);
 	}
 
 	@Override
@@ -343,8 +350,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(viewBox);
 		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
-		g.clip(new Rectangle2D.Float(0, 0, scanner.nextFloat(), scanner.nextFloat()));
-		hasViewBox = true;
+		unitMap.put("%w", scanner.nextFloat() / 100);
+		unitMap.put("%h", scanner.nextFloat() / 100);
 	}
 
 	private static float[] parseArray(final String array) {
