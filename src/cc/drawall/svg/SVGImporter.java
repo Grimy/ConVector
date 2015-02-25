@@ -88,6 +88,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			}
 		});
 		attrHandlers.put("opacity", v -> {/*TODO*/});
+		attrHandlers.put("color", v -> parseColor(v, g::setColor));
 		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
 		attrHandlers.put("fill-rule", v -> {
 			if (v.equals("evenodd")) {
@@ -328,7 +329,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			return;
 		}
 		if (colorName.equals("currentColor")) {
-			// TODO
+			callback.accept(Graphics.CURRENT_COLOR);
 			return;
 		}
 		if (colorName.equals("none")) {

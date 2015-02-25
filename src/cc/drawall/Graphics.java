@@ -35,6 +35,8 @@ import java.lang.reflect.Field;
   * and text.
   * Path drawing is either stroking, filling or both. */
 public class Graphics {
+	public static final Color CURRENT_COLOR = new Color(0);
+
 	Drawing drawing = new Drawing();
 
 	/* Graphical state information */
@@ -44,8 +46,9 @@ public class Graphics {
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private boolean relative;
 	private final Path2D path = new Path2D.Float();
-	private Color strokeColor = Color.BLACK;
-	private Color fillColor;
+	private Color strokeColor = CURRENT_COLOR;
+	private Color fillColor = CURRENT_COLOR;
+	private Color color = Color.BLACK;
 	private Font font;
 	private float fontSize = 1;
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
@@ -248,13 +251,13 @@ public class Graphics {
 	/** Stroke the current path with the stroking Color.
 	  * @return this Graphics */
 	public Graphics stroke() {
-		if (strokeColor == null || path.getCurrentPoint() == null) {
+		if (getStrokeColor() == null || path.getCurrentPoint() == null) {
 			return this;
 		}
 		try {
 			final Shape inverse = ctm.createInverse().createTransformedShape(path);
 			final Shape stroked = stroke.createStrokedShape(inverse);
-			drawing.paint(strokeColor, clipped(ctm.createTransformedShape(stroked)));
+			drawing.paint(getStrokeColor(), clipped(ctm.createTransformedShape(stroked)));
 		} catch (final NoninvertibleTransformException e) {
 			// Non-invertible transforms squash any shape to empty areas
 		}
@@ -264,13 +267,13 @@ public class Graphics {
 	/** Fill the current path with the filling Color.
 	  * @return this Graphics */
 	public Graphics fill() {
-		if (fillColor == null || path.getCurrentPoint() == null) {
+		if (getFillColor() == null || path.getCurrentPoint() == null) {
 			return this;
 		}
 		path.closePath();
 		final Area area = new Area(path);
 		area.intersect(clippath);
-		drawing.paint(fillColor, area);
+		drawing.paint(getFillColor(), area);
 		return this;
 	}
 
@@ -342,12 +345,24 @@ public class Graphics {
 		}
 	}
 
+	public void setColor(final Color color) {
+		this.color = color;
+	}
+
 	public void setStrokeColor(final Color strokeColor) {
 		this.strokeColor = strokeColor;
 	}
 
+	public Color getStrokeColor() {
+		return strokeColor == CURRENT_COLOR ? color : strokeColor;
+	}
+
 	public void setFillColor(final Color fillColor) {
 		this.fillColor = fillColor;
+	}
+
+	public Color getFillColor() {
+		return fillColor == CURRENT_COLOR ? color : fillColor;
 	}
 
 	/** Sets the winding rule for filling operations.
@@ -358,10 +373,6 @@ public class Graphics {
 		assert rule == Path2D.WIND_NON_ZERO || rule == Path2D.WIND_EVEN_ODD;
 		path.setWindingRule(rule);
 		return this;
-	}
-
-	public Color getFillColor() {
-		return fillColor;
 	}
 
 	public Path2D getPath() {
