@@ -87,6 +87,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.clip(new Path2D.Float());
 			}
 		});
+		attrHandlers.put("opacity", v -> {/*TODO*/});
 		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
 		attrHandlers.put("fill-rule", v -> {
 			if (v.equals("evenodd")) {
@@ -121,6 +122,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private final Map<String, Runnable> tagHandlers = new HashMap<>(); {
 		tagHandlers.put("svg", () -> {
+			// TODO: don’t crash if viewBox isn’t specified
 			unitMap.putIfAbsent("%w", getFloat("width", Float.MAX_VALUE) / 100);
 			unitMap.putIfAbsent("%h", getFloat("height", Float.MAX_VALUE) / 100);
 			unitMap.put("%/", (float) Math.sqrt(sqLen(unitMap.get("%w"), unitMap.get("%h")) / 2));
@@ -214,7 +216,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private static <T> void getURL(final Map<String, T> map, final String url,
 			final Consumer<T> sink) {
-		final String id = url.substring(4, url.length() - 1);
+		final String id = url.length() > 4 ? url.substring(4, url.length() - 1) : "";
 		if (map.containsKey(id)) {
 			sink.accept(map.get(id));
 		}
