@@ -4,4 +4,4 @@ jdk:
 os:
   - linux
   - windows
-script: make && make test
+script: compare --version && make && make test
