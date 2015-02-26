@@ -13,12 +13,13 @@
 
 package cc.drawall;
 
-import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+
+import javafx.scene.paint.Color;
 
 /** The base class for all Exporter plugins.
   * Provides a common template for all output filetypes. Abstract methods should be overriden
@@ -77,7 +78,8 @@ public abstract class Exporter {
 				0, (flags & REVERSE) * bounds.getHeight() * ratio);
 		writeHeader(bounds.getWidth(), bounds.getHeight(), 1 / ratio);
 		for (final Drawing.Splash splash: drawing) {
-			writeColor(splash.color);
+			final Color color = splash.color;
+			writeColor(color.getRed(), color.getGreen(), color.getBlue());
 			for (final PathIterator itr = splash.getPathIterator(normalize, flatness);
 					!itr.isDone(); itr.next()) {
 				writeSegment(itr.currentSegment(coords), coords);
@@ -105,7 +107,8 @@ public abstract class Exporter {
 	  * By default, this does nothing; subclasses should override this if the
 	  * target filetype supports color.
 	  * @param color the new painting color */
-	protected void writeColor(final Color color) {
+	@SuppressWarnings("unused")
+	protected void writeColor(final double red, final double green, final double blue) {
 		/* Do nothing by default */
 	}
 

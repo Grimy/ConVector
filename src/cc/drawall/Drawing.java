@@ -13,7 +13,6 @@
 
 package cc.drawall;
 
-import java.awt.Color;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -27,6 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import javafx.scene.paint.Color;
 
 /** An in-memory representation of a vector image.
   * A Drawing is an ordered list of colored areas. Those areas are rendered

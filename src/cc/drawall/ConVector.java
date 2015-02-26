@@ -15,6 +15,7 @@ package cc.drawall;
 
 import java.awt.BorderLayout;
 import java.awt.Canvas;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
@@ -134,7 +135,8 @@ class ConVector extends Canvas {
 		g.scale(ratio, ratio);
 		g.translate(-bounds.getX(), -bounds.getY());
 		for (final Drawing.Splash splash: drawing) {
-			g.setColor(splash.color);
+			g.setColor(new Color((float) splash.color.getRed(),
+				(float) splash.color.getGreen(), (float) splash.color.getBlue()));
 			g.fill(splash.shape);
 		}
 	}

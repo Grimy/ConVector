@@ -13,7 +13,6 @@
 
 package cc.drawall.svg;
 
-import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
@@ -30,11 +29,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+
+import javafx.scene.paint.Color;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -72,7 +74,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	}
 
 	private static final Set<String> defs = new HashSet<>(Arrays.asList(
-				"defs", "symbol", "clipPath", "linearGradient"));
+		"defs", "symbol", "clipPath", "linearGradient", "radialGradient"));
 
 	private final Graphics g = new Graphics();
 	private final Deque<String> idStack = new ArrayDeque<>();
@@ -87,20 +89,22 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.clip(new Path2D.Float());
 			}
 		});
-		attrHandlers.put("opacity", v -> {/*TODO*/});
-		attrHandlers.put("color", v -> parseColor(v, g::setColor));
-		attrHandlers.put("fill", v -> parseColor(v, g::setFillColor));
+		attrHandlers.put("color", v -> parseColor(v, Graphics.Mode.BASE));
+		attrHandlers.put("fill", v -> parseColor(v, Graphics.Mode.FILL));
+		attrHandlers.put("stroke", v -> parseColor(v, Graphics.Mode.STROKE));
+		attrHandlers.put("stop-color", v -> parseColor(v, Graphics.Mode.BASE));
+		attrHandlers.put("opacity", v -> parseOpacity(v, Graphics.Mode.BASE));
+		attrHandlers.put("fill-opacity", v -> parseOpacity(v, Graphics.Mode.FILL));
+		attrHandlers.put("stroke-opacity", v -> parseOpacity(v, Graphics.Mode.STROKE));
+		attrHandlers.put("stop-opacity", v -> parseOpacity(v, Graphics.Mode.BASE));
 		attrHandlers.put("fill-rule", v -> {
 			if (v.equals("evenodd")) {
 				g.setWindingRule(Path2D.WIND_EVEN_ODD);
 			}
 		});
-		attrHandlers.put("clip-path", v -> getURL(paths, v, path ->
-			g.clip(g.getTransform().createTransformedShape(path))));
+		attrHandlers.put("clip-path", v -> Optional.ofNullable(paths.get(stripURL(v)))
+			.ifPresent(path -> g.clip(g.getTransform().createTransformedShape(path))));
 		attrHandlers.put("viewBox", v -> parseViewBox(v));
-		attrHandlers.put("stroke", v -> parseColor(v, g::setStrokeColor));
-		attrHandlers.put("stop-color", v -> parseColor(v, color ->
-			gradients.put(idStack.peek(), color)));
 		attrHandlers.put("transform", v -> parseTransform(v));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 			handleAttr(prop.split(":")[0], prop.split(":")[1])));
@@ -161,10 +165,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		});
 		tagHandlers.put("tspan", () -> g.moveTo(getFloat("x", Float.NaN), getFloat("y", Float.NaN)));
 		tagHandlers.put("path", () -> parsePathData(attributes.getValue("d")));
-		tagHandlers.put("linearGradient", () -> gradients.put(
-			idStack.peek(), gradients.get(attributes.getValue("xlink:href"))));
-		tagHandlers.put("radialGradient", () -> gradients.put(
-			'#' + attributes.getValue("id"), null));
 	}
 
 	private final Map<Character, Consumer<Scanner>> pathHandlers = new HashMap<>(); {
@@ -176,7 +176,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
 		pathHandlers.put('Z', s -> {
 			g.closePath();
-			if (idStack.isEmpty() && g.getFillColor() == null) {
+			if (idStack.isEmpty() && g.getColor(Graphics.Mode.FILL) == Graphics.NONE) {
 				g.stroke().resetKeepPos();
 			}
 		});
@@ -215,12 +215,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			0, Math.tan(Math.toRadians(s.nextFloat()))));
 	}
 
-	private static <T> void getURL(final Map<String, T> map, final String url,
-			final Consumer<T> sink) {
-		final String id = url.length() > 4 ? url.substring(4, url.length() - 1) : "";
-		if (map.containsKey(id)) {
-			sink.accept(map.get(id));
-		}
+	private static final String stripURL(final String url) {
+		return url.length() > 4 ? url.substring(4, url.length() - 1) : "";
 	}
 
 	private void handleAttr(final String name, final String value) {
@@ -231,8 +227,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	@Override
 	public Graphics process(final ReadableByteChannel input) {
-		g.setFillColor(Color.BLACK);
-		g.setStrokeColor(null);
+		g.setColor(Graphics.Mode.BASE, Graphics.NONE);
+		g.setColor(Graphics.Mode.FILL, Color.BLACK);
+		g.setColor(Graphics.Mode.STROKE, Graphics.NONE);
 		g.setFont("DejaVu Serif");
 		try {
 			SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -288,6 +285,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (defs.contains(name) || !idStack.isEmpty()) {
 			idStack.push('#' + attributes.getValue("id"));
 		}
+		if (name.endsWith("Gradient")) {
+			Optional.ofNullable(gradients.get(attributes.getValue("xlink:href")))
+				.ifPresent(color -> gradients.put(idStack.peek(), color));
+		}
 		tagHandlers.getOrDefault(name, () -> {/*NOOP*/}).run();
 	}
 
@@ -299,6 +300,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			paths.put(idStack.pop(), g.getPath());
 			if (defs.contains(name)) {
 				g.resetPath();
+			} else if (name.equals("stop")) {
+				final Color stop = g.getColor(Graphics.Mode.BASE);
+				gradients.compute(idStack.peek(), (k, v) -> v == null
+					? stop : v.interpolate(stop, .5));
 			}
 		}
 		inText &= !name.equals("text");
@@ -323,22 +328,23 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		}
 	}
 
-	private void parseColor(final String colorName, final Consumer<Color> callback) {
-		if (colorName.startsWith("url(")) {
-			getURL(gradients, colorName, callback);
-			return;
+	private static final float clamp(float value, float min, float max) {
+		return value < min ? min : value > max ? max : value;
+	}
+
+	private void parseColor(final String colorName, final Graphics.Mode mode) {
+		g.setColor(mode, colorName.startsWith("url(")
+			? gradients.getOrDefault(stripURL(colorName), Graphics.NONE)
+			: colorName.equals("currentColor") ? Graphics.CURRENT_COLOR
+			: colorName.equals("none") ? Graphics.NONE
+			: Color.web(colorName, g.getColor(mode).getOpacity()));
+	}
+
+	private void parseOpacity(final String opacity, final Graphics.Mode mode) {
+		if (g.getColor(mode) != Graphics.NONE) {
+			final double alpha = clamp(Float.parseFloat(opacity), 0, 1);
+			g.setColor(mode, g.getColor(mode).deriveColor(0, 1, 1, alpha));
 		}
-		if (colorName.equals("currentColor")) {
-			callback.accept(Graphics.CURRENT_COLOR);
-			return;
-		}
-		if (colorName.equals("none")) {
-			callback.accept(null);
-			return;
-		}
-		final javafx.scene.paint.Color color = javafx.scene.paint.Color.web(colorName);
-		callback.accept(new Color((float) color.getRed(),
-					(float) color.getGreen(), (float) color.getBlue()));
 	}
 
 	private void parseTransform(final String transform) {

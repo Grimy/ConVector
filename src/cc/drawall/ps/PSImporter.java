@@ -13,8 +13,6 @@
 
 package cc.drawall.ps;
 
-import java.awt.Color;
-import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
@@ -33,6 +31,8 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
 import java.util.regex.Pattern;
+
+import javafx.scene.paint.Color;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -257,13 +257,10 @@ public class PSImporter implements Importer {
 		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
 		builtin("setdash",       () -> g.setDashArray(popArray()).setDashOffset(p(1)));
 		builtin("showpage", NOOP);
-		builtin("setrgbcolor", () -> g.setStrokeColor(new Color(p(3), p(), p())));
-		builtin("sethsbcolor", () -> g.setStrokeColor(Color.getHSBColor(p(3), p(), p())));
-		builtin("setcmykcolor", () -> stack.push(new Color(
-				ColorSpace.getInstance(ColorSpace.TYPE_CMYK),
-				new float[] {p(4), p(), p(), p()}, 1.0f)));
+		builtin("setrgbcolor", () -> g.setColor(Graphics.Mode.BASE, Color.color(p(3), p(), p())));
+		builtin("sethsbcolor", () -> g.setColor(Graphics.Mode.BASE, Color.hsb(p(3), p(), p())));
 		builtin("setcmykcolor", () -> substack(4).clear());
-		builtin("setgray", () -> g.setStrokeColor(new Color((int) (0xFFFFFF * p(1)))));
+		builtin("setgray", () -> g.setColor(Graphics.Mode.BASE, Color.gray(p(1))));
 		builtin("clippath", () -> {
 			g.resetPath();
 			g.append(g.getClip());

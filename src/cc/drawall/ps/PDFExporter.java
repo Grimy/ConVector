@@ -13,7 +13,6 @@
 
 package cc.drawall.ps;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,9 +38,8 @@ public class PDFExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeColor(final Color color) {
-		final float[] rgb = color.getRGBColorComponents(null);
-		write("h f %.3f %.3f %.3f rg\n", rgb[0], rgb[1], rgb[2]);
+	protected void writeColor(final double red, final double green, final double blue) {
+		write("h f %.3f %.3f %.3f rg\n", red, green, blue);
 	}
 
 	@Override

@@ -13,8 +13,6 @@
 
 package cc.drawall.svg;
 
-import java.awt.Color;
-
 import cc.drawall.Exporter;
 
 /** Outputs a vector as SVG. */
@@ -34,8 +32,9 @@ public class SVGExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeColor(final Color color) {
-		write("'/><path fill='#%06x' d='", color.getRGB() & 0xFFFFFF);
+	protected void writeColor(final double red, final double green, final double blue) {
+		write("'/><path fill='#%02x%02x%02x' d='", (int) (red * 255),
+			(int) (green * 255), (int) (blue * 255));
 	}
 
 	@Override

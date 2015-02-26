@@ -14,7 +14,6 @@
 package cc.drawall;
 
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Font;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
@@ -26,6 +25,9 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
+import java.util.Arrays;
+
+import javafx.scene.paint.Color;
 
 /** Graphics context for all drawing operations done by Importer plugins.
   * Provides methods for setting graphical state, constructing paths and drawing them.
@@ -35,7 +37,10 @@ import java.lang.reflect.Field;
   * and text.
   * Path drawing is either stroking, filling or both. */
 public class Graphics {
-	public static final Color CURRENT_COLOR = new Color(0);
+	public static final Color CURRENT_COLOR = new Color(0, 0, 0, 1);
+	public static final Color NONE = new Color(0, 0, 0, 1);
+	public static enum Mode { BASE, FILL, STROKE; }
+	private static final float MIN_ALPHA = .25f;
 
 	Drawing drawing = new Drawing();
 
@@ -46,9 +51,7 @@ public class Graphics {
 				Float.MAX_VALUE, Float.MAX_VALUE));
 	private boolean relative;
 	private final Path2D path = new Path2D.Float();
-	private Color strokeColor = CURRENT_COLOR;
-	private Color fillColor = CURRENT_COLOR;
-	private Color color = Color.BLACK;
+	private Color[] colors = {Color.BLACK, CURRENT_COLOR, CURRENT_COLOR};
 	private Font font;
 	private float fontSize = 1;
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
@@ -219,6 +222,7 @@ public class Graphics {
 	  * @param text the text to be outlined */
 	public void charpath(final String text) {
 		// TODO: interact correctly with ctm
+		// TODO: TextAttributes.LIGATURES, TextAttributes.LIGATURES_ON
 		assert font != null : "Undefined font";
 		final AffineTransform t = relativeTransform();
 		t.scale(1, -1);
@@ -248,39 +252,36 @@ public class Graphics {
 	// Drawing operations //
 	////////////////////////
 
+	public Graphics fill() {
+		return draw(Mode.FILL);
+	}
+
+	public Graphics stroke() {
+		return draw(Mode.STROKE);
+	}
+
 	/** Stroke the current path with the stroking Color.
 	  * @return this Graphics */
-	public Graphics stroke() {
-		if (getStrokeColor() == null || path.getCurrentPoint() == null) {
+	public Graphics draw(Mode mode) {
+		final Color color = getColor(mode);
+		if (color == NONE || color.getOpacity() < MIN_ALPHA
+				|| mode == Mode.BASE || path.getCurrentPoint() == null) {
 			return this;
 		}
+		final Area area = new Area(mode == Mode.FILL ? path : stroked(path));
+		area.intersect(clippath);
+		drawing.paint(color, area);
+		return this;
+	}
+
+	private Shape stroked(Shape shape) {
 		try {
-			final Shape inverse = ctm.createInverse().createTransformedShape(path);
-			final Shape stroked = stroke.createStrokedShape(inverse);
-			drawing.paint(getStrokeColor(), clipped(ctm.createTransformedShape(stroked)));
+			final Shape inverse = ctm.createInverse().createTransformedShape(shape);
+			return ctm.createTransformedShape(stroke.createStrokedShape(inverse));
 		} catch (final NoninvertibleTransformException e) {
 			// Non-invertible transforms squash any shape to empty areas
+			return new Path2D.Float();
 		}
-		return this;
-	}
-
-	/** Fill the current path with the filling Color.
-	  * @return this Graphics */
-	public Graphics fill() {
-		if (getFillColor() == null || path.getCurrentPoint() == null) {
-			return this;
-		}
-		path.closePath();
-		final Area area = new Area(path);
-		area.intersect(clippath);
-		drawing.paint(getFillColor(), area);
-		return this;
-	}
-
-	private Area clipped(final Shape shape) {
-		final Area result = new Area(shape);
-		result.intersect(clippath);
-		return result;
 	}
 
 	///////////////////////
@@ -345,24 +346,12 @@ public class Graphics {
 		}
 	}
 
-	public void setColor(final Color color) {
-		this.color = color;
+	public void setColor(final Mode mode, final Color color) {
+		this.colors[mode.ordinal()] = color;
 	}
 
-	public void setStrokeColor(final Color strokeColor) {
-		this.strokeColor = strokeColor;
-	}
-
-	public Color getStrokeColor() {
-		return strokeColor == CURRENT_COLOR ? color : strokeColor;
-	}
-
-	public void setFillColor(final Color fillColor) {
-		this.fillColor = fillColor;
-	}
-
-	public Color getFillColor() {
-		return fillColor == CURRENT_COLOR ? color : fillColor;
+	public Color getColor(final Mode mode) {
+		return colors[mode.ordinal()] == CURRENT_COLOR ? colors[0] : colors[mode.ordinal()];
 	}
 
 	/** Sets the winding rule for filling operations.
@@ -424,8 +413,7 @@ public class Graphics {
 	private void copy(final Graphics that) {
 		this.ctm.setTransform(that.ctm);
 		this.clippath = (Area) that.clippath.clone();
-		this.strokeColor = that.strokeColor;
-		this.fillColor = that.fillColor;
+		this.colors = Arrays.copyOf(that.colors, that.colors.length);
 		this.font = that.font;
 		this.path.setWindingRule(that.path.getWindingRule());
 		this.stroke = new BasicStroke(that.stroke.getLineWidth(), that.stroke.getEndCap(),
