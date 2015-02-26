@@ -12,7 +12,7 @@
 <!-- Author : Tim Thompson 8/04/00                                         -->
 <!--          1.1 revision by Rick Graham                                  -->
 <!--======================================================================-->
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="svg-root" baseProfile="tiny">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="svg-root" baseProfile="tiny" width="480" height="360">
 	<title id="test-title">painting-fill-04-t.svg</title>
 	<desc id="test-desc">Test inheritance of painting properties.</desc>
 	<!--======================================================================-->

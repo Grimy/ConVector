@@ -14,10 +14,9 @@ test: convector.jar
 	cd test; mkdir -p pdf ps svg; for file in *.svg; do \
 		echo $$file; \
 		java -ea -jar ../$< $$file svg/$$file.svg ps/$$file.ps pdf/$$file.pdf; \
-		grep -q `md5sum svg/$$file.svg` md5sums && \
-		grep -q `md5sum ps/$$file.ps`   md5sums && \
-		grep -q `md5sum pdf/$$file.pdf` md5sums || \
-		exit 1; \
+		compare -metric PSNR $$file svg/$$file.svg /dev/null; \
+		compare -metric PSNR $$file ps/$$file.ps /dev/null; \
+		compare -metric PSNR $$file pdf/$$file.pdf /dev/null; \
 	done
 
 doc:

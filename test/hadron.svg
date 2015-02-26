@@ -52,4 +52,5 @@
       <tspan>P</tspan>
     </text>
   </g>
+  <line id="truande" x1="100%" y1="100%" stroke="black" stroke-width="1E-9" />
 </svg>

@@ -6,4 +6,5 @@
 </clipPath>
 </defs>
 <circle cx="25" cy="25" r="20" style="fill: #0000ff; clip-path: url(#clipPath);" />
+<line id="truande" x1="100%" y1="100%" stroke="black" stroke-width="1E-9" />
 </svg>

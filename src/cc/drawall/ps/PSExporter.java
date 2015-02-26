@@ -32,7 +32,7 @@ public class PSExporter extends Exporter {
 			+ "/h/closepath d/f/fill d/rg/setrgbcolor d\n"
 			+ "/Z{3 1 roll add 3 div}def\n/q{4 2 roll 2 mul exch 2 mul 2 copy "
 			+ "currentpoint Z Z 6 2 roll 3 index 3 index Z Z 4 2 roll c}def\n"
-			+ "%f %f scale\n", COMMENT, (int) width, (int) height, ratio, ratio);
+			+ "%f %f scale\n", COMMENT, (int) (width + .5), (int) (height + .5), ratio, ratio);
 	}
 
 	@Override
