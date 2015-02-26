@@ -40,6 +40,9 @@ public class Graphics {
 	public static final Color CURRENT_COLOR = new Color(0, 0, 0, 1);
 	public static final Color NONE = new Color(0, 0, 0, 1);
 	public static enum Mode { BASE, FILL, STROKE; }
+	public static enum LineCap { BUTT, ROUND, SQUARE; }
+	public static enum LineJoin { MITER, ROUND, BEVEL; }
+
 	private static final float MIN_ALPHA = .25f;
 
 	Drawing drawing = new Drawing();
@@ -252,17 +255,19 @@ public class Graphics {
 	// Drawing operations //
 	////////////////////////
 
+	/** Fill the current path with the FILL Color.
+	  * @return this Graphics */
 	public Graphics fill() {
 		return draw(Mode.FILL);
 	}
 
+	/** Stroke the current path with the STROKE Color.
+	  * @return this Graphics */
 	public Graphics stroke() {
 		return draw(Mode.STROKE);
 	}
 
-	/** Stroke the current path with the stroking Color.
-	  * @return this Graphics */
-	public Graphics draw(Mode mode) {
+	private Graphics draw(final Mode mode) {
 		final Color color = getColor(mode);
 		if (color == NONE || color.getOpacity() < MIN_ALPHA
 				|| mode == Mode.BASE || path.getCurrentPoint() == null) {
@@ -274,7 +279,7 @@ public class Graphics {
 		return this;
 	}
 
-	private Shape stroked(Shape shape) {
+	private Shape stroked(final Shape shape) {
 		try {
 			final Shape inverse = ctm.createInverse().createTransformedShape(shape);
 			return ctm.createTransformedShape(stroke.createStrokedShape(inverse));
@@ -294,9 +299,6 @@ public class Graphics {
 	public void setStrokeWidth(final float width) {
 		setStroke("width", width);
 	}
-
-	public static enum LineCap { BUTT, ROUND, SQUARE; }
-	public static enum LineJoin { MITER, ROUND, BEVEL; }
 
 	/** Set the dashing style.
 	  * @param dash an array representing the dashing pattern

@@ -28,6 +28,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.InputMismatchException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
@@ -53,6 +54,9 @@ import cc.drawall.Importer;
 public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
 
+	private static final Set<String> defs = new HashSet<>(Arrays.asList(
+				"defs", "symbol", "clipPath", "linearGradient", "radialGradient"));
+
 	private static final Map<String, Float> fontSizes = new HashMap<>(); {
 		fontSizes.put("xx-small", 125 / 18f);
 		fontSizes.put("x-small", 25 / 3f);
@@ -73,15 +77,16 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		unitMap.put("in", 90f);
 	}
 
-	private static final Set<String> defs = new HashSet<>(Arrays.asList(
-		"defs", "symbol", "clipPath", "linearGradient", "radialGradient"));
-
 	private final Graphics g = new Graphics();
 	private final Deque<String> idStack = new ArrayDeque<>();
 	private final Map<String, Color> gradients = new HashMap<>();
 	private final Map<String, Path2D> paths = new HashMap<>();
 	private Attributes attributes;
 	private boolean inText;
+
+	///////////////////
+	// Callback maps //
+	///////////////////
 
 	private final Map<String, Consumer<String>> attrHandlers = new HashMap<>(); {
 		attrHandlers.put("display", v -> {
@@ -112,17 +117,13 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("stroke-dashoffset", v -> g.setDashOffset(Float.parseFloat(v)));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v, '/')));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(
-			Graphics.LineCap.valueOf(v.toUpperCase())));
+			Graphics.LineCap.valueOf(v.toUpperCase(Locale.ENGLISH))));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(
-			Graphics.LineJoin.valueOf(v.toUpperCase())));
+			Graphics.LineJoin.valueOf(v.toUpperCase(Locale.ENGLISH))));
 		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v, '/')));
 		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v, '/')));
 		attrHandlers.put("font-family", v -> g.setFont(v));
 		// font-weight, text-align, text-anchor
-	}
-
-	private static final float sqLen(float x, float y) {
-		return x * x + y * y;
 	}
 
 	private final Map<String, Runnable> tagHandlers = new HashMap<>(); {
@@ -130,9 +131,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			// TODO: don’t crash if viewBox isn’t specified
 			unitMap.putIfAbsent("%w", getFloat("width", Float.MAX_VALUE) / 100);
 			unitMap.putIfAbsent("%h", getFloat("height", Float.MAX_VALUE) / 100);
-			unitMap.put("%/", (float) Math.sqrt(sqLen(unitMap.get("%w"), unitMap.get("%h")) / 2));
-			g.clip(new Rectangle2D.Float(0, 0, 100 * unitMap.get("%w"),
-				100 * unitMap.get("%h")));
+			final float w = unitMap.get("%w"), h = unitMap.get("%h");
+			unitMap.put("%/", (float) Math.sqrt((w * w + h * h) / 2));
+			g.clip(new Rectangle2D.Float(0, 0, 100 * w, 100 * h));
 		});
 		tagHandlers.put("use", () -> g.append(paths.getOrDefault(
 			attributes.getValue("xlink:href"), new Path2D.Float())));
@@ -215,40 +216,48 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			0, Math.tan(Math.toRadians(s.nextFloat()))));
 	}
 
-	private static final String stripURL(final String url) {
+	///////////////////////
+	// Attribute parsers //
+	///////////////////////
+
+	private static float clamp(final float value, final float min, final float max) {
+		return value < min ? min : value > max ? max : value;
+	}
+
+	private static String stripURL(final String url) {
 		return url.length() > 4 ? url.substring(4, url.length() - 1) : "";
 	}
 
-	private void handleAttr(final String name, final String value) {
-		if (!value.equals("inherit")) {
-			attrHandlers.getOrDefault(name.trim(), v -> {/*NOOP*/}).accept(value.trim());
+	private static float[] parseArray(final String array) {
+		if (array.equals("none")) {
+			return null;
 		}
+		final String[] tokens = array.split("[,\\s]+");
+		final float[] result = new float[tokens.length];
+		float sum = 0;
+		for (int i = 0; i < tokens.length; ++i) {
+			result[i] = Float.parseFloat(tokens[i]);
+			sum += result[i];
+		}
+		return sum == 0 ? null : result;
 	}
 
-	@Override
-	public Graphics process(final ReadableByteChannel input) {
-		g.setColor(Graphics.Mode.BASE, Graphics.NONE);
-		g.setColor(Graphics.Mode.FILL, Color.BLACK);
-		g.setColor(Graphics.Mode.STROKE, Graphics.NONE);
-		g.setFont("DejaVu Serif");
-		try {
-			SAXParserFactory factory = SAXParserFactory.newInstance();
-			factory.setNamespaceAware(true);
-			factory.newSAXParser().parse(Channels.newInputStream(input), this);
-		} catch (final ParserConfigurationException | IOException e) {
-			assert false : "XML error : " + e;
-		} catch (final SAXException e) {
-			final RuntimeException wrapper = new InputMismatchException(
-					"Invalid XML file" + e.getMessage());
-			wrapper.initCause(e);
-			throw wrapper;
+	private void parsePathData(final String data) {
+		@SuppressWarnings("resource")
+		final Scanner scanner = new Scanner(data);
+		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|"
+			+ "[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
+		char cmd = 'M';
+		while (scanner.hasNext()) {
+			if (scanner.hasNext(SVG_COMMAND)) {
+				cmd = scanner.next(SVG_COMMAND).charAt(0);
+			}
+			g.setRelative(Character.isLowerCase(cmd) && g.getCurrentPoint() != null);
+			pathHandlers.get(Character.toUpperCase(cmd)).accept(scanner);
+			if (Character.toUpperCase(cmd) == 'M') {
+				--cmd;
+			}
 		}
-		return g;
-	}
-
-	@Override
-	public InputSource resolveEntity(final String publicId, final String systemId) {
-		return new InputSource(new StringReader(""));
 	}
 
 	/** Parses a floating-point number, respecting SVG units. */
@@ -256,12 +265,42 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		if (fontSizes.containsKey(floatString)) {
 			return fontSizes.get(floatString);
 		}
-		String str = floatString.endsWith("%") ? floatString + dim : floatString;
+		final String str = floatString.endsWith("%") ? floatString + dim : floatString;
 		final int index = str.length() - 2;  // all SVG unitMap are 2 chars long
 		final Float multiplier = index < 0 ? null : unitMap.get(str.substring(index));
-		float result = multiplier == null ? Float.parseFloat(str)
+		return multiplier == null ? Float.parseFloat(str)
 			: multiplier * Float.parseFloat(str.substring(0, index));
-		return result;
+	}
+
+	private void parseColor(final String colorName, final Graphics.Mode mode) {
+		g.setColor(mode, colorName.startsWith("url(")
+			? gradients.getOrDefault(stripURL(colorName), Graphics.NONE)
+			: colorName.equals("currentColor") ? Graphics.CURRENT_COLOR
+			: colorName.equals("none") ? Graphics.NONE
+			: Color.web(colorName, g.getColor(mode).getOpacity()));
+	}
+
+	private void parseOpacity(final String opacity, final Graphics.Mode mode) {
+		if (g.getColor(mode) != Graphics.NONE) {
+			final double alpha = clamp(Float.parseFloat(opacity), 0, 1);
+			g.setColor(mode, g.getColor(mode).deriveColor(0, 1, 1, alpha));
+		}
+	}
+
+	private void parseTransform(final String transform) {
+		@SuppressWarnings("resource")
+		final Scanner scanner = new Scanner(transform);
+		scanner.useDelimiter("[(,\\s)]*(?:[(,\\s)]|(?<![eE])(?=[-+]))");
+		scanner.forEachRemaining(token -> g.getTransform().concatenate(
+			transformHandlers.get(token).apply(scanner)));
+	}
+
+	private void parseViewBox(final String viewBox) {
+		@SuppressWarnings("resource")
+		final Scanner scanner = new Scanner(viewBox);
+		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
+		unitMap.put("%w", scanner.nextFloat() / 100);
+		unitMap.put("%h", scanner.nextFloat() / 100);
 	}
 
 	private float getFloat(final String name, final float def) {
@@ -270,6 +309,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			: name.contains("y") || name.equals("height") ? 'h' : '/';
 		return value == null ? def : parseLength(value.trim().split(" ")[0], dim);
 	}
+
+	///////////////////
+	// XML callbacks //
+	///////////////////
 
 	@Override
 	public void startElement(final String uri, final String name,
@@ -310,72 +353,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		g.restore();
 	}
 
-	private void parsePathData(final String data) {
-		@SuppressWarnings("resource")
-		final Scanner scanner = new Scanner(data);
-		scanner.useDelimiter("(?<=[mzlhvcsqtaMZLHVCSQTA])\\s*|"
-			+ "[\\s,]*(?:[\\s,]|(?=[^\\deE.-])|(?<![eE])(?=-))");
-		char cmd = 'M';
-		while (scanner.hasNext()) {
-			if (scanner.hasNext(SVG_COMMAND)) {
-				cmd = scanner.next(SVG_COMMAND).charAt(0);
-			}
-			g.setRelative(Character.isLowerCase(cmd) && g.getCurrentPoint() != null);
-			pathHandlers.get(Character.toUpperCase(cmd)).accept(scanner);
-			if (Character.toUpperCase(cmd) == 'M') {
-				--cmd;
-			}
-		}
-	}
-
-	private static final float clamp(float value, float min, float max) {
-		return value < min ? min : value > max ? max : value;
-	}
-
-	private void parseColor(final String colorName, final Graphics.Mode mode) {
-		g.setColor(mode, colorName.startsWith("url(")
-			? gradients.getOrDefault(stripURL(colorName), Graphics.NONE)
-			: colorName.equals("currentColor") ? Graphics.CURRENT_COLOR
-			: colorName.equals("none") ? Graphics.NONE
-			: Color.web(colorName, g.getColor(mode).getOpacity()));
-	}
-
-	private void parseOpacity(final String opacity, final Graphics.Mode mode) {
-		if (g.getColor(mode) != Graphics.NONE) {
-			final double alpha = clamp(Float.parseFloat(opacity), 0, 1);
-			g.setColor(mode, g.getColor(mode).deriveColor(0, 1, 1, alpha));
-		}
-	}
-
-	private void parseTransform(final String transform) {
-		@SuppressWarnings("resource")
-		final Scanner scanner = new Scanner(transform);
-		scanner.useDelimiter("[(,\\s)]*(?:[(,\\s)]|(?<![eE])(?=[-+]))");
-		scanner.forEachRemaining(token -> g.getTransform().concatenate(
-			transformHandlers.get(token).apply(scanner)));
-	}
-
-	private void parseViewBox(final String viewBox) {
-		@SuppressWarnings("resource")
-		final Scanner scanner = new Scanner(viewBox);
-		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
-		unitMap.put("%w", scanner.nextFloat() / 100);
-		unitMap.put("%h", scanner.nextFloat() / 100);
-	}
-
-	private static float[] parseArray(final String array) {
-		if (array.equals("none")) {
-			return null;
-		}
-		String[] tokens = array.split("[,\\s]+");
-		float[] result = new float[tokens.length];
-		float sum = 0;
-		for (int i = 0; i < tokens.length; ++i) {
-			sum += (result[i] = Float.parseFloat(tokens[i]));
-		}
-		return sum == 0 ? null : result;
-	}
-
 	@Override
 	public void characters(final char[] ch, final int start, final int length) {
 		if (inText) {
@@ -383,6 +360,43 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			if (!text.isEmpty()) {
 				g.charpath(text);
 			}
+		}
+	}
+
+	/* Do not resolve external entities */
+	@Override
+	public InputSource resolveEntity(final String publicId, final String systemId) {
+		return new InputSource(new StringReader(""));
+	}
+
+	/////////////////
+	// Entry point //
+	/////////////////
+
+	@Override
+	public Graphics process(final ReadableByteChannel input) {
+		g.setColor(Graphics.Mode.BASE, Graphics.NONE);
+		g.setColor(Graphics.Mode.FILL, Color.BLACK);
+		g.setColor(Graphics.Mode.STROKE, Graphics.NONE);
+		g.setFont("DejaVu Serif");
+		try {
+			final SAXParserFactory factory = SAXParserFactory.newInstance();
+			factory.setNamespaceAware(true);
+			factory.newSAXParser().parse(Channels.newInputStream(input), this);
+		} catch (final ParserConfigurationException | IOException e) {
+			assert false : "XML error : " + e;
+		} catch (final SAXException e) {
+			final RuntimeException wrapper = new InputMismatchException(
+					"Invalid XML file" + e.getMessage());
+			wrapper.initCause(e);
+			throw wrapper;
+		}
+		return g;
+	}
+
+	private void handleAttr(final String name, final String value) {
+		if (!value.equals("inherit")) {
+			attrHandlers.getOrDefault(name.trim(), v -> {/*NOOP*/}).accept(value.trim());
 		}
 	}
 }
