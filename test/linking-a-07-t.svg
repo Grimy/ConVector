@@ -13,14 +13,13 @@
 <!--                                                                      -->
 <!--                                                                      --><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Tiny//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-tiny.dtd">
 
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
 	<title id="test-title">linking-a-07-t</title>
 	<desc id="test-desc">Verify  use of xlink attributes on the 'a' element.</desc>
 	<!--======================================================================-->
 	<!--Content of Test Case follows...                  =====================-->
 	<!--======================================================================-->
 	<g id="test-body-content">
-		<text x="90" y="16" font-size="12">xlink 'show' attribute on  'a' element.</text>
 		<g transform="translate(-120)">
 			<a xlink:href="../images/linkingToc-t.svg">
 				<path fill="yellow" stroke="blue" d="M 165,40 h 100 v -12 l 45 36 l -45 36 v -12 h -100 z"/>
@@ -52,6 +51,5 @@
 			</g>
 		</g>
 	</g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.10 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>

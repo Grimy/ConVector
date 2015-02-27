@@ -6,7 +6,7 @@
 <!--=  Informatique et en Automatique, Keio University). All Rights      =-->
 <!--=  Reserved. See http://www.w3.org/Consortium/Legal/.                =-->
 <!--======================================================================-->
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
   <title id="test-title">$RCSfile: shapes-circle-02-t.svg,v $</title>
     <g id="test-body-content" fill="red" stroke="#000000">
         <!-- Set cx and cy coordinate to default.-->
@@ -24,6 +24,5 @@
         <!-- Set all values to draw a circle -->
         <circle cx="100" cy="100" r="50"/>
     </g>
-  <text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.3 $</text>
   <rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>

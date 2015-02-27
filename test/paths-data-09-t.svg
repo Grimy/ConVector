@@ -14,7 +14,7 @@
 <!-- and closepath commands - M, Z, m, and z.                              -->
 <!--                                                                       --><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Tiny//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-tiny.dtd">
 
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
 
 	<title id="test-title">paths-data-09-t</title>
 	<desc id="test-desc">Test that viewer has the basic capability to handle the &lt;path&gt; element and data (d) attribute in combination with the moveto and closepath commands - m and z.</desc>
@@ -25,8 +25,6 @@
 		<!-- ====================================================================== -->
         <!-- Second Group of Triangles using m & z commands   ===================== -->
 		<!-- ====================================================================== -->
-		<text font-family="Arial" font-size="24" x="75" y="34">Lines drawn with commands:</text>
-		<text font-family="Arial" font-size="24" x="180" y="64">m and z</text>
         <g transform="scale(1.8) translate(0, -150)">
 			<path id="Triangle_stroke_mz" fill="none" stroke="#000000" d="   m   62.00000  190.00000    51.96152   90.00000   -103.92304    0.00000    51.96152  -90.00000   z    m    0.00000   15.00000   38.97114   67.50000   -77.91228    0.00000   38.97114  -67.50000   z  "/>
 			<rect x="60.00000" y="188.00000" width="4" height="4" fill="#FF0000" stroke="none"/>
@@ -44,6 +42,5 @@
 			<rect x="136.02886" y="270.50000" width="4" height="4" fill="#FF0000" stroke="none"/>
         </g>
 	</g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.11 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>

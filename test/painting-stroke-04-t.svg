@@ -29,7 +29,7 @@
 <!--= Note. After October 2000, revision history is kept as CVS 'commit' =-->
 <!--= log messages, and therefore is no longer in the preceding preamble.=-->
 <!--======================================================================-->
-<svg version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
 	<title id="test-title">painting-stroke-04-t</title>
 	<desc id="test-desc">Test that viewer has the basic capability to handle the &lt;stroke,stroke-opacity properites&gt;</desc>
 	<!--======================================================================-->
@@ -39,14 +39,10 @@
 		<!-- ====================================================================== -->
 		<!-- Test stroke:dasharray:10, 5 and stroke-opacity                  -->
 		<!-- ====================================================================== -->
-		<text font-family="Arial" font-size="36" x="10" y="60">Basic paint: stroke properties.</text>
 		<path id="stroke-7b" fill="none" stroke="red" stroke-width="25" stroke-dashoffset="0" stroke-dasharray="10,10"  d="M 50 120 L 430 120"/>
 		<path id="stroke-7c" fill="none" stroke="black" stroke-width="25" stroke-dashoffset="10" stroke-dasharray="10,10"  d="M 50 140 L 430 140"/>
-		<text font-family="Arial" font-size="30" x="65" y="210">stroke-dasharray="10, 10"</text>
-		<text font-family="Arial" font-size="30" x="75" y="260">stroke-dashoffset="10"</text>
 	</g>
 
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.10 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>
 

@@ -29,7 +29,7 @@
 <!--= Note. After October 2000, revision history is kept as CVS 'commit' =-->
 <!--= log messages, and therefore is no longer in the preceding preamble.=-->
 <!--======================================================================-->
-<svg version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
   <title id="test-title">paths-data-01-t</title>
   <desc id="test-desc">Test that the viewer has the basic capability to handle the 'path' element and data (d) attribute in combination with the cubic Bezier curveto, both regular and shorthand/smooth forms - C, c, S, s (along with Mm and Zz).</desc>
   <!--======================================================================-->
@@ -39,7 +39,6 @@
     <!-- ====================================================================== -->
     <!-- First Curve "X" that has subpath utilizing M, C, S, m, c, & s ======== -->
     <!-- ====================================================================== -->
-    <text font-family="Arial" font-size="12" x="100" y="14">Cubic bezier curves drawn with commands:</text>
     <path id="X_curve_MCSmcs" fill="#FF0000" stroke="#00C000" d="   M  210 130      C  145 130     110  80     110  80       S  75  25      10  25          m    0 105      c   65   0      100 -50     100 -50       s   35 -55     100 -55   "/>
     <!-- ====================================================================== -->
     <!-- Markers for path control points  ===================================== -->
@@ -50,7 +49,6 @@
     <rect x="8" y="128" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="108" y="78" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="208" y="23" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="5" y="82">M, C, S, m, c, s</text>
     <!-- ====================================================================== -->
     <!-- Infinity using M, c, c, c, C & z ===================================== -->
     <!-- ====================================================================== -->
@@ -62,7 +60,6 @@
     <rect x="288" y="88" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="338" y="88" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="248" y="58" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="253" y="50">M, c, c, c, C, z</text>
     <!-- ====================================================================== -->
     <!-- Horizontal line utilizing M, C & Z =================================== -->
     <!-- ====================================================================== -->
@@ -72,7 +69,6 @@
     <!-- ====================================================================== -->
     <rect x="78" y="168" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="178" y="168" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="110" y="190">M, C, Z</text>
     <!-- ====================================================================== -->
     <!-- Inverted V using M, C, c & Z ========================================= -->
     <!-- ====================================================================== -->
@@ -83,7 +79,6 @@
     <rect x="3" y="258" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="53" y="158" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="103" y="258" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="85" y="220">M, C, c, Z</text>
     <!-- ====================================================================== -->
     <!-- Remembrance Ribbon using m, c & s ==================================== -->
     <!-- ====================================================================== -->
@@ -94,7 +89,6 @@
     <rect x="198" y="258" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="223" y="158" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="248" y="258" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="165" y="210">m, c, s</text>
     <!-- ====================================================================== -->
     <!-- 90 degree arc using M & C ============================================ -->
     <!-- ====================================================================== -->
@@ -104,7 +98,6 @@
     <!-- ====================================================================== -->
     <rect x="358" y="98" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="448" y="188" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="360" y="150">M, C</text>
     <!-- ====================================================================== -->
     <!-- Circle using M, c, s, s, s & z ======================================= -->
     <!-- ====================================================================== -->
@@ -116,7 +109,6 @@
     <rect x="322" y="244" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="286" y="208" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="322" y="172" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="290" y="265">M, c, s, s, s, z</text>
     <!-- ====================================================================== -->
     <!-- Inverted horseshoe using m, c & z ==================================== -->
     <!-- ====================================================================== -->
@@ -126,9 +118,7 @@
     <!-- ====================================================================== -->
     <rect x="358" y="323" width="4" height="4" fill="#4A83FF" stroke="none"/>
     <rect x="438" y="323" width="4" height="4" fill="#4A83FF" stroke="none"/>
-    <text font-family="Arial" font-size="12" x="380" y="340">m, c, z</text>
   </g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.6 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>
 

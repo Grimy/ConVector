@@ -12,7 +12,7 @@
 <!-- Author : Dean Jackson  13-08-2000                                     -->
 <!-- Revised for 1.1 : Chris Lilley, 15-mar-2002                           -->
 <!--======================================================================-->
-<svg xmlns="http://www.w3.org/2000/svg"
+<svg font-family="DejaVu Sans" xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360" version="1.1" baseProfile="tiny">
 	<title id="test-title">fonts-elem-02-t</title>
 	<desc id="test-desc">Basic test of embedded fonts using glyph outlines</desc>
@@ -37,9 +37,7 @@
 				<glyph unicode="ç" horiz-adv-x="1052" d="M770 -196Q770 -320 710 -382T528 -445Q443 -445 367 -413Q271 -371 271 -298Q271 -244 339 -244Q375 -244 420 -268T517 -293Q566 -292 590 -269T614 -201Q614 -153 577 -115T463 -48Q304 -12 208 104Q105 227 105 404Q105 607 240 823Q390 1063 578 1063Q676 1063 797 1017Q950 958 950 873Q950 835 925 806T863 776Q834 776 813 793T771 828Q712 875 578 875Q476 875 376 693Q285 526 285 404Q285 272 375 196Q459 125 591 125Q651 125 719 157L835 219Q865 235 878 235Q915 235 942 206T969 138Q969 35 713 -40Q742 -78 756 -117T770 -196z"/>
 			</font>
 		</defs>
-		<text  fill="black" stroke="none" font-size="35" x="28" y="35">SVG font element accuracy</text>
 		<rect x="165" y="80" width="220" height="165" fill="black"/>
-		<text x="7" y="130" font-size="18" >SVG over Glyphs</text>
 		<!-- translate to text position and flip y axis (glyphs are drawn           -->
 		<!-- upside down                                                            -->
 		<g transform="translate(165,140) scale(1, -1)" fill="white">
@@ -58,11 +56,8 @@
 			</g>
 		</g>
 		<g transform="translate(165, 140)" font-family="TestComic" font-size="60" fill="black" stroke="none">
-			<text>AyÖ@ç</text>
 		</g>
-		<text x="7" y="210" font-size="18">Glyphs over SVG</text>
 		<g transform="translate(165, 210)" font-family="TestComic" font-size="60" fill="white" stroke="none">
-			<text>AyÖ@ç</text>
 		</g>
 		<!-- translate to text position and flip y axis (glyphs are drawn           -->
 		<!-- upside down                                                            -->
@@ -82,6 +77,5 @@
 			</g>
 		</g>
 	</g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.4 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>

@@ -34,7 +34,7 @@
 <!--= Note. After October 2000, revision history is kept as CVS 'commit' =-->
 <!--= log messages, and therefore is no longer in the preceding preamble.=-->
 <!--======================================================================-->
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" viewBox="0 0 480 360" width="100%" height="100%" version="1.1" baseProfile="tiny">
+<svg font-family="DejaVu Sans" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" viewBox="0 0 480 360" width="100%" height="100%" version="1.1" baseProfile="tiny">
 	<title id="test-title">render-elems-02-t</title>
 	<desc id="test-desc">This test validates that shapes can be both stroked.</desc>
 	<!--======================================================================-->
@@ -47,10 +47,8 @@
 		<g transform="translate(30, 80)">
 			<g fill="none" stroke="red" stroke-width="3" ><path d='M60,0 l60,0 l60,60 l0,60 l-60,60 l-60,0 l-60,-60 l0,-60 z'/></g>
 			<g fill="none" stroke="black" stroke-width="9"  transform="translate(200, 0)"><path d='M60,0 l60,0 l60,60 l0,60 l-60,60 l-60,0 l-60,-60 l0,-60 z'/></g>
-			<text x="110" y="-30" font-size="28">Shape stroke</text>
 		</g>
 	</g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.7 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>
 

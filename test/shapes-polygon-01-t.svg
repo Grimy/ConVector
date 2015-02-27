@@ -27,7 +27,7 @@
 <!--= Note. After October 2000, revision history is kept as CVS 'commit' =-->
 <!--= log messages, and therefore is no longer in the preceding preamble.=-->
 <!--======================================================================-->
-<svg version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
 	<title id="test-title">shapes-polygon-01-t</title>
 	<desc id="test-desc">Test that viewer has the basic capability to handle the 'polygon' element.</desc>
 	<!--======================================================================-->
@@ -59,7 +59,6 @@
 		<!-- ====================================================================== -->
 		<polygon id="polygon-07" fill="none" stroke="#00FF00" stroke-width="8"  points="270,225 300,245 320,225 340,245 280,280                   390,280 420,240 280,185"/>
 	</g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.7 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>
 

@@ -18,7 +18,7 @@
 <!-- Minimal SVG element, unless the test purpose is to exercise ========== -->
 <!-- attributes and properties on the SVG element.               ========== -->
 <!-- ====================================================================== -->
-<svg version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="structure-imggamma-BE-11" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="structure-imggamma-BE-11" width="100%" height="100%" viewBox="0 0 480 360">
 	<title id="test-title">struct-image-03-t</title>
 	<desc id="test-desc">Test gamma correction of PNG images based on gAMA 
        chunk. Derived from original HTML test by Dave Martindale.</desc>
@@ -32,9 +32,7 @@
 		<image x="25" y="91" width="430" height="48" xlink:href="../images/gam056.png"/>
 		<image x="25" y="139" width="430" height="48" xlink:href="../images/gam100.png"/>
 		<image x="25" y="187" width="430" height="48" xlink:href="../images/gam200.png"/>
-		<text x="25" y="285" font-size="40">Gamma correction</text>
 	</g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.6 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>
 

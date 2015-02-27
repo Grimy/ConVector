@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0" y="0" width="200" height="180">
+<svg font-family="DejaVu Sans" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0" y="0" width="200" height="180">
   <desc>Electron-proton deep inelastic scattering</desc>
   <g fill="none" stroke="black" stroke-width="1.6" stroke-linecap="round">
     <line x1="10" y1="50" x2="90" y2="50"/>
@@ -33,24 +33,6 @@
     </g>
   </g>
   <g fill="black" stroke="black" stroke-width="0" font-family="Georgia" font-size="15" font-style="italic" text-anchor="middle">
-    <text x="50" y="43">
-      <tspan>k</tspan>
-    </text>
-    <text x="110" y="23">
-      <tspan>k′</tspan>
-    </text>
-    <text x="125" y="53">
-      <tspan>q</tspan>
-    </text>
-    <text x="160" y="80">
-      <tspan>p + q</tspan>
-    </text>
-    <text x="125" y="117">
-      <tspan>p</tspan>
-    </text>
-    <text x="50" y="119">
-      <tspan>P</tspan>
-    </text>
   </g>
   <line id="truande" x1="100%" y1="100%" stroke="black" stroke-width="1E-9" />
 </svg>

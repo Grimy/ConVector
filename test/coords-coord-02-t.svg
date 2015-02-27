@@ -6,7 +6,7 @@
 <!--=  Informatique et en Automatique, Keio University). All Rights      =-->
 <!--=  Reserved. See http://www.w3.org/Consortium/Legal/.                =-->
 <!--======================================================================-->
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="tiny" id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
   <title id="test-title">$RCSfile: coords-coord-02-t.svg,v $</title>
 
   <g id="test-body-content">
@@ -36,6 +36,5 @@
         <rect x="0px" y="150px" width="10" height="10"/>
     </g>
   </g>
-  <text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.4 $</text>
   <rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000"/>
 </svg>

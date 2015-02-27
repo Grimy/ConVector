@@ -12,7 +12,7 @@
 <!-- renamed for 1.1 suite to paths-data-06-t.svg                          -->
 <!-- Author : Lofton Henderson, 20-Jan-2000 (from Mark Sgarlato, Adobe).   -->
 <!--======================================================================-->
-<svg version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
+<svg font-family="DejaVu Sans" version="1.1" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  id="svg-root" width="100%" height="100%" viewBox="0 0 480 360">
 	<title id="test-title">paths-data-06-t</title>
 	<desc id="test-desc">Test that viewer has the basic capability to handle the &lt;path&gt; element and data (d) attribute in combination with the moveto, lineto, and closepath commands - M, L, Z, m, l, and z.</desc>
 	<!--======================================================================-->
@@ -23,9 +23,6 @@
 		<!-- ====================================================================== -->
 		<!-- First Group of Stairs using M, H, V & Z commands====================== -->
 		<!-- ====================================================================== -->
-		<text font-family="Arial" font-size="12"  x="288" y="30">M, H, V, H,</text>
-		<text font-family="Arial" font-size="12"  x="288" y="46">V. H, V, H,</text>
-		<text font-family="Arial" font-size="12"  x="304" y="62">V, Z</text>
 		<path id="Stairs_stroke_MHVZ" fill="none" stroke="#000000"  d="   M  240.00000  56.00000    H  270.00000   V  86.00000    H  300.00000   V  116.00000    H  330.00000   V  146.00000    H  240.00000   V  56.00000    Z  "/>
 		<rect x="238.00000" y="54.00000" width="4" height="4" fill="#FFFF00" stroke="none" />
 		<rect x="268.00000" y="54.00000" width="4" height="4" fill="#FFFF00" stroke="none" />
@@ -47,7 +44,6 @@
 		<!-- ====================================================================== -->
         </g>
 	</g>
-	<text id="revision" x="10" y="340" font-size="40" stroke="none" fill="black">$Revision: 1.7 $</text>
 	<rect id="test-frame" x="1" y="1" width="478" height="358" fill="none" stroke="#000000"/>
 </svg>
 
