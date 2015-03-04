@@ -109,7 +109,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		});
 		attrHandlers.put("clip-path", v -> Optional.ofNullable(paths.get(stripURL(v)))
 			.ifPresent(path -> g.clip(g.getTransform().createTransformedShape(path))));
-		attrHandlers.put("viewBox", v -> parseViewBox(v));
 		attrHandlers.put("transform", v -> parseTransform(v));
 		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
 			handleAttr(prop.split(":")[0], prop.split(":")[1])));
@@ -128,12 +127,24 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private final Map<String, Runnable> tagHandlers = new HashMap<>(); {
 		tagHandlers.put("svg", () -> {
-			// TODO: don’t crash if viewBox isn’t specified
-			unitMap.putIfAbsent("%w", getFloat("width", Float.MAX_VALUE) / 100);
-			unitMap.putIfAbsent("%h", getFloat("height", Float.MAX_VALUE) / 100);
-			final float w = unitMap.get("%w"), h = unitMap.get("%h");
-			unitMap.put("%/", (float) Math.sqrt((w * w + h * h) / 2));
-			g.clip(new Rectangle2D.Float(0, 0, 100 * w, 100 * h));
+			// Assume a 1600x900 initial viewPort
+			float[] viewBox = {0, 0, 1600, 900};
+			if (attributes.getIndex("viewBox") >= 0) {
+				viewBox = parseArray(attributes.getValue("viewBox"));
+			}
+			g.getTransform().translate(-viewBox[0], -viewBox[1]);
+			unitMap.put("%w", viewBox[2] / 100);
+			unitMap.put("%h", viewBox[3] / 100);
+			final float width = getFloat("width", viewBox[2]);
+			final float height = getFloat("height", viewBox[3]);
+			g.clip(new Rectangle2D.Float(0, 0, width, height));
+			unitMap.put("%w", width / 100);
+			unitMap.put("%h", height / 100);
+			unitMap.put("%/", (float) (Math.sqrt((width * width + height * height) / 2) / 100));
+			if (attributes.getIndex("viewBox") >= 0) {
+				final float scale = Math.min(width / viewBox[2], height / viewBox[3]);
+				g.getTransform().scale(scale, scale);
+			}
 		});
 		tagHandlers.put("use", () -> g.append(paths.getOrDefault(
 			attributes.getValue("xlink:href"), new Path2D.Float())));
@@ -293,14 +304,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		scanner.useDelimiter("[(,\\s)]*(?:[(,\\s)]|(?<![eE])(?=[-+]))");
 		scanner.forEachRemaining(token -> g.getTransform().concatenate(
 			transformHandlers.get(token).apply(scanner)));
-	}
-
-	private void parseViewBox(final String viewBox) {
-		@SuppressWarnings("resource")
-		final Scanner scanner = new Scanner(viewBox);
-		g.getTransform().translate(-scanner.nextFloat(), -scanner.nextFloat());
-		unitMap.put("%w", scanner.nextFloat() / 100);
-		unitMap.put("%h", scanner.nextFloat() / 100);
 	}
 
 	private float getFloat(final String name, final float def) {
