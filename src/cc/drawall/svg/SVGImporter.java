@@ -157,8 +157,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			final float ry = getFloat("ry", getFloat("r", 0f));
 			final float cx = getFloat("cx", 0f);
 			final float cy = getFloat("cy", 0f);
-			g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
-				cx - rx, cy - ry, 2 * rx, 2 * ry)));
+			if (rx > 0 && ry > 0) {
+				g.append(g.getTransform().createTransformedShape(new Ellipse2D.Float(
+					cx - rx, cy - ry, 2 * rx, 2 * ry)));
+			}
 		});
 		tagHandlers.put("circle", tagHandlers.get("ellipse"));
 		tagHandlers.put("polygon", () -> parsePathData(attributes.getValue("points") + "z"));
@@ -167,9 +169,11 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			final float x = getFloat("x", 0f), y = getFloat("y", 0f);
 			final float width = getFloat("width", 0f), height = getFloat("height", 0f);
 			final float rx = getFloat("rx", getFloat("ry", 0f)), ry = getFloat("ry", rx);
-			g.append(g.getTransform().createTransformedShape(rx == 0 && ry == 0
-				? new Rectangle2D.Float(x, y, width, height)
-				: new RoundRectangle2D.Float(x, y, width, height, 2 * rx, 2 * ry)));
+			if (width > 0 && height > 0) {
+				g.append(g.getTransform().createTransformedShape(rx == 0 && ry == 0
+					? new Rectangle2D.Float(x, y, width, height)
+					: new RoundRectangle2D.Float(x, y, width, height, 2 * rx, 2 * ry)));
+			}
 		});
 		tagHandlers.put("text", () -> {
 			g.moveTo(getFloat("x", 0), getFloat("y", 0));
