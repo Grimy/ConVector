@@ -422,7 +422,7 @@ public class Graphics {
 		this.path.setWindingRule(that.path.getWindingRule());
 		this.stroke = new BasicStroke(that.stroke.getLineWidth(), that.stroke.getEndCap(),
 				that.stroke.getLineJoin(), that.stroke.getMiterLimit(),
-				stroke.getDashArray(), stroke.getDashPhase());
+				that.stroke.getDashArray(), that.stroke.getDashPhase());
 		this.drawing = that.drawing;
 		this.prev = that.prev;
 	}
