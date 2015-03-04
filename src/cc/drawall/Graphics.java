@@ -26,8 +26,12 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
 
 import javafx.scene.paint.Color;
+
+import java.awt.font.TextAttribute;
 
 /** Graphics context for all drawing operations done by Importer plugins.
   * Provides methods for setting graphical state, constructing paths and drawing them.
@@ -44,8 +48,12 @@ public class Graphics {
 	public static enum LineJoin { MITER, ROUND, BEVEL; }
 
 	private static final float MIN_ALPHA = .25f;
-
 	Drawing drawing = new Drawing();
+
+	private Map<TextAttribute, Object> textAttrs = new HashMap<>(); {
+		textAttrs.put(TextAttribute.KERNING, TextAttribute.KERNING_ON);
+		textAttrs.put(TextAttribute.LIGATURES, TextAttribute.LIGATURES_ON);
+	}
 
 	/* Graphical state information */
 	private final AffineTransform ctm = new AffineTransform();
@@ -55,8 +63,6 @@ public class Graphics {
 	private boolean relative;
 	private final Path2D path = new Path2D.Float();
 	private Color[] colors = {Color.BLACK, CURRENT_COLOR, CURRENT_COLOR};
-	private Font font;
-	private float fontSize = 1;
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
 
 	/* Saved graphical context. */
@@ -225,10 +231,8 @@ public class Graphics {
 	  * @param text the text to be outlined */
 	public void charpath(final String text) {
 		// TODO: interact correctly with ctm
-		// TODO: TextAttributes.LIGATURES, TextAttributes.LIGATURES_ON
-		assert font != null : "Undefined font";
+		final Font font = new Font(textAttrs);
 		final AffineTransform t = relativeTransform();
-		t.scale(1, -1);
 		path.append(t.createTransformedShape(font.createGlyphVector(
 			new FontRenderContext(null, true, false), text).getOutline()), false);
 	}
@@ -382,19 +386,17 @@ public class Graphics {
 	  * If no fitting font is found in the system, an attempt is made to load one
 	  * from the ressource files. */
 	public void setFont(final String fontDescriptor) {
-		font = new Font(fontDescriptor, 0, (int) fontSize)
-			.deriveFont(AffineTransform.getScaleInstance(1, -1));
+		textAttrs.put(TextAttribute.FAMILY, fontDescriptor);
 	}
 
 	public Font getFont() {
-		return font;
+		return new Font(textAttrs);
 	}
 
 	/** Set the font size.
 	  * @param fontSize the desired font size, in points */
 	public void setFontSize(final float fontSize) {
-		this.fontSize = fontSize;
-		font = font == null ? null : font.deriveFont(fontSize);
+		textAttrs.put(TextAttribute.SIZE, fontSize);
 	}
 
 	/** Pushes a snapshot of the graphical state on the save stack.
@@ -416,7 +418,7 @@ public class Graphics {
 		this.ctm.setTransform(that.ctm);
 		this.clippath = (Area) that.clippath.clone();
 		this.colors = Arrays.copyOf(that.colors, that.colors.length);
-		this.font = that.font;
+		this.textAttrs = new HashMap<>(that.textAttrs);
 		this.path.setWindingRule(that.path.getWindingRule());
 		this.stroke = new BasicStroke(that.stroke.getLineWidth(), that.stroke.getEndCap(),
 				that.stroke.getLineJoin(), that.stroke.getMiterLimit(),
