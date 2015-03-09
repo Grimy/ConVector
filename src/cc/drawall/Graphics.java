@@ -277,7 +277,8 @@ public class Graphics {
 				|| mode == Mode.BASE || path.getCurrentPoint() == null) {
 			return this;
 		}
-		final Area area = new Area(mode == Mode.FILL ? path : stroked(path));
+		final boolean stroke = mode == Mode.STROKE && System.getProperty("line") == null;
+		final Area area = new Area(stroke ? stroked(path) : path);
 		area.intersect(clippath);
 		drawing.paint(color, area);
 		return this;
