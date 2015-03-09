@@ -64,7 +64,7 @@ public abstract class Exporter {
 	  * @param format a list of format strings for the different segment types:
 	  * moveTo, lineTo, quadTo, curveTo and closePath. */
 	protected Exporter(final int flags, final String... format) {
-		this.flags = flags | FLAGS;
+		this.flags = flags ^ FLAGS;
 		this.format = format;
 	}
 

@@ -296,6 +296,7 @@ public class PSImporter implements Importer {
 		builtin("lineto", () -> g.setRelative(false).lineTo(p(2), p()));
 		builtin("rlineto", () -> g.setRelative(true).lineTo(p(2), p()));
 		builtin("curveto", () -> g.setRelative(false).lineTo(p(6), p(), p(), p(), p(), p()));
+		builtin("rcurveto", () -> g.setRelative(true).lineTo(p(6), p(), p(), p(), p(), p()));
 		builtin("closepath", () -> g.closePath());
 		builtin("currentpoint", () -> {
 			final Point2D point = g.getCurrentPoint();
