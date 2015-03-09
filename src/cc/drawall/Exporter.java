@@ -72,7 +72,7 @@ public abstract class Exporter {
 			drawing.optimize();
 		}
 		final Rectangle2D bounds = drawing.getBounds();
-		final double ratio = 25000 / Math.max(bounds.getWidth(), bounds.getHeight());
+		final double ratio = 65534 / Math.max(bounds.getWidth(), bounds.getHeight());
 		final int reverse = (flags & REVERSE) == 0 ? 1 : -1;
 		final AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio * reverse,
 				0, (flags & REVERSE) * bounds.getHeight() * ratio);
