@@ -32,7 +32,7 @@ import javafx.scene.paint.Color;
 /** An in-memory representation of a vector image.
   * A Drawing is an ordered list of colored areas. Those areas are rendered
   * so that the latter ones can hide the first ones by drawing over them. */
-class Drawing implements Iterable<Drawing.Splash> {
+public class Drawing implements Iterable<Drawing.Splash> {
 	private static final Logger log = Logger.getLogger(Drawing.class.getName());
 
 	/* Buffer used for temporary storage of coordinates. */
@@ -135,7 +135,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		}
 	}
 
-	Rectangle2D getBounds() {
+	public Rectangle2D getBounds() {
 		return bounds;
 	}
 
@@ -144,9 +144,9 @@ class Drawing implements Iterable<Drawing.Splash> {
 		return splashes.iterator();
 	}
 
-	static class Splash {
-		final Color color;
-		final Shape shape;
+	public static class Splash {
+		public final Color color;
+		public final Shape shape;
 		Splash(final Color color, final Shape shape) {
 			this.color = color;
 			this.shape = shape;

@@ -68,7 +68,7 @@ public abstract class Exporter {
 		this.format = format;
 	}
 
-	final void output(final Drawing drawing, final ByteBuffer out) {
+	protected void output(final Drawing drawing, final ByteBuffer out) {
 		this.out = out;
 		final int flatness = (flags & FLATTEN) == 0 ? -1 : Integer.getInteger("flatness", 1);
 		if ((flags & MERGE) != 0) {
@@ -78,7 +78,7 @@ public abstract class Exporter {
 			drawing.optimize();
 		}
 		final Rectangle2D bounds = drawing.getBounds();
-		final double ratio = 65534 / Math.max(bounds.getWidth(), bounds.getHeight());
+		final double ratio = 65535 / Math.max(bounds.getWidth(), bounds.getHeight());
 		final int reverse = (flags & REVERSE) == 0 ? 1 : -1;
 		final AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio * reverse,
 				0, (flags & REVERSE) * bounds.getHeight() * ratio);
@@ -124,7 +124,7 @@ public abstract class Exporter {
 	protected void writeSegment(final int type, final double[] coords) {
 		int i = 0;
 		for (final Character chr: format[type].toCharArray()) {
-			write(chr == '%' ? Integer.toString((int) coords[i++]) : Character.toString(chr));
+			write(chr == '%' ? Double.toString(coords[i++]) : Character.toString(chr));
 		}
 		out.put((byte) '\n');
 	}
@@ -138,6 +138,10 @@ public abstract class Exporter {
 	/** Writes a char value, which is comprised of two bytes, to the output stream. */
 	protected final void writeChar(final int c) {
 		out.putChar((char) c);
+	}
+
+	protected final void write(final byte[] data) {
+		out.put(data);
 	}
 
 	/** Returns the number of bytes written to the output stream so far.
