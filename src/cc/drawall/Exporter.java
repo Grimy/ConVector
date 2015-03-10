@@ -69,6 +69,7 @@ public abstract class Exporter {
 	}
 
 	final void output(final Drawing drawing, final ByteBuffer out) {
+		System.out.println("Exporting!");
 		this.out = out;
 		final int flatness = (flags & FLATTEN) == 0 ? -1 : Integer.getInteger("flatness", 1);
 		if ((flags & MERGE) != 0) {

@@ -20,16 +20,12 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.InputMismatchException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Stack;
 import java.util.regex.Pattern;
 
 import javafx.scene.paint.Color;
@@ -70,7 +66,10 @@ public class PSImporter implements Importer {
 	 * `null` represents an empty stack. */
 
 	/** Operand stack. */
-	private final Stack<Object> stack = new Stack<>();
+	private final float[] stack = new float[512];
+	private final List<Object> objects = new ArrayList<>();
+	private int i = -1;
+	private int itr = -1;
 
 	private static final Object MARK = new Object();
 	private static final Object CURLY_MARK = new Object();
@@ -78,51 +77,74 @@ public class PSImporter implements Importer {
 	private final Graphics g = new Graphics();
 
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
-	private Iterator<Object> itr;
 
 	/** Main dictionary. */
 	private final PSDict vars = new PSDict(); {
 		// The categories and their order are from PLRM3 8.1: Operator Summary
 		// Stack manipulation
-		builtin("pop", () -> stack.pop());
-		builtin("exch", () -> Collections.rotate(substack(2), 1));
-		builtin("dup", () -> stack.push(stack.peek()));
+		builtin("pop", () -> --i);
+		builtin("exch", () -> {
+			final float tmp = stack[i];
+			stack[i] = stack[i - 1];
+			stack[i - 1] = tmp;
+		});
+		builtin("dup", () -> stack[++i] = stack[i - 1]);
 		builtin("copy", () -> {
-			if (stack.peek() instanceof Double) {
-				stack.addAll(new ArrayList<>(substack((int) p(1))));
+			if (stack[i] == stack[i]) {
+				int count = (int) stack[i];
+				System.arraycopy(stack, i - count, stack, i, count);
+				i += count - 1;
 			} else {
 				pop2();
 			}
 		});
-		builtin("index", () -> stack.push(stack.get(-(int) p(1) + stack.size())));
-		builtin("roll", () -> Collections.rotate(substack((int) p(2)), (int) p()));
-		builtin("clear", () -> stack.clear());
+		builtin("index", () -> stack[i] = stack[i - (int) stack[i]]);
+		builtin("roll", () -> {
+			int size = (int) stack[--i];
+			int distance = ((int) stack[1 + i--] + size) % size;
+			if (distance == 0)
+				return;
+			for (int cycleStart = i - size + 1, nMoved = 0; nMoved != size; cycleStart++) {
+				float displaced = stack[cycleStart];
+				int j = cycleStart;
+				do {
+					j += distance;
+					if (j > i)
+						j -= size;
+					float tmp = stack[j];
+					stack[j] = displaced;
+					displaced = tmp;
+					nMoved ++;
+				} while (j != cycleStart);
+			}
+		});
+		builtin("clear", () -> i = 0);
 		builtin("cleartomark", () -> popTo(MARK));
 		// count, mark, cleartomark, counttomark (not in PDF)
 
 		// Math
-		builtin("add", () -> stack.push(p(2) + p()));
-		builtin("div", () -> stack.push(p(2) / p()));
+		builtin("add", () -> stack[i - 1] += stack[i--]);
+		builtin("div", () -> stack[i - 1] /= stack[i--]);
 		// idiv, mod
-		builtin("mul", () -> stack.push(p(2) * p()));
-		builtin("sub", () -> stack.push(p(2) - p()));
-		builtin("abs", () -> stack.push(Math.abs(p(1))));
-		builtin("neg", () -> stack.push(-p(1)));
+		builtin("mul", () -> stack[i - 1] *= stack[i--]);
+		builtin("sub", () -> stack[i - 1] -= stack[i--]);
+		builtin("abs", () -> stack[i] = Math.abs(stack[i]));
+		builtin("neg", () -> stack[i] = -stack[i]);
 		// ceiling, floor, round, truncate, sqrt, atan, cos, sin, exp, ln, log
 		// rand, srand, rrand
 
 		// Array
-		builtin("array", () -> stack.push(literal(new Object[(int) p(1)])));
+		builtin("array", () -> stack[++i] = nanBox(literal(new Object[(int) p(1)])));
 		vars.put("[", MARK);
-		builtin("]", () -> stack.push(literal(popTo(MARK))));
-		builtin("astore", () -> {
-			final Object[] array = (Object[]) stack.pop();
-			stack.push(substack(array.length).toArray(array));
-		});
-		builtin("length", () -> {
-			final Object o = stack.pop();
-			stack.push(o instanceof Object[] ? ((Object[]) o).length : 0f);
-		});
+		builtin("]", () -> stack[++i] = nanBox(literal(popTo(MARK))));
+		// builtin("astore", () -> {
+		// 	final Object[] array = (Object[]) stack.pop();
+		// 	stack[++i] = substack(array.length).toArray(array));
+		// });
+		// builtin("length", () -> {
+		// 	final Object o = stack.pop();
+		// 	stack[++i] = o instanceof Object[] ? ((Object[]) o).length : 0f);
+		// });
 
 		// Dictionary
 		vars.put("$error", vars);
@@ -132,120 +154,123 @@ public class PSImporter implements Importer {
 		vars.put("systemdict", vars);
 		vars.put("currentdict", vars);
 		vars.put("currentsystemparams", vars);
-		builtin("countdictstack", () -> stack.push(1f));
-		builtin("dictstack", () -> ((Object[]) stack.peek())[0] = vars);
+		builtin("countdictstack", () -> stack[++i] = 1f);
+		// builtin("dictstack", () -> ((Object[]) stack.peek())[0] = vars);
 
-		builtin("dict", () -> stack.push(p(1) > 0 ? vars : null));
-		builtin("begin", () -> stack.pop());
+		// builtin("dict", () -> stack[++i] = p(1) > 0 ? vars : null));
+		builtin("begin", () -> --i);
 		builtin("end", NOOP);
-		builtin("load", () -> stack.push(getVar(stack.pop())));
-		builtin("def", () -> vars.put(pop2(), stack.pop()));
-		builtin("get", () -> {
-			final Object o = pop2();
-			stack.push(o instanceof PSDict ? ((PSDict) o).get(stack.pop())
-					: o instanceof Object[] ? ((Object[]) o)[(int) p(1)]
-					: ((String) o).codePointAt((int) p(1)));
-		});
-		builtin("put", () -> {
-			final Object value = stack.pop();
-			final Object o = pop2();
-			if (o instanceof PSDict) {
-				((PSDict) o).put(stack.pop(), value);
-			} else {
-				((Object[]) o)[(int) p(1)] = value;
-			}
-		});
-		builtin("known", () -> stack.push(((PSDict) pop2()).containsKey(stack.pop())));
-		builtin("where", () -> {
-			final boolean exists = vars.containsKey(stack.pop());
-			if (exists) {
-				stack.push(vars);
-			}
-			stack.push(exists);
-		});
+		builtin("load", () -> stack[i] = nanBox(getVar(nanUnbox(stack[i]))));
+		builtin("def", () -> vars.put(nanUnbox(stack[--i]), nanUnbox(stack[1 + i--])));
+		// builtin("get", () -> {
+		// 	final Object o = pop2();
+		// 	stack[++i] = o instanceof PSDict ? ((PSDict) o).get(stack.pop())
+		// 			: o instanceof Object[] ? ((Object[]) o)[(int) p(1)]
+		// 			: ((String) o).codePointAt((int) p(1)));
+		// });
+		// builtin("put", () -> {
+		// 	final Object value = stack.pop();
+		// 	final Object o = pop2();
+		// 	if (o instanceof PSDict) {
+		// 		((PSDict) o).put(stack.pop(), value);
+		// 	} else {
+		// 		((Object[]) o)[(int) p(1)] = value;
+		// 	}
+		// });
+		// builtin("known", () -> stack[++i] = ((PSDict) pop2()).containsKey(stack.pop())));
+		// builtin("where", () -> {
+		// 	final boolean exists = vars.containsKey(stack.pop());
+		// 	if (exists) {
+		// 		stack[++i] = vars);
+		// 	}
+		// 	stack[++i] = exists);
+		// });
 		builtin("cleardictstack", NOOP);
 
 		// String
-		builtin("string", () -> stack.push(new String(new char[(int) p(1)])));
+		// builtin("string", () -> stack[++i] = new String(new char[(int) p(1)])));
 
 		// Relational, boolean and bitwise
-		builtin("eq", () -> stack.push(stack.pop().equals(stack.pop())));
-		builtin("ne", () -> stack.push(!stack.pop().equals(stack.pop())));
-		builtin("gt", () -> stack.push(compare() < 0));
-		builtin("lt", () -> stack.push(compare() > 0));
-		builtin("ge", () -> stack.push(compare() <= 0));
-		builtin("le", () -> stack.push(compare() >= 0));
-		builtin("and", () -> stack.push(popBool() & popBool()));
-		builtin("or",  () -> stack.push(popBool() | popBool()));
-		builtin("xor", () -> stack.push(popBool() ^ popBool()));
-		builtin("not", () -> stack.push(!popBool()));
+		builtin("eq", () -> stack[i - 1] = nanBox(stack[i - 1] == stack[i--]));
+		builtin("ne", () -> stack[i - 1] = nanBox(stack[i - 1] != stack[i--]));
+		builtin("le", () -> stack[i - 1] = nanBox(stack[i - 1] <= stack[i--]));
+		builtin("ge", () -> stack[i - 1] = nanBox(stack[i - 1] >= stack[i--]));
+		builtin("lt", () -> stack[i - 1] = nanBox(stack[i - 1] <  stack[i--]));
+		builtin("gt", () -> stack[i - 1] = nanBox(stack[i - 1] >  stack[i--]));
+		// builtin("and", () -> stack[--i] = popBool() & popBool()));
+		// builtin("or",  () -> stack[--i] = popBool() | popBool()));
+		// builtin("xor", () -> stack[--i] = popBool() ^ popBool()));
+		// builtin("not", () -> stack[--i] = !popBool()));
 		// bitshift
 		vars.put("true", Boolean.TRUE);
 		vars.put("false", Boolean.FALSE);
 		vars.put("null", null);
 
 		// Flow control
-		builtin("exec", () -> execute(stack.pop()));
-		builtin("stopped", () -> stack.push(Boolean.FALSE));
-		builtin("quit", NOOP);
+		// builtin("exec", () -> execute(stack.pop()));
+		// builtin("stopped", () -> stack[++i] = Boolean.FALSE));
+		// builtin("quit", NOOP);
 		builtin("if", () -> {
-			final Object code = stack.pop();
-			if ((boolean) stack.pop()) {
+			final float code = stack[i--];
+			if ((Boolean) nanUnbox(stack[i--])) {
 				execute(code);
 			}
 		});
-		builtin("ifelse", () -> {
-			final Object ifFalse = stack.pop();
-			final Object ifTrue = stack.pop();
-			execute((boolean) stack.pop() ? ifTrue : ifFalse);
-		});
-		builtin("repeat", () -> {
-			final Object code = stack.pop();
-			for (int i = (int) p(1); i > 0; i--) {
-				execute(code);
-			}
-		});
-		builtin("for", () -> {
-			final Object code = stack.pop();
-			final float max = p(1), inc = p(1);
-			for (float i = p(1); i < max; i += inc) {
-				stack.push(i);
-				execute(code);
-			}
-		});
-		builtin("forall", () -> {
-			final Object code = stack.pop();
-			final Object array = stack.pop();
-			(array instanceof String ? ((String) array).chars().mapToObj(c -> c)
-				: Arrays.stream((Object[]) array)).forEach(c -> {
-					stack.push(c);
-					execute(code);
-				});
-		});
+		// builtin("ifelse", () -> {
+		// 	final Object ifFalse = stack.pop();
+		// 	final Object ifTrue = stack.pop();
+		// 	execute((boolean) stack.pop() ? ifTrue : ifFalse);
+		// });
+		// builtin("repeat", () -> {
+		// 	final Object code = stack.pop();
+		// 	for (int i = (int) p(1); i > 0; i--) {
+		// 		execute(code);
+		// 	}
+		// });
+		// builtin("for", () -> {
+		// 	final Object code = stack.pop();
+		// 	final float max = p(1), inc = p(1);
+		// 	for (float i = p(1); i < max; i += inc) {
+		// 		stack[++i] = i);
+		// 		execute(code);
+		// 	}
+		// });
+		// builtin("forall", () -> {
+		// 	final Object code = stack.pop();
+		// 	final Object array = stack.pop();
+		// 	(array instanceof String ? ((String) array).chars().mapToObj(c -> c)
+		// 		: Arrays.stream((Object[]) array)).forEach(c -> {
+		// 			stack[++i] = c);
+		// 			execute(code);
+		// 		});
+		// });
 		// exec
 
 		// Type, attributes and conversion operators
-		builtin("type", () -> stack.push(stack.pop() instanceof String ? "nametype" : null));
+		builtin("type", () -> stack[i] = nanBox(nanUnbox(stack[i]) instanceof String ? "nametype" : null));
 		// cvi
 		builtin("cvx", NOOP);
 		builtin("cvr", NOOP);
-		builtin("cvlit", () -> stack.push(literal(stack.peek())));
-		builtin("rcheck", () -> stack.push(stack.pop() != null));
-		builtin("wcheck", () -> stack.push(stack.pop() != null));
-		builtin("xcheck", () -> stack.push(stack.pop() != null));
+		builtin("cvlit", () -> literal(nanUnbox(stack[i])));
+		builtin("rcheck", () -> stack[++i] = nanBox(false));
+		builtin("wcheck", () -> stack[++i] = nanBox(false));
+		builtin("xcheck", () -> stack[++i] = nanBox(false));
 		builtin("readonly", NOOP);
 		builtin("executeonly", NOOP);
 
 		// File operators
-		builtin("==", () -> System.out.println(stack.pop().toString()));
-		builtin("stack", () -> stack.stream().forEach(o -> System.out.println(o.toString())));
+		builtin("==", () -> System.out.println(stack[i]));
+		// builtin("stack", () -> Arrays.stream(stack).forEach(o -> System.out.println(o.toString())));
 
 		// Miscellaneous
 		vars.put("ps_level", 1f);
-		builtin("currentglobal", () -> stack.push(Boolean.FALSE));
-		builtin("bind", () -> stack.push(Arrays.stream((Object[]) stack.pop()).map(
-			o -> vars.containsKey(o) ? vars.get(o) : o
-		).toArray()));
+		builtin("currentglobal", () -> stack[++i] = (nanBox(Boolean.FALSE)));
+		builtin("bind", () -> {
+			float[] arr = (float[]) nanUnbox(stack[i]);
+			for (int i = 0; i < arr.length; ++i) {
+				arr[i] = vars.containsKey(arr[i]) ? nanBox(vars.get(arr[i])) : arr[i];
+			}
+		});
 
 		// Graphics State
 		builtin("gsave",         () -> g.save());
@@ -259,7 +284,7 @@ public class PSImporter implements Importer {
 		builtin("showpage", NOOP);
 		builtin("setrgbcolor", () -> g.setColor(Graphics.Mode.BASE, Color.color(p(3), p(), p())));
 		builtin("sethsbcolor", () -> g.setColor(Graphics.Mode.BASE, Color.hsb(p(3), p(), p())));
-		builtin("setcmykcolor", () -> substack(4).clear());
+		builtin("setcmykcolor", () -> i -= 4);
 		builtin("setgray", () -> g.setColor(Graphics.Mode.BASE, Color.gray(p(1))));
 		builtin("clippath", () -> {
 			g.resetPath();
@@ -267,21 +292,21 @@ public class PSImporter implements Importer {
 		});
 		builtin("pathbbox", () -> {
 			final Rectangle2D r = g.pathBounds();
-			stack.push((float) r.getMinX());
-			stack.push((float) r.getMinY());
-			stack.push((float) r.getMaxX());
-			stack.push((float) r.getMaxY());
+			stack[i++] = (float) r.getMinX();
+			stack[i++] = (float) r.getMinY();
+			stack[i++] = (float) r.getMaxX();
+			stack[i++] = (float) r.getMaxY();
 		});
 
-		builtin("currentcolortransfer", () -> stack.push(NOOP));
-		builtin("currentblackgeneration", () -> stack.push(NOOP));
-		builtin("currentundercolorremoval", () -> stack.push(NOOP));
-		builtin("currentflat", () -> stack.push(0f));
-		builtin("currentsmoothness", () -> stack.push(0f));
-		builtin("setoverprint", () -> popBool());
+		// builtin("currentcolortransfer", () -> stack[++i] = NOOP));
+		// builtin("currentblackgeneration", () -> stack[++i] = NOOP));
+		// builtin("currentundercolorremoval", () -> stack[++i] = NOOP));
+		// builtin("currentflat", () -> stack[++i] = 0f));
+		// builtin("currentsmoothness", () -> stack[++i] = 0f));
+		// builtin("setoverprint", () -> popBool());
 
 		// Coordinate systems
-		builtin("matrix", () -> stack.push(new float[]{1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f}));
+		// builtin("matrix", () -> stack[++i] = new float[]{1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f}));
 		// currentmatrix
 		builtin("setmatrix", () -> g.getTransform().setTransform(popMatrix()));
 		builtin("concat", () -> g.getTransform().concatenate(popMatrix()));
@@ -300,8 +325,8 @@ public class PSImporter implements Importer {
 		builtin("closepath", () -> g.closePath());
 		builtin("currentpoint", () -> {
 			final Point2D point = g.getCurrentPoint();
-			stack.push((float) point.getX());
-			stack.push((float) point.getY());
+			stack[++i] = (float) point.getX();
+			stack[++i] = (float) point.getY();
 		});
 
 		// Painting
@@ -313,48 +338,42 @@ public class PSImporter implements Importer {
 		// Insideness-testing
 
 		// Glyph and font
-		builtin("definefont", () -> vars.put(pop2(), stack.peek()));
-		builtin("findfont", () -> stack.push(((String) stack.pop()).replace('-', ' ')));
-		builtin("scalefont", () -> g.setFontSize(p(1)));
-		builtin("setfont", () -> g.setFont((String) stack.pop()));
-		builtin("show", () -> {
-			g.charpath((String) stack.pop());
-			g.fill();
-		});
-		builtin("ashow", () -> {
-			g.charpath((String) stack.pop());
-			g.fill();
-			p(2);
-			p();
-		});
-		builtin("charpath", () -> {
-			stack.pop(); // boolean stroke
-			g.charpath((String) stack.pop());
-		});
+		// builtin("definefont", () -> vars.put(pop2(), stack.peek()));
+		// builtin("findfont", () -> stack[++i] = ((String) stack.pop()).replace('-', ' ')));
+		// builtin("scalefont", () -> g.setFontSize(p(1)));
+		// builtin("setfont", () -> g.setFont((String) stack.pop()));
+		// builtin("show", () -> {
+		// 	g.charpath((String) stack.pop());
+		// 	g.fill();
+		// });
+		// builtin("ashow", () -> {
+		// 	g.charpath((String) stack.pop());
+		// 	g.fill();
+		// 	p(2);
+		// 	p();
+		// });
+		// builtin("charpath", () -> {
+		// 	stack.pop(); // boolean stroke
+		// 	g.charpath((String) stack.pop());
+		// });
 
 		// Unhandled but ignored
-		builtin("defineresource", () -> {
-			stack.pop();
-			vars.put(pop2(), stack.peek());
-		});
-		builtin("findresource", () -> {
-			pop2(); //category
-			stack.push(vars.get(stack.pop())); // instance
-		});
+		// builtin("defineresource", () -> {
+		// 	stack.pop();
+		// 	vars.put(pop2(), stack.peek());
+		// });
+		// builtin("findresource", () -> {
+		// 	pop2(); //category
+		// 	stack[++i] = vars.get(stack.pop())); // instance
+		// });
 		builtin("currentscreen", () -> {
-			stack.push(0f); //frequency
-			stack.push(0f); //angle
-			stack.push(0f); //halftone
+			stack[++i] = 0f; //frequency
+			stack[++i] = 0f; //angle
+			stack[++i] = 0f; //halftone
 		});
-		builtin("setglobal", () -> stack.pop());
-		builtin("save", () -> stack.push(null));
-		builtin("restore", () -> stack.pop());
-	}
-
-	private int compare() {
-		@SuppressWarnings("unchecked")
-		final Comparable<Object> top = (Comparable<Object>) stack.pop();
-		return top.compareTo(stack.pop());
+		builtin("setglobal", () -> --i);
+		builtin("save", () -> stack[++i] = 0f);
+		builtin("restore", () -> --i);
 	}
 
 	@Override
@@ -368,9 +387,9 @@ public class PSImporter implements Importer {
 					WHITESPACE, "[(){}<>\\[\\]/]"));
 		while (scanner.hasNext()) {
 			final Object obj = tokenize(scanner.next(), scanner);
-			if (stack.contains(CURLY_MARK)) {
+			if (curlies > 0) {
 				// Deferred execution mode
-				stack.push(obj);
+				stack[++i] = nanBox(obj);
 			} else {
 				execute(obj);
 			}
@@ -378,19 +397,31 @@ public class PSImporter implements Importer {
 		return g;
 	}
 
+	private void execute(final float f) {
+		if (f == f) {
+			stack[++i] = f;
+		} else {
+			execute(nanUnbox(f));
+		}
+	}
+
 	private void execute(final Object object) {
 		if (literals.containsKey(object)) {
-			stack.push(object);
+			stack[++i] = nanBox(object);
 		} else if (object instanceof Runnable) {      // built-in operator
 			((Runnable) object).run();
 		} else if (object instanceof String) { // name object
 			execute(getVar(object));
-		} else if (object instanceof Object[]) {   // procedure
-			Arrays.stream((Object[]) object).forEach(this::execute);
+		} else if (object instanceof float[]) {   // procedure
+			for (final float f: (float[]) object) {
+				execute(f);
+			}
 		} else {
-			stack.push(object);
+			stack[++i] = nanBox(object);
 		}
 	}
+
+	int curlies;
 
 	/** Process a single input token. */
 	private Object tokenize(final String token, final Scanner scanner) {
@@ -404,10 +435,11 @@ public class PSImporter implements Importer {
 			scanner.next();
 			return literal(DatatypeConverter.parseHexBinary(hexString.replaceAll(WHITESPACE, "")));
 		case '{':
+			++curlies;
 			return CURLY_MARK;
 		case '}':
-			final Object[] proc = popTo(CURLY_MARK);
-			return (Runnable) () -> stack.push(proc);
+			final float[] proc = popTo(CURLY_MARK);
+			return (Runnable) () -> stack[++i] = nanBox(proc);
 		case '/':
 			return literal(scanner.next());
 		default:
@@ -440,54 +472,57 @@ public class PSImporter implements Importer {
 	/////////////////////////
 
 	private float p(final int count) {
-		itr = new ArrayList<>(substack(count)).iterator();
-		stack.setSize(stack.size() - count);
-		return p();
+		itr = i -= count;
+		return stack[++itr];
 	}
 
 	private float p() {
-		return (Float) itr.next();
+		return stack[++itr];
 	}
 
 	private Object pop2() {
-		final Object fst = stack.pop();
-		final Object snd = stack.pop();
-		stack.push(fst);
-		return snd;
-	}
-
-	private boolean popBool() {
-		return (Boolean) stack.pop();
+		final Object result = stack[i - 1];
+		stack[i - 1] = stack[i--];
+		return result;
 	}
 
 	/** Pops n items from the stack and returns them as an array. */
-	private Object[] popTo(final Object mark) {
-		final int n = stack.lastIndexOf(mark);
+	private float[] popTo(final Object mark) {
+		if (mark == CURLY_MARK) {
+			--curlies;
+		}
+		int n = i + 1;
+		while (nanUnbox(stack[--n]) != mark) {/*EMPTY*/}
 		assert n >= 0 : "No matching mark";
-		final Object[] array = substack(stack.size() - 1 - n).toArray();
-		stack.setSize(n);
+		final float[] array = new float[i - n];
+		System.arraycopy(stack, n + 1, array, 0, i - n);
+		i = n - 1;
 		return array;
 	}
 
-	/** Returns a live view of the top n elements of the stack. */
-	private List<Object> substack(final int n) {
-		final int size = stack.size();
-		return stack.subList(size - n, size);
-	}
-
 	private float[] popArray() {
-		final Object[] array = (Object[]) stack.pop();
-		final float[] result = new float[array.length];
-		for (int i = 0; i < array.length; i++) {
-			result[i] = (Float) array[i];
-		}
-		return result;
+		return (float[]) nanUnbox(stack[i--]);
 	}
 
 	private AffineTransform popMatrix() {
 		final float[] matrix = popArray();
 		assert matrix.length == 6;
 		return new AffineTransform(matrix);
+	}
+	
+	private float nanBox(Object object) {
+		if (object instanceof Float) {
+			return (Float) object;
+		}
+		objects.add(object);
+		return Float.intBitsToFloat(~(objects.size() - 1));
+	}
+
+	private Object nanUnbox(float nan) {
+		if (nan == nan) {
+			return nan;
+		}
+		return objects.get(~Float.floatToRawIntBits(nan));
 	}
 
 	static final class PSDict extends HashMap<Object, Object> {

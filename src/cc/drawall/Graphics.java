@@ -278,9 +278,9 @@ public class Graphics {
 			return this;
 		}
 		final boolean stroke = mode == Mode.STROKE && System.getProperty("line") == null;
-		final Area area = new Area(stroke ? stroked(path) : path);
-		area.intersect(clippath);
-		drawing.paint(color, area);
+		// final Area area = new Area(stroke ? stroked(path) : path);
+		// area.intersect(clippath);
+		drawing.paint(color, stroke ? stroked(path) : path);
 		return this;
 	}
 

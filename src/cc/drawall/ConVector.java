@@ -88,7 +88,7 @@ class ConVector extends Canvas {
 	private static void exportFile(final File file, final Drawing drawing) {
 		try (final RandomAccessFile handle = new RandomAccessFile(file, "rw");
 				final FileChannel chan = handle.getChannel()) {
-			final ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 10 << 20);
+			final ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 20 << 20);
 			exportStream(output, getExtension(file), drawing);
 			chan.truncate(output.position());
 		} catch (final IOException e) {
