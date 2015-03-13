@@ -1,14 +1,31 @@
 %!PS
 
-/rec { exch 1 sub dup 0 ne 3 -1 roll if 1 add } bind def
+/bd {bind def} bind def
+/rng {rand 65536 mod exch mul 65536 div add} bd
+/rec {[ exch {exch 1 sub dup 0 ne 3 -1 roll {dist 0 rlineto} ifelse 1 add}
+	bind /exec cvx ] cvx def} bd
+/+ {angle rotate} bd
+/- {angle neg rotate} bd
+/s {currentpoint stroke moveto style gsave} bd
+/r {stroke grestore} bd
 
-/F { 1 1 1 1 2 0 rcurveto } def
-/+ {  90 rotate } def
-/- { -90 rotate } def
+/dist 2 def
+/style {} def
 
-/X { { X + Y F + } rec } def
-/Y { { - F X - Y } rec } def
+% Dragon
+/X { X + Y + } rec
+/Y { - X - Y } rec
+/angle 90 def
+1 .1 0 setrgbcolor 250 400 moveto s 16 X r
 
-250 500 moveto
-F 15 X
-stroke
+% Triangle
+/X { Y - X - Y } rec
+/Y { X + Y + X } rec
+/angle 60 def
+0 1 .1 setrgbcolor 0 0 moveto s 9 X r
+
+% Snowflake
+/X { Y + + Y + + Y } def
+/Y { Y - Y + + Y - Y } rec
+/angle 60 def
+.1 0 1 setrgbcolor 9 142 moveto s 6 X r

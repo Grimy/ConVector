@@ -1,0 +1,46 @@
+%!PS
+
+/bd {bind def} bind def
+/rng {rand 65536 mod exch mul 65536 div add} bd
+/rec {[ exch {exch 1 sub dup 0 ne 3 -1 roll {dist 0 rlineto} ifelse 1 add}
+bind /exec cvx ] cvx def} bd
+/+ {angle rotate} bd
+/- {angle neg rotate} bd
+/s {currentpoint stroke moveto style gsave} bd
+/r {stroke grestore} bd
+
+1 setlinecap
+4 setlinewidth
+320 0 moveto
+99 rotate
+/wood {.1 1 .3 sethsbcolor} def
+
+% /X { wood X X s + X r s - - X X r s - X + X r } rec
+% /angle {10 15 rng} def
+% /dist {5 5 rng} def
+% /style {
+%     .2 .15 rng 1 0 rng .4 .4 rng sethsbcolor
+%     .99 currentlinewidth mul setlinewidth
+% } def
+% s 6 X r
+
+/X { wood X X - s - X + X + X + r + s + X - X - X r } rec
+/angle {22 9 rng} def
+/dist {5 3 rng} def
+/style {
+	.2 .15 rng 1 0 rng .4 .4 rng sethsbcolor
+	.99 currentlinewidth mul setlinewidth
+} def
+s 6 X r
+
+% /X { F - s s X r + X r + F s + F X r - X } rec
+% /F { F F } rec
+% /angle {25 0 rng} def
+% /dist {1 1.5 rng} def
+% /depth 8 def
+% /style {
+% 	currentrgbcolor exch .04 add exch setrgbcolor
+% 	.94 currentlinewidth mul setlinewidth
+% } def
+% wood
+% s 8 X r
