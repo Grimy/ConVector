@@ -277,10 +277,13 @@ public class Graphics {
 				|| mode == Mode.BASE || path.getCurrentPoint() == null) {
 			return this;
 		}
-		final boolean stroke = mode == Mode.STROKE && System.getProperty("line") == null;
-		final Area area = new Area(stroke ? stroked(path) : path);
-		area.intersect(clippath);
-		drawing.paint(color, area);
+		if (System.getProperty("line") != null) {
+			drawing.paint(color, (Path2D) path.clone());
+		} else {
+			final Area area = new Area(mode == Mode.STROKE ? stroked(path) : path);
+			area.intersect(clippath);
+			drawing.paint(color, area);
+		}
 		return this;
 	}
 

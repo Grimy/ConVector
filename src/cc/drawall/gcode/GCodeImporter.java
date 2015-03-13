@@ -91,6 +91,7 @@ public class GCodeImporter implements Importer {
 			switch (token.charAt(0)) {
 			case 'G':
 				gcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
+				g.stroke();
 				scanner.nextLine();
 				break;
 			case 'M':
