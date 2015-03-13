@@ -25,16 +25,18 @@ public class SVGExporter extends Exporter {
 
 	@Override
 	protected void writeHeader(final double width, final double height, final double ratio) {
+		boolean line = System.getProperty("line") != null;
 		write("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
-				+ "<!-- Superbly %s -->\n"
-				+ "<svg xmlns='http://www.w3.org/2000/svg' width='%f' height='%f'>\n"
-				+ "<g transform='scale(%f)'><g id='g", COMMENT, width, height, ratio);
+			+ "<!-- Superbly %s -->\n"
+			+ "<svg xmlns='http://www.w3.org/2000/svg' width='%f' height='%f'>\n"
+			+ "<g transform='scale(%f)' stroke-width='%f' fill=%s'currentColor'><g id='g"
+			, COMMENT, width, height, ratio, 1 / ratio, line ? "'none' stroke=" : "");
 	}
 
 	@Override
 	protected void writeColor(final double red, final double green, final double blue) {
-		write("'/><path fill='#%02x%02x%02x' d='", (int) (red * 255),
-			(int) (green * 255), (int) (blue * 255));
+		write("'/><path color='#%02x%02x%02x' d='", (int) (red * 255)
+			, (int) (green * 255), (int) (blue * 255));
 	}
 
 	@Override
