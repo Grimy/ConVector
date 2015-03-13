@@ -29,7 +29,7 @@ class WebService implements Runnable {
 
 	static {
 		try (final InputStream in = WebService.class.getResourceAsStream("/convector.html");
-			final ReadableByteChannel chan = Channels.newChannel(in)) {
+		final ReadableByteChannel chan = Channels.newChannel(in)) {
 			chan.read(html);
 			html.flip();
 		} catch (final IOException e) {

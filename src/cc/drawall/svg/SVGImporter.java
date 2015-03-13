@@ -55,7 +55,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	private static final Pattern SVG_COMMAND = Pattern.compile("[mzlhvcsqtaMZLHVCSQTA]");
 
 	private static final Set<String> defs = new HashSet<>(Arrays.asList(
-				"defs", "symbol", "clipPath", "linearGradient", "radialGradient"));
+		"defs", "symbol", "clipPath", "linearGradient", "radialGradient"));
 
 	private static final Map<String, Float> fontSizes = new HashMap<>(); {
 		fontSizes.put("xx-small", 125 / 18f);
@@ -110,8 +110,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("clip-path", v -> Optional.ofNullable(paths.get(stripURL(v)))
 			.ifPresent(path -> g.clip(g.getTransform().createTransformedShape(path))));
 		attrHandlers.put("transform", v -> parseTransform(v));
-		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(prop ->
-			handleAttr(prop.split(":")[0], prop.split(":")[1])));
+		attrHandlers.put("style", v -> Arrays.stream(v.split(";")).forEach(
+			prop -> handleAttr(prop.split(":")[0], prop.split(":")[1])));
 		attrHandlers.put("stroke-dasharray", v -> g.setDashArray(parseArray(v)));
 		attrHandlers.put("stroke-dashoffset", v -> g.setDashOffset(Float.parseFloat(v)));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v, '/')));
@@ -209,8 +209,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
 	}
 
-	private static final Map<String, Function<Scanner, AffineTransform>>
-		transformHandlers = new HashMap<>(); static {
+	private static final Map<String, Function<Scanner, AffineTransform>> transformHandlers = new HashMap<>(); static {
 		transformHandlers.put("matrix", s -> new AffineTransform(
 			s.nextFloat(), s.nextFloat(), s.nextFloat(),
 			s.nextFloat(), s.nextFloat(), s.nextFloat()));
@@ -322,8 +321,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	///////////////////
 
 	@Override
-	public void startElement(final String uri, final String name,
-			final String qname, final Attributes attributes) {
+	public void startElement(final String uri, final String name, final String qname, final Attributes attributes) {
 		g.setRelative(false).save();
 		if (!uri.equals("http://www.w3.org/2000/svg")) {
 			return;
@@ -394,7 +392,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			assert false : "XML error : " + e;
 		} catch (final SAXException e) {
 			final RuntimeException wrapper = new InputMismatchException(
-					"Invalid XML file" + e.getMessage());
+				"Invalid XML file" + e.getMessage());
 			wrapper.initCause(e);
 			throw wrapper;
 		}

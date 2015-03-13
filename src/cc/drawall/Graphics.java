@@ -58,8 +58,8 @@ public class Graphics {
 	/* Graphical state information */
 	private final AffineTransform ctm = new AffineTransform();
 	private Area clippath = new Area(new Rectangle2D.Float(
-				-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
-				Float.MAX_VALUE, Float.MAX_VALUE));
+		-Float.MAX_VALUE/2, -Float.MAX_VALUE/2,
+		Float.MAX_VALUE, Float.MAX_VALUE));
 	private boolean relative;
 	private final Path2D path = new Path2D.Float();
 	private Color[] colors = {Color.BLACK, CURRENT_COLOR, CURRENT_COLOR};
@@ -118,7 +118,7 @@ public class Graphics {
 	  * @param sweepFlag whether to choose one of the counterclockwise arc sweeps
 	  * @param points the coordinates of the radii and end point of the ellipse to be drawn */
 	public void arcTo(final float xAxisRotation,
-			final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
+		final boolean largeArcFlag, final boolean sweepFlag, final float... points) {
 		final Point2D p0 = path.getCurrentPoint();
 		try {
 			ctm.inverseTransform(p0, p0);
@@ -138,7 +138,7 @@ public class Graphics {
 
 	// Based on w3c’s SVG specification, Appendix F.6.5
 	private static Shape computeEllipse(final boolean largeArcFlag, final boolean sweepFlag,
-			final double angle, final double x0, final double y0, final float[] points) {
+		final double angle, final double x0, final double y0, final float[] points) {
 		// Step 1 : Compute (x1, y1)
 		final double dx2 = (x0 - points[2]) / 2.0;
 		final double dy2 = (y0 - points[3]) / 2.0;
@@ -173,12 +173,12 @@ public class Graphics {
 		final double vy = (-y1 - cy1) / ry;
 		final double p = ux * vx + uy * vy;
 		final double angleExtent = (Math.toDegrees((ux * vy < uy * vx ? -1.0 : 1.0)
-				* Math.acos(p / Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))))
-				+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
+			* Math.acos(p / Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))))
+			+ (sweepFlag ? 360.0 : -360.0)) % 360.0;
 
 		return AffineTransform.getRotateInstance(angle, cx, cy).createTransformedShape(
 			new Arc2D.Double(cx - rx, cy - ry, rx * 2.0, ry * 2.0,
-				-angleStart, -angleExtent, Arc2D.OPEN));
+			-angleStart, -angleExtent, Arc2D.OPEN));
 	}
 
 	/** Closes the current path by drawing a straight line back to the coordinates of the
@@ -251,8 +251,8 @@ public class Graphics {
 		points[0] = Float.isNaN(points[0]) ? (float) point.getX() : points[0];
 		points[1] = Float.isNaN(points[1]) ? (float) point.getY() : points[1];
 		smooth = nbPoints == 1 ? null : new Point2D.Float(
-				2 * points[points.length - 2] - points[points.length - 4],
-				2 * points[points.length - 1] - points[points.length - 3]);
+			2 * points[points.length - 2] - points[points.length - 4],
+			2 * points[points.length - 1] - points[points.length - 3]);
 	}
 
 	////////////////////////
@@ -274,7 +274,7 @@ public class Graphics {
 	private Graphics draw(final Mode mode) {
 		final Color color = getColor(mode);
 		if (color == NONE || color.getOpacity() < MIN_ALPHA
-				|| mode == Mode.BASE || path.getCurrentPoint() == null) {
+			|| mode == Mode.BASE || path.getCurrentPoint() == null) {
 			return this;
 		}
 		if (System.getProperty("line") != null) {
@@ -425,8 +425,8 @@ public class Graphics {
 		this.textAttrs = new HashMap<>(that.textAttrs);
 		this.path.setWindingRule(that.path.getWindingRule());
 		this.stroke = new BasicStroke(that.stroke.getLineWidth(), that.stroke.getEndCap(),
-				that.stroke.getLineJoin(), that.stroke.getMiterLimit(),
-				that.stroke.getDashArray(), that.stroke.getDashPhase());
+			that.stroke.getLineJoin(), that.stroke.getMiterLimit(),
+			that.stroke.getDashArray(), that.stroke.getDashPhase());
 		this.drawing = that.drawing;
 		this.prev = that.prev;
 	}

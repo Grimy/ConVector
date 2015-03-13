@@ -30,7 +30,7 @@ public class GCodeImporter implements Importer {
 	private static final double INCHES_TO_MM = 25.4;
 
 	private static final Pattern TOKEN = Pattern.compile("[GMFTSO#]"
-			+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
+		+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
 
 	/** The scanner used to parse the input. */
 	private Scanner scanner;
@@ -47,7 +47,7 @@ public class GCodeImporter implements Importer {
 		});
 		gcodes.put(1, () -> g.lineTo(readPos('X'), readPos('Y')));
 		gcodes.put(5, () -> g.lineTo(readArg('I'), readArg('J'),
-					readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
+			readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
 		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
 		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
 		gcodes.put(90, () -> g.setRelative(false));
@@ -100,13 +100,10 @@ public class GCodeImporter implements Importer {
 			case '#':
 				variables.put((int) arg, readArg('='));
 				break;
-
-			// Ignored codes
 			case 'F': // Set feedrate
 			case 'T': // Select tool
 			case 'S': // Set spindle speed
 				break;
-
 			case 'O': // Control flow
 			default:
 				throw new InputMismatchException("Invalid GCode: " + token);
@@ -119,21 +116,17 @@ public class GCodeImporter implements Importer {
 		return scanner.hasNext(axis + ".*") ? readArg(axis) : Float.NaN;
 	}
 
-	/**
-	 * Reads a named argument from the file.
-	 * Examples: given the input "X4.2", readArg('X') returns 4.2.
-	 * @throws AssertionError when a mandatory argument isn’t found.
-	 */
+	/** Reads a named argument from the file.
+	  * Examples: given the input "X4.2", readArg('X') returns 4.2.
+	  * @throws AssertionError when a mandatory argument isn’t found. */
 	private float readArg(final char arg) {
 		final String token = scanner.next();
 		assert token.charAt(0) == arg : "Required: " + arg + ", found: " + token;
 		return parseFloat(token.substring(1));
 	}
 
-	/**
-	 * Parses the specified string as a float.
-	 * Handles GCode variables (#%d) and mathematical expressions.
-	 */
+	/** Parses the specified string as a float.
+	  * Handles GCode variables (#%d) and mathematical expressions. */
 	private float parseFloat(final String string) {
 		final String expr = string.charAt(0) == '['
 			? string.substring(1, string.length() - 1) : string;

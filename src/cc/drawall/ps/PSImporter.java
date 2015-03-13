@@ -52,7 +52,7 @@ public class PSImporter implements Importer {
 	  * Dictionary  PSDict
 	  * Name        String
 	  * String      String
-	  **/
+	  */
 
 	/** A Runnable that does nothing, used for ignored instructions. */
 	private static final Runnable NOOP = () -> {/*NOOP*/};
@@ -143,8 +143,8 @@ public class PSImporter implements Importer {
 		builtin("get", () -> {
 			final Object o = pop2();
 			stack.push(o instanceof PSDict ? ((PSDict) o).get(stack.pop())
-					: o instanceof Object[] ? ((Object[]) o)[(int) p(1)]
-					: ((String) o).codePointAt((int) p(1)));
+				: o instanceof Object[] ? ((Object[]) o)[(int) p(1)]
+				: ((String) o).codePointAt((int) p(1)));
 		});
 		builtin("put", () -> {
 			final Object value = stack.pop();
@@ -218,9 +218,9 @@ public class PSImporter implements Importer {
 			final Object array = stack.pop();
 			(array instanceof String ? ((String) array).chars().mapToObj(c -> c)
 				: Arrays.stream((Object[]) array)).forEach(c -> {
-					stack.push(c);
-					execute(code);
-				});
+				stack.push(c);
+				execute(code);
+			});
 		});
 		// exec
 
@@ -365,7 +365,7 @@ public class PSImporter implements Importer {
 
 		// See PLRM 3.1: Syntax
 		scanner.useDelimiter(String.format("(%1$s|(?=%2$s)|(?<=%2$s)|%%.*+)+",
-					WHITESPACE, "[(){}<>\\[\\]/]"));
+			WHITESPACE, "[(){}<>\\[\\]/]"));
 		while (scanner.hasNext()) {
 			final Object obj = tokenize(scanner.next(), scanner);
 			if (stack.contains(CURLY_MARK)) {
@@ -430,7 +430,7 @@ public class PSImporter implements Importer {
 
 	private Object getVar(final Object key) {
 		if (!vars.containsKey(key)) {
-		   throw new InputMismatchException("Unknown variable : " + key);
+			throw new InputMismatchException("Unknown variable : " + key);
 		}
 		return vars.get(key);
 	}

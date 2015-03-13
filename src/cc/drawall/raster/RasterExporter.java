@@ -13,23 +13,22 @@
 
 package cc.drawall.raster;
 
-import cc.drawall.Exporter;
-import cc.drawall.Drawing;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.Color;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.nio.ByteBuffer;
+
+import cc.drawall.Drawing;
+import cc.drawall.Exporter;
 
 /** Outputs a vector to PostScript code. */
 public class RasterExporter extends Exporter {
 
 	private BufferedImage img;
 	private Graphics2D g;
-	private ByteBuffer out;
 
 	public RasterExporter() {
 		super(0);
@@ -37,7 +36,6 @@ public class RasterExporter extends Exporter {
 
 	@Override
 	protected void output(final Drawing drawing, final ByteBuffer out) {
-		this.out = out;
 		final Rectangle2D bounds = drawing.getBounds();
 		final int width = (int) (bounds.getWidth() + .5);
 		final int height = (int) (bounds.getHeight() + .5);
@@ -65,5 +63,6 @@ public class RasterExporter extends Exporter {
 
 	@Override
 	protected void writeHeader(final double width, final double height, final double ratio) {
+		// We have to get the unscaled width and height directly from the drawing
 	}
 }

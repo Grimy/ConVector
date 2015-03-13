@@ -84,8 +84,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 		final List<Splash> splitted = new ArrayList<>();
 		forEach(splash -> {
 			Path2D path = new Path2D.Double();
-			for (final PathIterator itr = splash.getPathIterator(null, -1);
-					!itr.isDone(); itr.next()) {
+			for (final PathIterator itr = splash.iterator(null, -1); !itr.isDone(); itr.next()) {
 				final int type = itr.currentSegment(coords);
 				switch (type) {
 				case PathIterator.SEG_MOVETO:
@@ -152,9 +151,9 @@ public class Drawing implements Iterable<Drawing.Splash> {
 			this.shape = shape;
 		}
 
-		PathIterator getPathIterator(final AffineTransform transform, final int flatness) {
+		PathIterator iterator(final AffineTransform transform, final int flatness) {
 			return flatness < 0 ? shape.getPathIterator(transform)
-			                    : shape.getPathIterator(transform, flatness);
+				: shape.getPathIterator(transform, flatness);
 		}
 	}
 
