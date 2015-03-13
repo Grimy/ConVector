@@ -10,10 +10,10 @@ convector.jar: $(shell find src -name '*.java')
 serve:
 	while true; do java -ea -jar convector.jar 3434; done
 
-test: test/*.svg
-examples: examples/*.svg
+test: test/*.svg test/*.ps
+examples: examples/*.svg examples/*.ps
 
-%.svg: convector.jar
+%.svg %.ps: convector.jar
 	./montage.sh $@
 	touch $@
 
