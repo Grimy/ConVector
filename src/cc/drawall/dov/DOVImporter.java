@@ -30,11 +30,14 @@ public class DOVImporter implements Importer {
 		final Scanner scanner = new Scanner(input, "UnicodeBig");
 		scanner.useDelimiter("");
 		scanner.skip("\u2339\uFFAF");
+
 		final int width = scanner.next().charAt(0);
 		final int height = scanner.next().charAt(0);
+		g.setSize(width, height);
 		final double ratio = Math.max(width, height) / 65535.0;
 		g.getTransform().scale(ratio, ratio);
 		g.setStrokeWidth((float) (1 / ratio));
+
 		while (scanner.hasNext()) {
 			final int x = scanner.next().charAt(0);
 			final int y = scanner.next().charAt(0);

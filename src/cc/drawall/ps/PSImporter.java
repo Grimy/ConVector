@@ -361,7 +361,7 @@ public class PSImporter implements Importer {
 	@SuppressWarnings("resource")
 	public Graphics process(final ReadableByteChannel input) {
 		final Scanner scanner = new Scanner(input, "ascii");
-		g.getClip().intersect(new Area(new Rectangle2D.Float(0, 0, 612, 792)));
+		g.setSize(612, 792);
 
 		// See PLRM 3.1: Syntax
 		scanner.useDelimiter(String.format("(%1$s|(?=%2$s)|(?<=%2$s)|%%.*+)+",

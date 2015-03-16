@@ -259,6 +259,10 @@ public class Graphics {
 	// Drawing operations //
 	////////////////////////
 
+	public void setSize(float width, float height) {
+		drawing.bounds = new Rectangle2D.Float(0, 0, width, height);
+	}
+
 	/** Fill the current path with the FILL Color.
 	  * @return this Graphics */
 	public Graphics fill() {

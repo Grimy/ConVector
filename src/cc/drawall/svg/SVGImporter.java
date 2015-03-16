@@ -127,7 +127,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 
 	private final Map<String, Runnable> tagHandlers = new HashMap<>(); {
 		tagHandlers.put("svg", () -> {
-			// Assume a 1600x900 initial viewPort
+			// Assume a 1600x900 initial viewport
 			float[] viewBox = {0, 0, 1600, 900};
 			if (attributes.getIndex("viewBox") >= 0) {
 				viewBox = parseArray(attributes.getValue("viewBox"));
@@ -137,7 +137,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			unitMap.put("%h", viewBox[3] / 100);
 			final float width = getFloat("width", viewBox[2]);
 			final float height = getFloat("height", viewBox[3]);
-			g.clip(new Rectangle2D.Float(0, 0, width, height));
+			g.setSize(width, height);
 			unitMap.put("%w", width / 100);
 			unitMap.put("%h", height / 100);
 			unitMap.put("%/", (float) (Math.sqrt((width * width + height * height) / 2) / 100));

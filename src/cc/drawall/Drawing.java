@@ -39,7 +39,7 @@ public class Drawing implements Iterable<Drawing.Splash> {
 	private final double[] coords = new double[6];
 
 	/* The bounding rectangle of this Drawing (initially empty). */
-	private Rectangle2D bounds = new Rectangle2D.Double(0, 0, -1, -1);
+	Rectangle2D bounds = new Rectangle2D.Double(0, 0, -1, -1);
 
 	/* The splashes composing this Drawing. */
 	private List<Splash> splashes = new ArrayList<>();
@@ -48,7 +48,6 @@ public class Drawing implements Iterable<Drawing.Splash> {
 
 	/* Adds the specified shape, filled with the specified color, to this Drawing. */
 	void paint(final Color color, final Shape shape) {
-		bounds = bounds.createUnion(shape.getBounds2D());
 		splashes.add(new Splash(color, shape));
 	}
 

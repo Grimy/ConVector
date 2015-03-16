@@ -75,10 +75,11 @@ public class GCodeImporter implements Importer {
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
-
 		scanner.skip("; (\\d+)x(\\d+)\n");
+
 		final int width = Integer.parseInt(scanner.match().group(1));
 		final int height = Integer.parseInt(scanner.match().group(2));
+		g.setSize(width, height);
 		final double ratio = Math.max(width, height) / 65535.0;
 		g.getTransform().scale(ratio, ratio);
 		g.setStrokeWidth((float) (1 / ratio));
