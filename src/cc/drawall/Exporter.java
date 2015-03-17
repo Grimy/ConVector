@@ -131,7 +131,7 @@ public abstract class Exporter {
 	protected void writeSegment(final int type, final double[] coords) {
 		int i = 0;
 		for (final char chr: format[type].toCharArray()) {
-			out.put(chr == '%' ? Double.toString(coords[i++]).getBytes(ASCII) : new byte[] {(byte) chr});
+			out.put(chr == '%' ? Integer.toString((int) coords[i++]).getBytes(ASCII) : new byte[] {(byte) chr});
 		}
 		out.put((byte) '\n');
 	}
