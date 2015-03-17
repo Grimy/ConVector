@@ -14,7 +14,7 @@ test: test/*.svg test/*.ps
 examples: examples/*.svg examples/*.ps
 
 %.svg %.ps: convector.jar
-	./montage.sh $@
+	scripts/montage.sh $@
 	touch $@
 
 doc:
