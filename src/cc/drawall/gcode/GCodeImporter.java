@@ -42,7 +42,7 @@ public class GCodeImporter implements Importer {
 
 	private final Map<Integer, Runnable> gcodes = new HashMap<>(); {
 		gcodes.put(0, () -> {
-			g.stroke().resetPath();
+			g.stroke().resetKeepPos();
 			g.moveTo(readPos('X'), readPos('Y'));
 		});
 		gcodes.put(1, () -> g.lineTo(readPos('X'), readPos('Y')));
@@ -92,7 +92,7 @@ public class GCodeImporter implements Importer {
 			switch (token.charAt(0)) {
 			case 'G':
 				gcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
-				g.stroke();
+				g.stroke().resetKeepPos();
 				scanner.nextLine();
 				break;
 			case 'M':
