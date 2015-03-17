@@ -40,7 +40,7 @@ import java.awt.font.TextAttribute;
   * Path construction can be done using straight lines, Bézier curves, `closePath` instructions
   * and text.
   * Path drawing is either stroking, filling or both. */
-public class Graphics {
+public class Canvas {
 	public static final Color CURRENT_COLOR = new Color(0, 0, 0, 1);
 	public static final Color NONE = new Color(0, 0, 0, 1);
 	public static enum Mode { BASE, FILL, STROKE; }
@@ -66,7 +66,7 @@ public class Graphics {
 	private BasicStroke stroke = new BasicStroke(1, 0, 0, 10);
 
 	/* Saved graphical context. */
-	private Graphics prev;
+	private Canvas prev;
 
 	/* First control point of a following smooth curve */
 	private Point2D.Float smooth;
@@ -75,7 +75,7 @@ public class Graphics {
 	// Path construction //
 	///////////////////////
 
-	public Graphics setRelative(final boolean relative) {
+	public Canvas setRelative(final boolean relative) {
 		this.relative = relative;
 		return this;
 	}
@@ -189,7 +189,7 @@ public class Graphics {
 
 	/** Resets the path to its initial, empty state.
 	  * @return this Graphics */
-	public Graphics resetPath() {
+	public Canvas resetPath() {
 		path.reset();
 		return this;
 	}
@@ -265,17 +265,17 @@ public class Graphics {
 
 	/** Fill the current path with the FILL Color.
 	  * @return this Graphics */
-	public Graphics fill() {
+	public Canvas fill() {
 		return draw(Mode.FILL);
 	}
 
 	/** Stroke the current path with the STROKE Color.
 	  * @return this Graphics */
-	public Graphics stroke() {
+	public Canvas stroke() {
 		return draw(Mode.STROKE);
 	}
 
-	private Graphics draw(final Mode mode) {
+	private Canvas draw(final Mode mode) {
 		final Color color = getColor(mode);
 		if (color == NONE || color.getOpacity() < MIN_ALPHA
 			|| mode == Mode.BASE || path.getCurrentPoint() == null) {
@@ -315,7 +315,7 @@ public class Graphics {
 	/** Set the dashing style.
 	  * @param dash an array representing the dashing pattern
 	  * @see java.awt.BasicStroke */
-	public Graphics setDashArray(final float[] dash) {
+	public Canvas setDashArray(final float[] dash) {
 		setStroke("dash", dash);
 		return this;
 	}
@@ -372,7 +372,7 @@ public class Graphics {
 	  * @see java.awt.geom.GeneralPath
 	  * @param rule the winding rule to use
 	  * @return this Graphics */
-	public Graphics setWindingRule(final int rule) {
+	public Canvas setWindingRule(final int rule) {
 		assert rule == Path2D.WIND_NON_ZERO || rule == Path2D.WIND_EVEN_ODD;
 		path.setWindingRule(rule);
 		return this;
@@ -410,7 +410,7 @@ public class Graphics {
 	/** Pushes a snapshot of the graphical state on the save stack.
 	  * @see restore() */
 	public void save() {
-		final Graphics copy = new Graphics();
+		final Canvas copy = new Canvas();
 		copy.copy(this);
 		prev = copy;
 	}
@@ -422,7 +422,7 @@ public class Graphics {
 		copy(prev);
 	}
 
-	private void copy(final Graphics that) {
+	private void copy(final Canvas that) {
 		this.ctm.setTransform(that.ctm);
 		this.clippath = (Area) that.clippath.clone();
 		this.colors = Arrays.copyOf(that.colors, that.colors.length);

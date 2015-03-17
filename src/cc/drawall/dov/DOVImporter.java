@@ -17,15 +17,15 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-import cc.drawall.Graphics;
+import cc.drawall.Canvas;
 import cc.drawall.Importer;
 
 /** Importer used to parse GCode. */
 public class DOVImporter implements Importer {
 
 	@Override
-	public Graphics process(final ReadableByteChannel input) {
-		final Graphics g = new Graphics();
+	public Canvas process(final ReadableByteChannel input) {
+		final Canvas g = new Canvas();
 		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(input, "UnicodeBig");
 		scanner.useDelimiter("");

@@ -9,8 +9,6 @@
 				rlineto 1 0
 * Consider using nailgun
 * Update DOV to use a MIFF-like syntax?
-* Rename Graphics to Canvas
-* Rename RasterExporter to MIFFExporter
 * Compare Canvas APIs:
 	* http://download.java.net/jdk9/jfxdocs/javafx/scene/canvas/GraphicsContext.html
 	* http://java-gnome.sourceforge.net/doc/api/4.1/org/freedesktop/cairo/Context.html

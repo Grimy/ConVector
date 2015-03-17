@@ -11,7 +11,7 @@
  * © 2014-2015 Victor Adam
  */
 
-package cc.drawall.raster;
+package cc.drawall.miff;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -25,12 +25,12 @@ import cc.drawall.Drawing;
 import cc.drawall.Exporter;
 
 /** Outputs a vector to PostScript code. */
-public class RasterExporter extends Exporter {
+public class MIFFExporter extends Exporter {
 
 	private BufferedImage img;
 	private Graphics2D g;
 
-	public RasterExporter() {
+	public MIFFExporter() {
 		super(0);
 	}
 

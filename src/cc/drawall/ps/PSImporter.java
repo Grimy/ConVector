@@ -36,7 +36,7 @@ import javafx.scene.paint.Color;
 
 import javax.xml.bind.DatatypeConverter;
 
-import cc.drawall.Graphics;
+import cc.drawall.Canvas;
 import cc.drawall.Importer;
 
 /** Importer used to parse PostScript. */
@@ -75,7 +75,7 @@ public class PSImporter implements Importer {
 	private static final Object MARK = new Object();
 	private static final Object CURLY_MARK = new Object();
 
-	private final Graphics g = new Graphics();
+	private final Canvas g = new Canvas();
 
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
 	private Iterator<Object> itr;
@@ -251,16 +251,16 @@ public class PSImporter implements Importer {
 		builtin("gsave",         () -> g.save());
 		builtin("grestore",      () -> g.resetPath().restore());
 		builtin("grestoreall",   () -> g.resetPath().restore());
-		builtin("setlinecap",    () -> g.setLineCap(Graphics.LineCap.values()[(int) p(1)]));
-		builtin("setlinejoin",   () -> g.setLineJoin(Graphics.LineJoin.values()[(int) p(1)]));
+		builtin("setlinecap",    () -> g.setLineCap(Canvas.LineCap.values()[(int) p(1)]));
+		builtin("setlinejoin",   () -> g.setLineJoin(Canvas.LineJoin.values()[(int) p(1)]));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
 		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
 		builtin("setdash",       () -> g.setDashArray(popArray()).setDashOffset(p(1)));
 		builtin("showpage", NOOP);
-		builtin("setrgbcolor", () -> g.setColor(Graphics.Mode.BASE, Color.color(p(3), p(), p())));
-		builtin("sethsbcolor", () -> g.setColor(Graphics.Mode.BASE, Color.hsb(p(3), p(), p())));
+		builtin("setrgbcolor", () -> g.setColor(Canvas.Mode.BASE, Color.color(p(3), p(), p())));
+		builtin("sethsbcolor", () -> g.setColor(Canvas.Mode.BASE, Color.hsb(p(3), p(), p())));
 		builtin("setcmykcolor", () -> substack(4).clear());
-		builtin("setgray", () -> g.setColor(Graphics.Mode.BASE, Color.gray(p(1))));
+		builtin("setgray", () -> g.setColor(Canvas.Mode.BASE, Color.gray(p(1))));
 		builtin("clippath", () -> {
 			g.resetPath();
 			g.append(g.getClip());
@@ -359,7 +359,7 @@ public class PSImporter implements Importer {
 
 	@Override
 	@SuppressWarnings("resource")
-	public Graphics process(final ReadableByteChannel input) {
+	public Canvas process(final ReadableByteChannel input) {
 		final Scanner scanner = new Scanner(input, "ascii");
 		g.setSize(612, 792);
 

@@ -47,7 +47,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import cc.drawall.Graphics;
+import cc.drawall.Canvas;
 import cc.drawall.Importer;
 
 /** An Importer for SVG images. */
@@ -77,7 +77,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		unitMap.put("in", 90f);
 	}
 
-	private final Graphics g = new Graphics();
+	private final Canvas g = new Canvas();
 	private final Deque<String> idStack = new ArrayDeque<>();
 	private final Map<String, Color> gradients = new HashMap<>();
 	private final Map<String, Path2D> paths = new HashMap<>();
@@ -94,14 +94,14 @@ public class SVGImporter extends DefaultHandler implements Importer {
 				g.clip(new Path2D.Float());
 			}
 		});
-		attrHandlers.put("color", v -> parseColor(v, Graphics.Mode.BASE));
-		attrHandlers.put("fill", v -> parseColor(v, Graphics.Mode.FILL));
-		attrHandlers.put("stroke", v -> parseColor(v, Graphics.Mode.STROKE));
-		attrHandlers.put("stop-color", v -> parseColor(v, Graphics.Mode.BASE));
-		attrHandlers.put("opacity", v -> parseOpacity(v, Graphics.Mode.BASE));
-		attrHandlers.put("fill-opacity", v -> parseOpacity(v, Graphics.Mode.FILL));
-		attrHandlers.put("stroke-opacity", v -> parseOpacity(v, Graphics.Mode.STROKE));
-		attrHandlers.put("stop-opacity", v -> parseOpacity(v, Graphics.Mode.BASE));
+		attrHandlers.put("color", v -> parseColor(v, Canvas.Mode.BASE));
+		attrHandlers.put("fill", v -> parseColor(v, Canvas.Mode.FILL));
+		attrHandlers.put("stroke", v -> parseColor(v, Canvas.Mode.STROKE));
+		attrHandlers.put("stop-color", v -> parseColor(v, Canvas.Mode.BASE));
+		attrHandlers.put("opacity", v -> parseOpacity(v, Canvas.Mode.BASE));
+		attrHandlers.put("fill-opacity", v -> parseOpacity(v, Canvas.Mode.FILL));
+		attrHandlers.put("stroke-opacity", v -> parseOpacity(v, Canvas.Mode.STROKE));
+		attrHandlers.put("stop-opacity", v -> parseOpacity(v, Canvas.Mode.BASE));
 		attrHandlers.put("fill-rule", v -> {
 			if (v.equals("evenodd")) {
 				g.setWindingRule(Path2D.WIND_EVEN_ODD);
@@ -116,9 +116,9 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		attrHandlers.put("stroke-dashoffset", v -> g.setDashOffset(Float.parseFloat(v)));
 		attrHandlers.put("stroke-width", v -> g.setStrokeWidth(parseLength(v, '/')));
 		attrHandlers.put("stroke-linecap", v -> g.setLineCap(
-			Graphics.LineCap.valueOf(v.toUpperCase(Locale.ENGLISH))));
+			Canvas.LineCap.valueOf(v.toUpperCase(Locale.ENGLISH))));
 		attrHandlers.put("stroke-linejoin", v -> g.setLineJoin(
-			Graphics.LineJoin.valueOf(v.toUpperCase(Locale.ENGLISH))));
+			Canvas.LineJoin.valueOf(v.toUpperCase(Locale.ENGLISH))));
 		attrHandlers.put("stroke-miterlimit", v -> g.setMiterLimit(parseLength(v, '/')));
 		attrHandlers.put("font-size", v -> g.setFontSize(parseLength(v, '/')));
 		attrHandlers.put("font-family", v -> g.setFont(v));
@@ -192,7 +192,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			s.nextFloat(), s.nextFloat(), s.nextFloat(), s.nextFloat()));
 		pathHandlers.put('Z', s -> {
 			g.closePath();
-			if (idStack.isEmpty() && g.getColor(Graphics.Mode.FILL) == Graphics.NONE) {
+			if (idStack.isEmpty() && g.getColor(Canvas.Mode.FILL) == Canvas.NONE) {
 				g.stroke().resetKeepPos();
 			}
 		});
@@ -286,16 +286,16 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			: multiplier * Float.parseFloat(str.substring(0, index));
 	}
 
-	private void parseColor(final String colorName, final Graphics.Mode mode) {
+	private void parseColor(final String colorName, final Canvas.Mode mode) {
 		g.setColor(mode, colorName.startsWith("url(")
-			? gradients.getOrDefault(stripURL(colorName), Graphics.NONE)
-			: colorName.equals("currentColor") ? Graphics.CURRENT_COLOR
-			: colorName.equals("none") ? Graphics.NONE
+			? gradients.getOrDefault(stripURL(colorName), Canvas.NONE)
+			: colorName.equals("currentColor") ? Canvas.CURRENT_COLOR
+			: colorName.equals("none") ? Canvas.NONE
 			: Color.web(colorName, g.getColor(mode).getOpacity()));
 	}
 
-	private void parseOpacity(final String opacity, final Graphics.Mode mode) {
-		if (g.getColor(mode) != Graphics.NONE) {
+	private void parseOpacity(final String opacity, final Canvas.Mode mode) {
+		if (g.getColor(mode) != Canvas.NONE) {
 			final double alpha = clamp(Float.parseFloat(opacity), 0, 1);
 			g.setColor(mode, g.getColor(mode).deriveColor(0, 1, 1, alpha));
 		}
@@ -349,7 +349,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			if (defs.contains(name)) {
 				g.resetPath();
 			} else if (name.equals("stop")) {
-				final Color stop = g.getColor(Graphics.Mode.BASE);
+				final Color stop = g.getColor(Canvas.Mode.BASE);
 				gradients.compute(idStack.peek(), (k, v) -> v == null
 					? stop : v.interpolate(stop, .5));
 			}
@@ -379,10 +379,10 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	/////////////////
 
 	@Override
-	public Graphics process(final ReadableByteChannel input) {
-		g.setColor(Graphics.Mode.BASE, Graphics.NONE);
-		g.setColor(Graphics.Mode.FILL, Color.BLACK);
-		g.setColor(Graphics.Mode.STROKE, Graphics.NONE);
+	public Canvas process(final ReadableByteChannel input) {
+		g.setColor(Canvas.Mode.BASE, Canvas.NONE);
+		g.setColor(Canvas.Mode.FILL, Color.BLACK);
+		g.setColor(Canvas.Mode.STROKE, Canvas.NONE);
 		g.setFont("DejaVu Serif");
 		try {
 			final SAXParserFactory factory = SAXParserFactory.newInstance();

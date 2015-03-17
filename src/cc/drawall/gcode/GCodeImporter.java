@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
-import cc.drawall.Graphics;
+import cc.drawall.Canvas;
 import cc.drawall.Importer;
 
 /** Importer used to parse GCode. */
@@ -35,7 +35,7 @@ public class GCodeImporter implements Importer {
 	/** The scanner used to parse the input. */
 	private Scanner scanner;
 
-	private final Graphics g = new Graphics();
+	private final Canvas g = new Canvas();
 
 	/* Maps GCode variable names to their values. */
 	private final Map<Integer, Float> variables = new HashMap<>();
@@ -69,7 +69,7 @@ public class GCodeImporter implements Importer {
 	}
 
 	@Override
-	public Graphics process(final ReadableByteChannel input) {
+	public Canvas process(final ReadableByteChannel input) {
 		scanner = new Scanner(input, "ascii");
 		g.moveTo(0, 0);
 

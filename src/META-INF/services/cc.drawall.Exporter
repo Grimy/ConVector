@@ -4,4 +4,4 @@ cc.drawall.mvg.MVGExporter
 cc.drawall.ps.PDFExporter
 cc.drawall.ps.PSExporter
 cc.drawall.svg.SVGExporter
-cc.drawall.raster.RasterExporter
+cc.drawall.miff.MIFFExporter

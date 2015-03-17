@@ -22,5 +22,5 @@ public interface Importer {
 	  * class is a way to interpret bytes as a vector image.
 	  * @param input the channel in which to read the data to be parsed
 	  * @return the resulting vector */
-	Graphics process(final ReadableByteChannel input);
+	Canvas process(final ReadableByteChannel input);
 }
