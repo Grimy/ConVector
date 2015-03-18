@@ -3,29 +3,29 @@
 /bd {bind def} bind def
 /rng {rand 65536 mod exch mul 65536 div add} bd
 /rec {[ exch {exch 1 sub dup 0 ne 3 -1 roll {dist 0 rlineto} ifelse 1 add}
-	bind /exec cvx ] cvx def} bd
+	/exec load ] cvx def} def
 /+ {angle rotate} bd
 /- {angle neg rotate} bd
 /s {currentpoint stroke moveto style gsave} bd
 /r {stroke grestore} bd
 
-/dist 2 def
+/dist 4 def
 /style {} def
 
 % Dragon
 /X { X + Y + } rec
 /Y { - X - Y } rec
 /angle 90 def
-1 .1 0 setrgbcolor 250 400 moveto s 16 X r
+1 .1 0 setrgbcolor 250 400 moveto s 11 X r
 
 % Triangle
 /X { Y - X - Y } rec
 /Y { X + Y + X } rec
 /angle 60 def
-0 1 .1 setrgbcolor 0 0 moveto s 9 X r
+0 1 .1 setrgbcolor 47 111 moveto s 7 X r
 
 % Snowflake
 /X { Y + + Y + + Y } def
 /Y { Y - Y + + Y - Y } rec
 /angle 60 def
-.1 0 1 setrgbcolor 9 142 moveto s 6 X r
+.1 0 1 setrgbcolor 9 99 moveto s 5 X r
