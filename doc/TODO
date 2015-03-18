@@ -8,6 +8,7 @@
 			else:
 				rlineto 1 0
 * Consider using nailgun
+* PS: { /name } bind def incorrectly binds name
 * Update DOV to use a MIFF-like syntax?
 * Compare Canvas APIs:
 	* http://download.java.net/jdk9/jfxdocs/javafx/scene/canvas/GraphicsContext.html

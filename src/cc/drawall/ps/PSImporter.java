@@ -14,7 +14,6 @@
 package cc.drawall.ps;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -185,24 +184,24 @@ public class PSImporter implements Importer {
 		vars.put("null", null);
 
 		// Flow control
-		builtin("exec", () -> execute(stack.pop()));
+		builtin("exec", () -> execute(stack.pop(), true));
 		builtin("stopped", () -> stack.push(Boolean.FALSE));
 		builtin("quit", NOOP);
 		builtin("if", () -> {
 			final Object code = stack.pop();
 			if ((boolean) stack.pop()) {
-				execute(code);
+				execute(code, true);
 			}
 		});
 		builtin("ifelse", () -> {
 			final Object ifFalse = stack.pop();
 			final Object ifTrue = stack.pop();
-			execute((boolean) stack.pop() ? ifTrue : ifFalse);
+			execute((boolean) stack.pop() ? ifTrue : ifFalse, true);
 		});
 		builtin("repeat", () -> {
 			final Object code = stack.pop();
 			for (int i = (int) p(1); i > 0; i--) {
-				execute(code);
+				execute(code, true);
 			}
 		});
 		builtin("for", () -> {
@@ -210,7 +209,7 @@ public class PSImporter implements Importer {
 			final float max = p(1), inc = p(1);
 			for (float i = p(1); i < max; i += inc) {
 				stack.push(i);
-				execute(code);
+				execute(code, true);
 			}
 		});
 		builtin("forall", () -> {
@@ -219,7 +218,7 @@ public class PSImporter implements Importer {
 			(array instanceof String ? ((String) array).chars().mapToObj(c -> c)
 				: Arrays.stream((Object[]) array)).forEach(c -> {
 				stack.push(c);
-				execute(code);
+				execute(code, true);
 			});
 		});
 		// exec
@@ -227,7 +226,7 @@ public class PSImporter implements Importer {
 		// Type, attributes and conversion operators
 		builtin("type", () -> stack.push(stack.pop() instanceof String ? "nametype" : null));
 		// cvi
-		builtin("cvx", NOOP);
+		builtin("cvx", () -> literals.remove(stack.peek()));
 		builtin("cvr", NOOP);
 		builtin("cvlit", () -> stack.push(literal(stack.peek())));
 		builtin("rcheck", () -> stack.push(stack.pop() != null));
@@ -238,7 +237,7 @@ public class PSImporter implements Importer {
 
 		// File operators
 		builtin("==", () -> System.out.println(stack.pop().toString()));
-		builtin("stack", () -> stack.stream().forEach(o -> System.out.println(o.toString())));
+		builtin("stack", () -> System.out.println("---\n" + Arrays.deepToString(stack.toArray()) + "\n---"));
 
 		// Miscellaneous
 		vars.put("ps_level", 1f);
@@ -247,7 +246,7 @@ public class PSImporter implements Importer {
 			o -> vars.containsKey(o) ? vars.get(o) : o
 		).toArray()));
 
-		// Graphics State
+		// Canvas State
 		builtin("gsave",         () -> g.save());
 		builtin("grestore",      () -> g.resetPath().restore());
 		builtin("grestoreall",   () -> g.resetPath().restore());
@@ -362,6 +361,9 @@ public class PSImporter implements Importer {
 	public Canvas process(final ReadableByteChannel input) {
 		final Scanner scanner = new Scanner(input, "ascii");
 		g.setSize(612, 792);
+		System.setProperty("reverse", "1");
+		g.setColor(Canvas.Mode.FILL, Canvas.CURRENT_COLOR);
+		g.setColor(Canvas.Mode.STROKE, Canvas.CURRENT_COLOR);
 
 		// See PLRM 3.1: Syntax
 		scanner.useDelimiter(String.format("(%1$s|(?=%2$s)|(?<=%2$s)|%%.*+)+",
@@ -372,21 +374,21 @@ public class PSImporter implements Importer {
 				// Deferred execution mode
 				stack.push(obj);
 			} else {
-				execute(obj);
+				execute(obj, false);
 			}
 		}
 		return g;
 	}
 
-	private void execute(final Object object) {
+	private void execute(final Object object, final boolean doProc) {
 		if (literals.containsKey(object)) {
 			stack.push(object);
 		} else if (object instanceof Runnable) {      // built-in operator
 			((Runnable) object).run();
 		} else if (object instanceof String) { // name object
-			execute(getVar(object));
-		} else if (object instanceof Object[]) {   // procedure
-			Arrays.stream((Object[]) object).forEach(this::execute);
+			execute(getVar(object), true);
+		} else if (doProc && object instanceof Object[]) {
+			Arrays.stream((Object[]) object).forEach(o -> execute(o, false));
 		} else {
 			stack.push(object);
 		}
@@ -406,8 +408,7 @@ public class PSImporter implements Importer {
 		case '{':
 			return CURLY_MARK;
 		case '}':
-			final Object[] proc = popTo(CURLY_MARK);
-			return (Runnable) () -> stack.push(proc);
+			return popTo(CURLY_MARK);
 		case '/':
 			return literal(scanner.next());
 		default:
