@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 class HTTPChannel implements ReadableByteChannel {
 	private final SocketChannel chan;
 	private int remaining;
-	private static final Logger log = Logger.getLogger(WebService.class.getName());
+	private static final Logger log = Logger.getLogger(HTTPChannel.class.getName());
 	String url;
 
 	HTTPChannel(final SocketChannel chan) throws IOException {
@@ -45,7 +45,8 @@ class HTTPChannel implements ReadableByteChannel {
 	private String readline() throws IOException {
 		final ByteBuffer buffer = ByteBuffer.allocate(1);
 		final StringBuilder line = new StringBuilder();
-		for (char c = '\0'; c != '\n';) {
+		char c = '\0';
+		while (c != '\n') {
 			chan.read(buffer);
 			buffer.flip();
 			c = (char) buffer.get();

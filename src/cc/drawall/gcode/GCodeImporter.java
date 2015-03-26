@@ -19,56 +19,39 @@ import java.util.InputMismatchException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import cc.drawall.Graphics;
+import cc.drawall.Canvas;
 import cc.drawall.Importer;
 
 /** Importer used to parse GCode. */
 public class GCodeImporter implements Importer {
-	private static final Logger log = Logger.getLogger(GCodeImporter.class.getName());
-
 	/* Conversion ratio. */
 	private static final double INCHES_TO_MM = 25.4;
 
 	private static final Pattern TOKEN = Pattern.compile("[GMFTSO#]"
-			+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
-
-	/* Whether to compute coordinates relative to the current point. Set by G20 / G21 */
-	private boolean relative;
+		+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
 
 	/** The scanner used to parse the input. */
 	private Scanner scanner;
 
-	private final Graphics g = new Graphics();
+	private final Canvas g = new Canvas();
 
 	/* Maps GCode variable names to their values. */
 	private final Map<Integer, Float> variables = new HashMap<>();
 
 	private final Map<Integer, Runnable> gcodes = new HashMap<>(); {
 		gcodes.put(0, () -> {
-			g.stroke().reset();
-			g.moveTo(relative, readPos('X'), readPos('Y'));
+			g.stroke().resetKeepPos();
+			g.moveTo(readPos('X'), readPos('Y'));
 		});
-		gcodes.put(1, () -> g.lineTo(relative, readPos('X'), readPos('Y')));
-		gcodes.put(5, () -> g.lineTo(relative, readArg('I'), readArg('J'),
-					readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
+		gcodes.put(1, () -> g.lineTo(readPos('X'), readPos('Y')));
+		gcodes.put(5, () -> g.lineTo(readArg('I'), readArg('J'),
+			readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
 		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
 		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
-		gcodes.put(90, () -> relative = false);
-		gcodes.put(91, () -> relative = true);
-
-		final Runnable unsupported = () -> log.severe("Unsupported operation");
-		gcodes.put(2,  unsupported);
-		gcodes.put(3,  unsupported);
-		gcodes.put(7,  unsupported);
-		gcodes.put(8,  unsupported);
-		gcodes.put(18, unsupported);
-		gcodes.put(19, unsupported);
-		gcodes.put(28, unsupported);
-		gcodes.put(30, unsupported);
-		gcodes.put(92, unsupported);
+		gcodes.put(90, () -> g.setRelative(false));
+		gcodes.put(91, () -> g.setRelative(true));
 		// 2:  Helical motion, CW
 		// 3:  Helical motion, CCW
 		// 7:  Diameter mode
@@ -86,44 +69,42 @@ public class GCodeImporter implements Importer {
 	}
 
 	@Override
-	public Graphics process(final ReadableByteChannel input) {
+	public Canvas process(final ReadableByteChannel input) {
 		scanner = new Scanner(input, "ascii");
-		g.moveTo(false, 0, 0);
+		g.moveTo(0, 0);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
-
 		scanner.skip("; (\\d+)x(\\d+)\n");
-		int width = Integer.parseInt(scanner.match().group(1));
-		int height = Integer.parseInt(scanner.match().group(2));
-		double ratio = Math.max(width, height) / 65535.0;
+
+		final int width = Integer.parseInt(scanner.match().group(1));
+		final int height = Integer.parseInt(scanner.match().group(2));
+		g.setSize(width, height);
+		final double ratio = Math.max(width, height) / 65535.0;
 		g.getTransform().scale(ratio, ratio);
 		g.setStrokeWidth((float) (1 / ratio));
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
 			final String token = scanner.next(TOKEN).toUpperCase(Locale.US).replaceAll("\\s", "");
-			log.finest("Read token: " + token);
 			final float arg = parseFloat(token.substring(1));
 
 			switch (token.charAt(0)) {
 			case 'G':
-				gcodes.getOrDefault((int) arg, () -> log.finest("G" + arg)).run();
+				gcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
+				g.stroke().resetKeepPos();
 				scanner.nextLine();
 				break;
 			case 'M':
-				mcodes.getOrDefault((int) arg, () -> log.finest("M" + arg)).run();
+				mcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
 				break;
 			case '#':
 				variables.put((int) arg, readArg('='));
 				break;
-
-			// Ignored codes
 			case 'F': // Set feedrate
 			case 'T': // Select tool
 			case 'S': // Set spindle speed
 				break;
-
 			case 'O': // Control flow
 			default:
 				throw new InputMismatchException("Invalid GCode: " + token);
@@ -136,21 +117,17 @@ public class GCodeImporter implements Importer {
 		return scanner.hasNext(axis + ".*") ? readArg(axis) : Float.NaN;
 	}
 
-	/**
-	 * Reads a named argument from the file.
-	 * Examples: given the input "X4.2", readArg('X') returns 4.2.
-	 * @throws AssertionError when a mandatory argument isn’t found.
-	 */
+	/** Reads a named argument from the file.
+	  * Examples: given the input "X4.2", readArg('X') returns 4.2.
+	  * @throws AssertionError when a mandatory argument isn’t found. */
 	private float readArg(final char arg) {
 		final String token = scanner.next();
 		assert token.charAt(0) == arg : "Required: " + arg + ", found: " + token;
 		return parseFloat(token.substring(1));
 	}
 
-	/**
-	 * Parses the specified string as a float.
-	 * Handles GCode variables (#%d) and mathematical expressions.
-	 */
+	/** Parses the specified string as a float.
+	  * Handles GCode variables (#%d) and mathematical expressions. */
 	private float parseFloat(final String string) {
 		final String expr = string.charAt(0) == '['
 			? string.substring(1, string.length() - 1) : string;

@@ -13,10 +13,7 @@
 
 package cc.drawall.ps;
 
-import java.awt.Color;
-import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -32,18 +29,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import javafx.scene.paint.Color;
 
 import javax.xml.bind.DatatypeConverter;
 
-import cc.drawall.Graphics;
+import cc.drawall.Canvas;
 import cc.drawall.Importer;
 
 /** Importer used to parse PostScript. */
 public class PSImporter implements Importer {
-	private static final Logger log = Logger.getLogger(PSImporter.class.getName());
-
 	/** PostScript® is a trademark of Adobe Systems Incorporated. */
 
 	/** The correspondance between PostScript type and Java types is as follow:
@@ -55,10 +51,10 @@ public class PSImporter implements Importer {
 	  * Dictionary  PSDict
 	  * Name        String
 	  * String      String
-	  **/
+	  */
 
 	/** A Runnable that does nothing, used for ignored instructions. */
-	private static final Runnable NOOP = () -> log.finest("No-op");
+	private static final Runnable NOOP = () -> {/*NOOP*/};
 
 	/* ==PATTERNS== */
 	private static final Pattern NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+([eE][-+]?\\d+)?");
@@ -78,7 +74,7 @@ public class PSImporter implements Importer {
 	private static final Object MARK = new Object();
 	private static final Object CURLY_MARK = new Object();
 
-	private final Graphics g = new Graphics();
+	private final Canvas g = new Canvas();
 
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
 	private Iterator<Object> itr;
@@ -146,8 +142,8 @@ public class PSImporter implements Importer {
 		builtin("get", () -> {
 			final Object o = pop2();
 			stack.push(o instanceof PSDict ? ((PSDict) o).get(stack.pop())
-					: o instanceof Object[] ? ((Object[]) o)[(int) p(1)]
-					: ((String) o).codePointAt((int) p(1)));
+				: o instanceof Object[] ? ((Object[]) o)[(int) p(1)]
+				: ((String) o).codePointAt((int) p(1)));
 		});
 		builtin("put", () -> {
 			final Object value = stack.pop();
@@ -188,24 +184,24 @@ public class PSImporter implements Importer {
 		vars.put("null", null);
 
 		// Flow control
-		builtin("exec", () -> execute(stack.pop()));
+		builtin("exec", () -> execute(stack.pop(), true));
 		builtin("stopped", () -> stack.push(Boolean.FALSE));
 		builtin("quit", NOOP);
 		builtin("if", () -> {
 			final Object code = stack.pop();
 			if ((boolean) stack.pop()) {
-				execute(code);
+				execute(code, true);
 			}
 		});
 		builtin("ifelse", () -> {
 			final Object ifFalse = stack.pop();
 			final Object ifTrue = stack.pop();
-			execute((boolean) stack.pop() ? ifTrue : ifFalse);
+			execute((boolean) stack.pop() ? ifTrue : ifFalse, true);
 		});
 		builtin("repeat", () -> {
 			final Object code = stack.pop();
 			for (int i = (int) p(1); i > 0; i--) {
-				execute(code);
+				execute(code, true);
 			}
 		});
 		builtin("for", () -> {
@@ -213,7 +209,7 @@ public class PSImporter implements Importer {
 			final float max = p(1), inc = p(1);
 			for (float i = p(1); i < max; i += inc) {
 				stack.push(i);
-				execute(code);
+				execute(code, true);
 			}
 		});
 		builtin("forall", () -> {
@@ -221,16 +217,16 @@ public class PSImporter implements Importer {
 			final Object array = stack.pop();
 			(array instanceof String ? ((String) array).chars().mapToObj(c -> c)
 				: Arrays.stream((Object[]) array)).forEach(c -> {
-					stack.push(c);
-					execute(code);
-				});
+				stack.push(c);
+				execute(code, true);
+			});
 		});
 		// exec
 
 		// Type, attributes and conversion operators
 		builtin("type", () -> stack.push(stack.pop() instanceof String ? "nametype" : null));
 		// cvi
-		builtin("cvx", NOOP);
+		builtin("cvx", () -> literals.remove(stack.peek()));
 		builtin("cvr", NOOP);
 		builtin("cvlit", () -> stack.push(literal(stack.peek())));
 		builtin("rcheck", () -> stack.push(stack.pop() != null));
@@ -240,8 +236,8 @@ public class PSImporter implements Importer {
 		builtin("executeonly", NOOP);
 
 		// File operators
-		builtin("==", () -> log.info(stack.pop().toString()));
-		builtin("stack", () -> stack.stream().forEach(o -> log.info(o.toString())));
+		builtin("==", () -> System.out.println(stack.pop().toString()));
+		builtin("stack", () -> System.out.println("---\n" + Arrays.deepToString(stack.toArray()) + "\n---"));
 
 		// Miscellaneous
 		vars.put("ps_level", 1f);
@@ -250,25 +246,22 @@ public class PSImporter implements Importer {
 			o -> vars.containsKey(o) ? vars.get(o) : o
 		).toArray()));
 
-		// Graphics State
-		builtin("gsave", () -> g.save());
-		builtin("grestore", () -> g.restore());
-		builtin("grestoreall", () -> g.restore());
-		builtin("setlinecap",    () -> g.setLineCap(popFlag()));
-		builtin("setlinejoin",   () -> g.setLineJoin(popFlag()));
+		// Canvas State
+		builtin("gsave",         () -> g.save());
+		builtin("grestore",      () -> g.resetPath().restore());
+		builtin("grestoreall",   () -> g.resetPath().restore());
+		builtin("setlinecap",    () -> g.setLineCap(Canvas.LineCap.values()[(int) p(1)]));
+		builtin("setlinejoin",   () -> g.setLineJoin(Canvas.LineJoin.values()[(int) p(1)]));
 		builtin("setlinewidth",  () -> g.setStrokeWidth(p(1)));
 		builtin("setmiterlimit", () -> g.setMiterLimit(p(1)));
-		builtin("setdash",       () -> g.setStrokeDash(popArray(), p(1)));
+		builtin("setdash",       () -> g.setDashArray(popArray()).setDashOffset(p(1)));
 		builtin("showpage", NOOP);
-		builtin("setrgbcolor", () -> g.setStrokeColor(new Color(p(3), p(), p())));
-		builtin("sethsbcolor", () -> g.setStrokeColor(Color.getHSBColor(p(3), p(), p())));
-		builtin("setcmykcolor", () -> stack.push(new Color(
-				ColorSpace.getInstance(ColorSpace.TYPE_CMYK),
-				new float[] {p(4), p(), p(), p()}, 1.0f)));
+		builtin("setrgbcolor", () -> g.setColor(Canvas.Mode.BASE, Color.color(p(3), p(), p())));
+		builtin("sethsbcolor", () -> g.setColor(Canvas.Mode.BASE, Color.hsb(p(3), p(), p())));
 		builtin("setcmykcolor", () -> substack(4).clear());
-		builtin("setgray", () -> g.setStrokeColor(new Color((int) (0xFFFFFF * p(1)))));
+		builtin("setgray", () -> g.setColor(Canvas.Mode.BASE, Color.gray(p(1))));
 		builtin("clippath", () -> {
-			g.reset();
+			g.resetPath();
 			g.append(g.getClip());
 		});
 		builtin("pathbbox", () -> {
@@ -288,7 +281,7 @@ public class PSImporter implements Importer {
 
 		// Coordinate systems
 		builtin("matrix", () -> stack.push(new float[]{1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f}));
-		builtin("currentmatrix", () -> log.severe("Unsupported operator: currentmatrix"));
+		// currentmatrix
 		builtin("setmatrix", () -> g.getTransform().setTransform(popMatrix()));
 		builtin("concat", () -> g.getTransform().concatenate(popMatrix()));
 		builtin("rotate", () -> g.getTransform().rotate(Math.toRadians(p(1))));
@@ -296,12 +289,13 @@ public class PSImporter implements Importer {
 		builtin("translate", () -> g.getTransform().translate(p(2), p()));
 
 		// Path construction
-		builtin("newpath", () -> g.reset());
-		builtin("moveto", () -> g.moveTo(false, p(2), p()));
-		builtin("rmoveto", () -> g.moveTo(true, p(2), p()));
-		builtin("lineto", () -> g.lineTo(false, p(2), p()));
-		builtin("rlineto", () -> g.lineTo(true, p(2), p()));
-		builtin("curveto", () -> g.lineTo(false, p(6), p(), p(), p(), p(), p()));
+		builtin("newpath", () -> g.resetPath());
+		builtin("moveto", () -> g.setRelative(false).moveTo(p(2), p()));
+		builtin("rmoveto", () -> g.setRelative(true).moveTo(p(2), p()));
+		builtin("lineto", () -> g.setRelative(false).lineTo(p(2), p()));
+		builtin("rlineto", () -> g.setRelative(true).lineTo(p(2), p()));
+		builtin("curveto", () -> g.setRelative(false).lineTo(p(6), p(), p(), p(), p(), p()));
+		builtin("rcurveto", () -> g.setRelative(true).lineTo(p(6), p(), p(), p(), p(), p()));
 		builtin("closepath", () -> g.closePath());
 		builtin("currentpoint", () -> {
 			final Point2D point = g.getCurrentPoint();
@@ -310,10 +304,10 @@ public class PSImporter implements Importer {
 		});
 
 		// Painting
-		builtin("stroke", () -> g.stroke().reset());
-		builtin("fill", () -> g.fill(Path2D.WIND_NON_ZERO).reset());
-		builtin("eofill", () -> g.fill(Path2D.WIND_EVEN_ODD).reset());
-		builtin("clip", () -> g.clip());
+		builtin("stroke", () -> g.stroke().resetPath());
+		builtin("fill", () -> g.setWindingRule(Path2D.WIND_NON_ZERO).fill().resetPath());
+		builtin("eofill", () -> g.setWindingRule(Path2D.WIND_EVEN_ODD).fill().resetPath());
+		builtin("clip", () -> g.clip(g.getPath()));
 
 		// Insideness-testing
 
@@ -324,11 +318,11 @@ public class PSImporter implements Importer {
 		builtin("setfont", () -> g.setFont((String) stack.pop()));
 		builtin("show", () -> {
 			g.charpath((String) stack.pop());
-			g.fill(Path2D.WIND_EVEN_ODD);
+			g.fill();
 		});
 		builtin("ashow", () -> {
 			g.charpath((String) stack.pop());
-			g.fill(Path2D.WIND_EVEN_ODD);
+			g.fill();
 			p(2);
 			p();
 		});
@@ -364,35 +358,37 @@ public class PSImporter implements Importer {
 
 	@Override
 	@SuppressWarnings("resource")
-	public Graphics process(final ReadableByteChannel input) {
+	public Canvas process(final ReadableByteChannel input) {
 		final Scanner scanner = new Scanner(input, "ascii");
-		g.getClip().intersect(new Area(new Rectangle2D.Float(0, 0, 612, 792)));
+		g.setSize(612, 792);
+		System.setProperty("reverse", "1");
+		g.setColor(Canvas.Mode.FILL, Canvas.CURRENT_COLOR);
+		g.setColor(Canvas.Mode.STROKE, Canvas.CURRENT_COLOR);
 
 		// See PLRM 3.1: Syntax
 		scanner.useDelimiter(String.format("(%1$s|(?=%2$s)|(?<=%2$s)|%%.*+)+",
-					WHITESPACE, "[(){}<>\\[\\]/]"));
+			WHITESPACE, "[(){}<>\\[\\]/]"));
 		while (scanner.hasNext()) {
 			final Object obj = tokenize(scanner.next(), scanner);
 			if (stack.contains(CURLY_MARK)) {
 				// Deferred execution mode
 				stack.push(obj);
 			} else {
-				execute(obj);
+				execute(obj, false);
 			}
 		}
 		return g;
 	}
 
-	private void execute(final Object object) {
-		log.finest("Executing: " + object);
+	private void execute(final Object object, final boolean doProc) {
 		if (literals.containsKey(object)) {
 			stack.push(object);
 		} else if (object instanceof Runnable) {      // built-in operator
 			((Runnable) object).run();
 		} else if (object instanceof String) { // name object
-			execute(getVar(object));
-		} else if (object instanceof Object[]) {   // procedure
-			Arrays.stream((Object[]) object).forEach(this::execute);
+			execute(getVar(object), true);
+		} else if (doProc && object instanceof Object[]) {
+			Arrays.stream((Object[]) object).forEach(o -> execute(o, false));
 		} else {
 			stack.push(object);
 		}
@@ -412,8 +408,7 @@ public class PSImporter implements Importer {
 		case '{':
 			return CURLY_MARK;
 		case '}':
-			final Object[] proc = popTo(CURLY_MARK);
-			return (Runnable) () -> stack.push(proc);
+			return popTo(CURLY_MARK);
 		case '/':
 			return literal(scanner.next());
 		default:
@@ -436,7 +431,7 @@ public class PSImporter implements Importer {
 
 	private Object getVar(final Object key) {
 		if (!vars.containsKey(key)) {
-		   throw new InputMismatchException("Unknown variable : " + key);
+			throw new InputMismatchException("Unknown variable : " + key);
 		}
 		return vars.get(key);
 	}
@@ -479,12 +474,6 @@ public class PSImporter implements Importer {
 	private List<Object> substack(final int n) {
 		final int size = stack.size();
 		return stack.subList(size - n, size);
-	}
-
-	private int popFlag() {
-		final float val = p(1);
-		assert val >= 0 && val < 3;
-		return (int) val;
 	}
 
 	private float[] popArray() {

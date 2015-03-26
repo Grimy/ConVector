@@ -15,6 +15,7 @@ package cc.drawall;
 
 import java.awt.BorderLayout;
 import java.awt.Canvas;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
@@ -50,7 +51,7 @@ class ConVector extends Canvas {
 
 	ConVector() {
 		chooser.setFileFilter(new FileNameExtensionFilter("Vectors",
-					new String[] {"svg", "pdf", "ps", "gcode", "dov"}));
+			new String[] {"svg", "pdf", "ps", "gcode", "dov"}));
 		setSize(800, 600);
 	}
 
@@ -61,10 +62,11 @@ class ConVector extends Canvas {
 			new ConVector().createAndShowGUI();
 		} else if (args.length == 1) {
 			WebService.loop(Integer.parseInt(args[0]));
-		} else if (args.length == 2) {
-			exportFile(new File(args[1]), importFile(new File(args[0])));
 		} else {
-			log.severe("Too many arguments.");
+			final Drawing drawing = importFile(new File(args[0]));
+			for (int i = 1; i < args.length; ++i) {
+				exportFile(new File(args[i]), drawing);
+			}
 		}
 	}
 
@@ -75,7 +77,7 @@ class ConVector extends Canvas {
 
 	private static Drawing importFile(final File file) {
 		try (final FileInputStream input = new FileInputStream(file);
-				final FileChannel chan = input.getChannel()) {
+		final FileChannel chan = input.getChannel()) {
 			return importStream(chan, getExtension(file));
 		} catch (final IOException e) {
 			log.severe("Problem reading file " + file.getName() + ": " + e);
@@ -85,8 +87,8 @@ class ConVector extends Canvas {
 
 	private static void exportFile(final File file, final Drawing drawing) {
 		try (final RandomAccessFile handle = new RandomAccessFile(file, "rw");
-				final FileChannel chan = handle.getChannel()) {
-			final ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 10 << 20);
+		final FileChannel chan = handle.getChannel()) {
+			final ByteBuffer output = chan.map(FileChannel.MapMode.READ_WRITE, 0, 20 << 20);
 			exportStream(output, getExtension(file), drawing);
 			chan.truncate(output.position());
 		} catch (final IOException e) {
@@ -129,11 +131,12 @@ class ConVector extends Canvas {
 		super.paint(g);
 		final Rectangle2D bounds = drawing.getBounds();
 		final double ratio = Math.min(getWidth() / bounds.getWidth(),
-				getHeight() / bounds.getHeight());
+			getHeight() / bounds.getHeight());
 		g.scale(ratio, ratio);
 		g.translate(-bounds.getX(), -bounds.getY());
 		for (final Drawing.Splash splash: drawing) {
-			g.setColor(splash.color);
+			g.setColor(new Color((float) splash.color.getRed(),
+				(float) splash.color.getGreen(), (float) splash.color.getBlue()));
 			g.fill(splash.shape);
 		}
 	}
@@ -144,9 +147,9 @@ class ConVector extends Canvas {
 	  * @param filetype indicates how to interpret read data
 	  * @return the resulting vector */
 	static Drawing importStream(final ReadableByteChannel input, final String filetype) {
-		for (Importer importer: ServiceLoader.load(Importer.class)) {
-			if (importer.getClass().getSimpleName().replace("Importer", "")
-					.equalsIgnoreCase(filetype)) {
+		for (final Importer importer: ServiceLoader.load(Importer.class)) {
+			final String name = importer.getClass().getSimpleName().replace("Importer", "");
+			if (name.equalsIgnoreCase(filetype)) {
 				return importer.process(input).drawing;
 			}
 		}
@@ -155,10 +158,10 @@ class ConVector extends Canvas {
 
 	/** Writes a drawing to a stream, using a plugin appropriate for the specified filetype. */
 	static void exportStream(final ByteBuffer output, final String filetype,
-			final Drawing drawing) {
+		final Drawing drawing) {
 		for (final Exporter exporter: ServiceLoader.load(Exporter.class)) {
-			if (exporter.getClass().getSimpleName().replace("Exporter", "")
-					.equalsIgnoreCase(filetype)) {
+			final String name = exporter.getClass().getSimpleName().replace("Exporter", "");
+			if (name.equalsIgnoreCase(filetype)) {
 				exporter.output(drawing, output);
 			}
 		}

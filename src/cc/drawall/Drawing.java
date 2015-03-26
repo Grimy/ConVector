@@ -13,7 +13,6 @@
 
 package cc.drawall;
 
-import java.awt.Color;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -28,17 +27,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javafx.scene.paint.Color;
+
 /** An in-memory representation of a vector image.
   * A Drawing is an ordered list of colored areas. Those areas are rendered
   * so that the latter ones can hide the first ones by drawing over them. */
-class Drawing implements Iterable<Drawing.Splash> {
+public class Drawing implements Iterable<Drawing.Splash> {
 	private static final Logger log = Logger.getLogger(Drawing.class.getName());
 
 	/* Buffer used for temporary storage of coordinates. */
 	private final double[] coords = new double[6];
 
 	/* The bounding rectangle of this Drawing (initially empty). */
-	private Rectangle2D bounds = new Rectangle2D.Double(0, 0, -1, -1);
+	Rectangle2D bounds = new Rectangle2D.Double(0, 0, -1, -1);
 
 	/* The splashes composing this Drawing. */
 	private List<Splash> splashes = new ArrayList<>();
@@ -47,7 +48,6 @@ class Drawing implements Iterable<Drawing.Splash> {
 
 	/* Adds the specified shape, filled with the specified color, to this Drawing. */
 	void paint(final Color color, final Shape shape) {
-		bounds = bounds.createUnion(shape.getBounds2D());
 		splashes.add(new Splash(color, shape));
 	}
 
@@ -83,8 +83,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		final List<Splash> splitted = new ArrayList<>();
 		forEach(splash -> {
 			Path2D path = new Path2D.Double();
-			for (final PathIterator itr = splash.getPathIterator(null, -1);
-					!itr.isDone(); itr.next()) {
+			for (final PathIterator itr = splash.iterator(null, -1); !itr.isDone(); itr.next()) {
 				final int type = itr.currentSegment(coords);
 				switch (type) {
 				case PathIterator.SEG_MOVETO:
@@ -134,7 +133,7 @@ class Drawing implements Iterable<Drawing.Splash> {
 		}
 	}
 
-	Rectangle2D getBounds() {
+	public Rectangle2D getBounds() {
 		return bounds;
 	}
 
@@ -143,17 +142,17 @@ class Drawing implements Iterable<Drawing.Splash> {
 		return splashes.iterator();
 	}
 
-	static class Splash {
-		final Color color;
-		final Shape shape;
+	public static class Splash {
+		public final Color color;
+		public final Shape shape;
 		Splash(final Color color, final Shape shape) {
 			this.color = color;
 			this.shape = shape;
 		}
 
-		PathIterator getPathIterator(final AffineTransform transform, final int flatness) {
+		PathIterator iterator(final AffineTransform transform, final int flatness) {
 			return flatness < 0 ? shape.getPathIterator(transform)
-			                    : shape.getPathIterator(transform, flatness);
+				: shape.getPathIterator(transform, flatness);
 		}
 	}
 

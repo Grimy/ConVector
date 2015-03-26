@@ -4,10 +4,10 @@ bin
 *~
 javadoc.xml
 *.class
+*.jar
 .sonar
 blah.*
 result.*
-convector.jar
 examples
 output
 doc/out
