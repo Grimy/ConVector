@@ -100,9 +100,10 @@ public class PSImporter implements Importer {
 		// count, mark, cleartomark, counttomark (not in PDF)
 
 		// Math
+		builtin("idiv", () -> stack.push((float) ((int) p(2) / (int) p())));
+		builtin("mod",  () -> stack.push((float) ((int) p(2) % (int) p())));
 		builtin("add", () -> stack.push(p(2) + p()));
 		builtin("div", () -> stack.push(p(2) / p()));
-		// idiv, mod
 		builtin("mul", () -> stack.push(p(2) * p()));
 		builtin("sub", () -> stack.push(p(2) - p()));
 		builtin("abs", () -> stack.push(Math.abs(p(1))));
