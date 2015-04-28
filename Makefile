@@ -7,8 +7,8 @@ convector.jar: $(shell find src -name '*.java')
 	cd tmp; zip -q -r -m ../$@ *; cd ../src; zip -q ../$@ `find . -type f -not -name '*.java'`
 	rmdir tmp
 
-serve:
-	while true; do java -ea -jar convector.jar 3434; done
+serve: convector.jar
+	cd src; java -ea -jar ../convector.jar 3434
 
 test: test/*.svg test/*.ps
 examples: examples/*.svg examples/*.ps

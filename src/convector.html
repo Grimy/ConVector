@@ -1,12 +1,6 @@
-HTTP/1.1 200 OK
-Content-Type: text/html
-Encoding: UTF-8
-
 <!DOCTYPE HTML>
-<html>
-	<head>
-		<meta charset=UTF-8>
-		<style media="screen" type="text/css">
+<meta charset=UTF-8>
+<style>
 * {
 	margin: 0px;
 	padding: 0px;
@@ -31,7 +25,7 @@ select {
 	width: 7em;
 }
 a {
-	display: none;
+	display: inline-block;
 	width: 6em;
 
 	text-decoration: none;
@@ -48,54 +42,63 @@ a:hover {
 	background-color: #ef2201;
 	border-color: #AC1100;
 }
-.nice_button {
-	display: inline-block;
-}
-		</style>
-	</head>
-	<body>
-		<label for=file>File to convert:</label>
-		<input type=file id=file />
-		<br/>
-		<label for=type>Convert to:</label>
-		<select id=type>
-			<option value=dov>DOV</option>
-			<option value=gcode>GCode</option>
-			<option value=pdf>PDF</option>
-			<option value=ps>PostScript</option>
-			<option value=svg>SVG</option>
-		</select>
-		<a id=submit class=nice_button>Convert</a>
-		<a id=result title="Click to get the generated file."></a>
-		<script>
-document.getElementById('submit').onclick = function() {
+</style>
+<label for=file>File to convert:</label>
+<input type=file id=file>
+<br>
+<label for=type>Convert to:</label>
+<select id=type>
+	<option value=dov>DOV</option>
+	<option value=gcode>GCode</option>
+	<option value=pdf>PDF</option>
+	<option value=ps>PostScript</option>
+	<option value=svg>SVG</option>
+</select>
+<a id=submit>Convert</a>
+<a id=result title="Click to get the generated file.">Save</a>
+<br>
+<svg id=canvas width=800 height=800></svg>
+
+<script>
+
+var result = document.getElementById('result');
+var canvas = document.getElementById('canvas');
+
+function ajax(url, payload, responseType, callback) {
 	var xhr = new XMLHttpRequest();
+	xhr.open('POST', url, true);
+	xhr.responseType = responseType;
+	xhr.onload = callback;
+	xhr.send(payload);
+}
+
+function save() {
+	var blob = new Blob([this.response], {type: 'application/octet-stream'});
+	result.style.display = 'inline-block';
+	result.href = URL.createObjectURL(blob);
+}
+
+function draw() {
+	canvas.innerHTML = this.responseText;
+}
+
+document.getElementById('submit').onclick = function() {
 	var reader = new FileReader();
 	var file = document.getElementById('file').files[0];
-	var result = document.getElementById('result');
 	var lastPos = 0;
-
-	xhr.onload = function() {
-		// new Uint16Array(arrayBuffer);
-		var blob = new Blob([xhr.response], {type: 'application/octet-stream'});
-		result.href = URL.createObjectURL(blob);
-		result.textContent = 'Save';
-		result.className = 'nice_button';
-	}
 
 	reader.onload = function() {
 		var i = file.name.lastIndexOf('.');
 		var srcType = file.name.substr(i + 1);
 		var dstType = document.getElementById('type').value;
 		result.download = file.name.substr(0, i) + '.' + dstType;
-		xhr.open('POST', srcType + '/' + dstType, true);
-		xhr.responseType = "arraybuffer";
-		xhr.send(reader.result);
+		ajax(srcType + '/' + dstType, reader.result, 'arraybuffer', save);
+		ajax(srcType + '/svg', reader.result, '', draw);
 	}
 
-	result.textContent = '';
+	result.style.display = 'none';
+	canvas.innerHTML = '';
 	reader.readAsArrayBuffer(file);
 }
-		</script>
-	</body>
-</html>
+result.style.display = 'none';
+</script>
