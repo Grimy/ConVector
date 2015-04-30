@@ -3,5 +3,6 @@ cc.drawall.gcode.GCodeExporter
 cc.drawall.mvg.MVGExporter
 cc.drawall.ps.PDFExporter
 cc.drawall.ps.PSExporter
+cc.drawall.polargraph.PGExporter
 cc.drawall.svg.SVGExporter
 cc.drawall.miff.MIFFExporter
