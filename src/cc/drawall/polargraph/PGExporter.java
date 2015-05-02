@@ -18,7 +18,7 @@ import cc.drawall.Exporter;
 /** Outputs a vector to PostScript code. */
 public class PGExporter extends Exporter {
 
-	private static final int WIDTH = Integer.getInteger("polargraph.width");
+	private static final int WIDTH = Integer.getInteger("polargraph.width", 7500);
 	private static final double RATIO = WIDTH / 65535.0;
 
 	/** Constructor. */

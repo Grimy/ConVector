@@ -27,7 +27,7 @@ import cc.drawall.Importer;
 /** Importer used to parse PostScript. */
 public class PGImporter implements Importer {
 
-	private static final int WIDTH = Integer.getInteger("polargraph.width");
+	private static final int WIDTH = Integer.getInteger("polargraph.width", 7500);
 
 	private static final Point2D polarToCartesian(int a, int b) {
 		final double x = (a * a - b * b + WIDTH * WIDTH) / (2 * WIDTH);
