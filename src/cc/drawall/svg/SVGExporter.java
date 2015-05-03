@@ -28,8 +28,9 @@ public class SVGExporter extends Exporter {
 		write("<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
 			+ "<!-- Superbly %s -->\n"
 			+ "<svg xmlns='http://www.w3.org/2000/svg' width='%f' height='%f'>\n"
-			+ "<g transform='scale(%f)' stroke-width='%f' fill='none'><g id='g",
-			COMMENT, width, height, ratio, 1 / ratio);
+			+ "<g transform='scale(%f)' stroke-width='%f' fill='none' "
+			+ "stroke-linecap='round' stroke-linejoin='round'><g id='g",
+			COMMENT, width, height, ratio, .5 / ratio);
 	}
 
 	@Override

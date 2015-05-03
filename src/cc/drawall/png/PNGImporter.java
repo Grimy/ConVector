@@ -1,13 +1,14 @@
 package cc.drawall.png;
 
-import cc.drawall.Importer;
 import cc.drawall.Canvas;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.Channels;
-import java.io.InputStream;
-import java.io.IOException;
-import javax.imageio.ImageIO;
+import cc.drawall.Importer;
+
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import javax.imageio.ImageIO;
 
 public class PNGImporter implements Importer {
 
@@ -38,15 +39,14 @@ public class PNGImporter implements Importer {
 	}
 
 	private void drawPixel(int rgb, int dx) {
-		int red = rgb >> 16;
-		int green = (rgb >> 8) & 255;
-		int blue = rgb & 255;
-		double brightness = red * .2126 + green * .7152 + blue * .0722;
-		if (brightness < .5) {
-			g.lineTo(dx * .5f, .5f);
-			g.lineTo(dx * .5f, -.5f);
-		} else {
-			g.lineTo(dx, 0);
-		}
+		double alpha = ((rgb >> 24) & 255) / 256d;
+		double red =   ((rgb >> 16) & 255) / 256d;
+		double green = ((rgb >> 8)  & 255) / 256d;
+		double blue =  ((rgb)       & 255) / 256d;
+		// HSP perceived brightness; see http://alienryderflex.com/hsp.html
+		final double brightness = Math.sqrt(.299 * red * red + .587 * green * green + .114 * blue * blue);
+		final float height = (float) ((1 - brightness) * alpha * .8);
+		g.lineTo(dx * .5f, height);
+		g.lineTo(dx * .5f, -height);
 	}
 }
