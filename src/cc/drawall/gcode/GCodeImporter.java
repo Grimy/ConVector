@@ -19,39 +19,37 @@ import java.util.InputMismatchException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-import cc.drawall.Canvas;
 import cc.drawall.Importer;
+import cc.drawall.Output;
 
 /** Importer used to parse GCode. */
 public class GCodeImporter implements Importer {
 	/* Conversion ratio. */
-	private static final double INCHES_TO_MM = 25.4;
+	// private static final double INCHES_TO_MM = 25.4;
 
 	private static final Pattern TOKEN = Pattern.compile("[GMFTSO#]"
 		+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
 
-	/** The scanner used to parse the input. */
-	private Scanner scanner;
-
-	private final Canvas g = new Canvas();
-
 	/* Maps GCode variable names to their values. */
 	private final Map<Integer, Float> variables = new HashMap<>();
 
-	private final Map<Integer, Runnable> gcodes = new HashMap<>(); {
-		gcodes.put(0, () -> {
-			g.stroke().resetKeepPos();
-			g.moveTo(readPos('X'), readPos('Y'));
-		});
-		gcodes.put(1, () -> g.lineTo(readPos('X'), readPos('Y')));
-		gcodes.put(5, () -> g.lineTo(readArg('I'), readArg('J'),
+	/* Scanner on the input data */
+	private Scanner scanner;
+
+	private static final Map<Integer, Consumer<Output>> gcodes = new HashMap<>(); {
+		gcodes.put(0, o -> o.writeSegment(0, readPos('X'), readPos('Y')));
+		gcodes.put(10, o -> o.writeSegment(1, readPos('X'), readPos('Y')));
+		gcodes.put(50, o -> o.writeSegment(2, readArg('I'), readArg('J'),
+			readArg('X'), readArg('Y')));
+		gcodes.put(50, o -> o.writeSegment(3, readArg('I'), readArg('J'),
 			readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
-		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
-		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
-		gcodes.put(90, () -> g.setRelative(false));
-		gcodes.put(91, () -> g.setRelative(true));
+		// gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
+		// gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
+		// gcodes.put(90, () -> g.setRelative(false));
+		// gcodes.put(91, () -> g.setRelative(true));
 		// 2:  Helical motion, CW
 		// 3:  Helical motion, CCW
 		// 7:  Diameter mode
@@ -63,15 +61,9 @@ public class GCodeImporter implements Importer {
 		// 92: Coordinate system offset
 	}
 
-	private final Map<Integer, Runnable> mcodes = new HashMap<>(); {
-		mcodes.put(2,  () -> g.stroke());
-		mcodes.put(30, () -> g.stroke());
-	}
-
 	@Override
-	public Canvas process(final ReadableByteChannel input) {
+	public void process(final ReadableByteChannel input, final Output output) {
 		scanner = new Scanner(input, "ascii");
-		g.moveTo(0, 0);
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
@@ -79,10 +71,7 @@ public class GCodeImporter implements Importer {
 
 		final int width = Integer.parseInt(scanner.match().group(1));
 		final int height = Integer.parseInt(scanner.match().group(2));
-		g.setSize(width, height);
-		final double ratio = Math.max(width, height) / 65535.0;
-		g.getTransform().scale(ratio, ratio);
-		g.setStrokeWidth((float) (1 / ratio));
+		output.setSize(width, height);
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
@@ -91,16 +80,13 @@ public class GCodeImporter implements Importer {
 
 			switch (token.charAt(0)) {
 			case 'G':
-				gcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
-				g.stroke().resetKeepPos();
+				gcodes.getOrDefault((int) (arg * 10), o -> {/*NOOP*/}).accept(output);
 				scanner.nextLine();
-				break;
-			case 'M':
-				mcodes.getOrDefault((int) arg, () -> {/*NOOP*/}).run();
 				break;
 			case '#':
 				variables.put((int) arg, readArg('='));
 				break;
+			case 'M':
 			case 'F': // Set feedrate
 			case 'T': // Select tool
 			case 'S': // Set spindle speed
@@ -110,7 +96,6 @@ public class GCodeImporter implements Importer {
 				throw new InputMismatchException("Invalid GCode: " + token);
 			}
 		}
-		return g;
 	}
 
 	private float readPos(final char axis) {

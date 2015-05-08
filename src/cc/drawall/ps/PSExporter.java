@@ -13,6 +13,8 @@
 
 package cc.drawall.ps;
 
+import java.nio.ByteBuffer;
+
 import cc.drawall.Exporter;
 
 /** Outputs a vector to PostScript code. */
@@ -20,12 +22,13 @@ public class PSExporter extends Exporter {
 
 	/** Constructor. */
 	public PSExporter() {
-		super(REVERSE, "% % m", "% % l", "% % % % q", "% % % % % % c", "h");
+		/* REVERSE */
+		super("% % m", "% % l", "% % % % q", "% % % % % % c", "h");
 	}
 
 	@Override
-	protected void writeHeader(final double width, final double height, final double ratio) {
-		write("%%!PS\n"
+	protected ByteBuffer header(final double width, final double height, final double ratio) {
+		return format("%%!PS\n"
 			+ "%% Lovingly %s\n"
 			+ "%%%%BoundingBox: 0 0 %d %d\n"
 			+ "/d{load def}bind def/m/moveto d/l/lineto d/c/curveto d"
@@ -36,12 +39,12 @@ public class PSExporter extends Exporter {
 	}
 
 	@Override
-	protected void writeColor(final double red, final double green, final double blue) {
-		write("f %.3f %.3f %.3f rg\n", red, green, blue);
+	protected ByteBuffer color(final double red, final double green, final double blue) {
+		return format("f %.3f %.3f %.3f rg\n", red, green, blue);
 	}
 
 	@Override
-	protected void writeFooter() {
-		write("f\n");
+	protected ByteBuffer footer() {
+		return format("f\n");
 	}
 }

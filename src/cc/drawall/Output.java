@@ -13,14 +13,20 @@
 
 package cc.drawall;
 
-import java.nio.channels.ReadableByteChannel;
 
-/** Base interface for plugins. */
-@FunctionalInterface
-public interface Importer {
-	/** Interprets bytes read from `input` and draws on `output`. Each implementing
-	  * class is a way to interpret bytes as a vector image.
-	  * @param input the channel in which to read the data to be parsed
-	  * @return the resulting vector */
-	void process(final ReadableByteChannel input, final Output output);
+/** The base class for all Exporter plugins.
+  * Provides a common template for all output filetypes. Abstract methods should be overriden
+  * to implement the details relevant to a particular filetype. */
+public interface Output {
+
+	/** Writes the beginning of the output file.
+	  * @param width the width of the original drawing
+	  * @param height the height of the original drawing
+	  * @param ratio the scaling ratio that should be applied to this drawing to return
+	  * it to its original size */
+	void setSize(final double width, final double height);
+
+	void writeColor(final double red, final double green, final double blue);
+	void writeSegment(final int type, final double... coords);
+	void writeFooter();
 }

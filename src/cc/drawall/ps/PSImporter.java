@@ -37,6 +37,7 @@ import javax.xml.bind.DatatypeConverter;
 
 import cc.drawall.Canvas;
 import cc.drawall.Importer;
+import cc.drawall.Output;
 
 /** Importer used to parse PostScript. */
 public class PSImporter implements Importer {
@@ -74,7 +75,7 @@ public class PSImporter implements Importer {
 	private static final Object MARK = new Object();
 	private static final Object CURLY_MARK = new Object();
 
-	private final Canvas g = new Canvas();
+	private Canvas g;
 
 	private final Map<Object, Void> literals = new IdentityHashMap<>();
 	private Iterator<Object> itr;
@@ -359,7 +360,8 @@ public class PSImporter implements Importer {
 
 	@Override
 	@SuppressWarnings("resource")
-	public Canvas process(final ReadableByteChannel input) {
+	public void process(final ReadableByteChannel input, final Output output) {
+		g = new Canvas(output);
 		final Scanner scanner = new Scanner(input, "ascii");
 		g.setSize(612, 792);
 		System.setProperty("reverse", "1");
@@ -378,7 +380,6 @@ public class PSImporter implements Importer {
 				execute(obj, false);
 			}
 		}
-		return g;
 	}
 
 	private void execute(final Object object, final boolean doProc) {

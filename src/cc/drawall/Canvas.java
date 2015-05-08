@@ -17,21 +17,21 @@ import java.awt.BasicStroke;
 import java.awt.Font;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
+import java.awt.font.TextAttribute;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Area;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import javafx.scene.paint.Color;
-
-import java.awt.font.TextAttribute;
 
 /** Graphics context for all drawing operations done by Importer plugins.
   * Provides methods for setting graphical state, constructing paths and drawing them.
@@ -47,8 +47,10 @@ public class Canvas {
 	public static enum LineCap { BUTT, ROUND, SQUARE; }
 	public static enum LineJoin { MITER, ROUND, BEVEL; }
 
+	// Buffer to hold PathIterator coordinates
+	private final double[] coords = new double[6];
+
 	private static final float MIN_ALPHA = .25f;
-	Drawing drawing = new Drawing();
 
 	private Map<TextAttribute, Object> textAttrs = new HashMap<>(); {
 		textAttrs.put(TextAttribute.KERNING, TextAttribute.KERNING_ON);
@@ -70,6 +72,12 @@ public class Canvas {
 
 	/* First control point of a following smooth curve */
 	private Point2D.Float smooth;
+
+	private Output sink;
+
+	public Canvas(Output sink) {
+		this.sink = sink;
+	}
 
 	///////////////////////
 	// Path construction //
@@ -260,7 +268,7 @@ public class Canvas {
 	////////////////////////
 
 	public void setSize(float width, float height) {
-		drawing.bounds = new Rectangle2D.Float(0, 0, width, height);
+		sink.setSize(width, height);
 	}
 
 	/** Fill the current path with the FILL Color.
@@ -281,13 +289,17 @@ public class Canvas {
 			|| mode == Mode.BASE || path.getCurrentPoint() == null) {
 			return this;
 		}
-		if (System.getProperty("line") != null) {
-			drawing.paint(color, (Path2D) path.clone());
-		} else {
-			final Area area = new Area(mode == Mode.STROKE ? stroked(path) : path);
-			area.intersect(clippath);
-			drawing.paint(color, area);
+		final Area area = new Area(mode == Mode.STROKE ? stroked(path) : path);
+		area.intersect(clippath);
+		sink.writeColor(color.getRed(), color.getBlue(), color.getGreen());
+		for (final PathIterator itr = area.getPathIterator(null);
+				!itr.isDone(); itr.next()) {
+			sink.writeSegment(itr.currentSegment(coords), coords);
 		}
+		/* TODO: normalize
+		final AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio * reverse,
+			0, (flags & REVERSE) * bounds.getHeight() * ratio);
+		*/
 		return this;
 	}
 
@@ -410,7 +422,7 @@ public class Canvas {
 	/** Pushes a snapshot of the graphical state on the save stack.
 	  * @see restore() */
 	public void save() {
-		final Canvas copy = new Canvas();
+		final Canvas copy = new Canvas(sink);
 		copy.copy(this);
 		prev = copy;
 	}
@@ -431,7 +443,6 @@ public class Canvas {
 		this.stroke = new BasicStroke(that.stroke.getLineWidth(), that.stroke.getEndCap(),
 			that.stroke.getLineJoin(), that.stroke.getMiterLimit(),
 			that.stroke.getDashArray(), that.stroke.getDashPhase());
-		this.drawing = that.drawing;
 		this.prev = that.prev;
 	}
 }

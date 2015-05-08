@@ -13,18 +13,20 @@
 
 package cc.drawall.gcode;
 
+import java.nio.ByteBuffer;
+
 import cc.drawall.Exporter;
 
 /** Outputs a vector to GCode. */
 public class GCodeExporter extends Exporter {
 
-	/** Constructor. */
 	public GCodeExporter() {
-		super(MERGE | SHORTEN | FLATTEN | REVERSE, "G0 X% Y%", "G1 X% Y%", null, null, "");
+		/* MERGE | SHORTEN | FLATTEN | REVERSE */
+		super("G0 X% Y%", "G1 X% Y%", "G5.1 I% J% X% Y%", "G5 I% J% P% Q% X% Y%", "");
 	}
 
 	@Override
-	protected void writeHeader(final double width, final double height, final double ratio) {
-		write("; %dx%d\n; Neatly %s\n", (int) width, (int) height, COMMENT);
+	protected ByteBuffer header(final double width, final double height, final double ratio) {
+		return format("; %dx%d\n; Neatly %s\n", (int) width, (int) height, COMMENT);
 	}
 }

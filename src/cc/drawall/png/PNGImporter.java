@@ -1,27 +1,29 @@
 package cc.drawall.png;
 
-import cc.drawall.Canvas;
-import cc.drawall.Importer;
-
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+
 import javax.imageio.ImageIO;
+
+import cc.drawall.Canvas;
+import cc.drawall.Importer;
+import cc.drawall.Output;
 
 public class PNGImporter implements Importer {
 
-	private Canvas g = new Canvas();
+	private Canvas g;
 
 	@Override
-	public Canvas process(final ReadableByteChannel input) {
-		InputStream stream = Channels.newInputStream(input);
+	public void process(final ReadableByteChannel input, final Output output) {
+		g = new Canvas(output);
 		BufferedImage img = null;
-	       	try {
-		       img = ImageIO.read(stream);
+		try (InputStream stream = Channels.newInputStream(input)) {
+			img = ImageIO.read(stream);
 		} catch (IOException e) {
-			assert false; // TODO
+			throw new IllegalArgumentException(e);
 		}
 		g.setSize(img.getWidth(), img.getHeight());
 		g.setRelative(false).moveTo(0, 0);
@@ -35,7 +37,7 @@ public class PNGImporter implements Importer {
 			g.lineTo(0, 1);
 			dx *= -1;
 		}
-		return g.stroke();
+		g.stroke();
 	}
 
 	private void drawPixel(int rgb, int dx) {

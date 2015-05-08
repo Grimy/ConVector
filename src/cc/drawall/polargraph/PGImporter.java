@@ -17,12 +17,9 @@ package cc.drawall.polargraph;
 import java.awt.geom.Point2D;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
-import javafx.scene.paint.Color;
-
-import cc.drawall.Canvas;
 import cc.drawall.Importer;
+import cc.drawall.Output;
 
 /** Importer used to parse PostScript. */
 public class PGImporter implements Importer {
@@ -35,15 +32,11 @@ public class PGImporter implements Importer {
 		return new Point2D.Double(x, y);
 	}
 
-	private final Canvas g = new Canvas();
-
 	@Override
-	public Canvas process(final ReadableByteChannel input) {
+	public void process(final ReadableByteChannel input, final Output output) {
+		@SuppressWarnings("resource")
 		final Scanner scanner = new Scanner(input, "ascii");
-		g.setColor(Canvas.Mode.FILL, null);
-		g.setColor(Canvas.Mode.STROKE, Color.BLACK);
-		g.setSize(999, 999);
-		g.getTransform().scale(999.0 / WIDTH, 999.0 / WIDTH);
+		output.setSize(999, 999);
 		scanner.useDelimiter("C|,END(?::.*)?\nC|,");
 		boolean penDown = false;
 		while (scanner.hasNextInt()) {
@@ -59,17 +52,11 @@ public class PGImporter implements Importer {
 			case 9:
 			case 17:
 				final Point2D p = polarToCartesian(scanner.nextInt(), scanner.nextInt());
-				if (penDown) {
-					g.lineTo((float) p.getX(), (float) p.getY());
-				} else {
-					g.stroke().resetPath();
-					g.moveTo((float) p.getX(), (float) p.getY());
-				}
+				output.writeSegment(penDown ? 1 : 0, p.getX(), p.getY());
 				break;
 			default:
 				assert false;
 			}
 		}
-		return g;
 	}
 }

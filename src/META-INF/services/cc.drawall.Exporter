@@ -1,4 +1,3 @@
-cc.drawall.dov.DOVExporter
 cc.drawall.gcode.GCodeExporter
 cc.drawall.mvg.MVGExporter
 cc.drawall.ps.PDFExporter

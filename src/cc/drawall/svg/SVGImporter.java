@@ -49,6 +49,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import cc.drawall.Canvas;
 import cc.drawall.Importer;
+import cc.drawall.Output;
 
 /** An Importer for SVG images. */
 public class SVGImporter extends DefaultHandler implements Importer {
@@ -77,7 +78,7 @@ public class SVGImporter extends DefaultHandler implements Importer {
 		unitMap.put("in", 90f);
 	}
 
-	private final Canvas g = new Canvas();
+	private Canvas g;
 	private final Deque<String> idStack = new ArrayDeque<>();
 	private final Map<String, Color> gradients = new HashMap<>();
 	private final Map<String, Path2D> paths = new HashMap<>();
@@ -379,7 +380,8 @@ public class SVGImporter extends DefaultHandler implements Importer {
 	/////////////////
 
 	@Override
-	public Canvas process(final ReadableByteChannel input) {
+	public void process(final ReadableByteChannel input, final Output output) {
+		g = new Canvas(output);
 		g.setColor(Canvas.Mode.BASE, Canvas.NONE);
 		g.setColor(Canvas.Mode.FILL, Color.BLACK);
 		g.setColor(Canvas.Mode.STROKE, Canvas.NONE);
@@ -396,7 +398,6 @@ public class SVGImporter extends DefaultHandler implements Importer {
 			wrapper.initCause(e);
 			throw wrapper;
 		}
-		return g;
 	}
 
 	private void handleAttr(final String name, final String value) {

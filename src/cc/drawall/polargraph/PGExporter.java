@@ -13,6 +13,8 @@
 
 package cc.drawall.polargraph;
 
+import java.nio.ByteBuffer;
+
 import cc.drawall.Exporter;
 
 /** Outputs a vector to PostScript code. */
@@ -21,34 +23,19 @@ public class PGExporter extends Exporter {
 	private static final int WIDTH = Integer.getInteger("polargraph.width", 7500);
 	private static final double RATIO = WIDTH / 65535.0;
 
-	/** Constructor. */
-	public PGExporter() {
-		super(FLATTEN | MERGE | SHORTEN);
+	// super(FLATTEN | MERGE | SHORTEN);
+
+	@Override
+	protected ByteBuffer header(final double width, final double height, final double ratio) {
+		return EMPTY;
 	}
 
 	@Override
-	protected void writeHeader(final double width, final double height, final double ratio) {
-	}
-
-	@Override
-	protected void writeSegment(final int type, final double[] coords) {
-		if (type == 0) {
-			write("C14,END\n");
-		}
+	protected ByteBuffer segment(final int type, final double[] coords) {
 		final double x = coords[0] * RATIO, y = coords[1] * RATIO;
-		final int a = (int) Math.sqrt(x * x + y * y);
-		final int b = (int) Math.sqrt((WIDTH - x) * (WIDTH - x) + y * y);
-		write("C17,%d,%d,END\n", a, b);
-		if (type == 0) {
-			write("C13,END\n");
-		}
-	}
-
-	@Override
-	protected void writeColor(final double red, final double green, final double blue) {
-	}
-
-	@Override
-	protected void writeFooter() {
+		return format(
+			type == 0 ? "C14,END\nC17,%d,%d,END\nC13,END\n" :  "C17,%d,%d,END\n",
+			(int) Math.sqrt(x * x + y * y),
+			(int) Math.sqrt((WIDTH - x) * (WIDTH - x) + y * y));
 	}
 }

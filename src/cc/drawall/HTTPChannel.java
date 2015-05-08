@@ -23,14 +23,10 @@ class HTTPChannel implements ReadableByteChannel {
 	private final SocketChannel chan;
 	private int remaining;
 	private static final Logger log = Logger.getLogger(HTTPChannel.class.getName());
-	String url;
+	final String url;
 
 	HTTPChannel(final SocketChannel chan) throws IOException {
 		this.chan = chan;
-		parseHeaders();
-	}
-
-	private void parseHeaders() throws IOException {
 		url = readline().split(" ")[1];
 		String line = ".";
 		while (!line.isEmpty()) {
