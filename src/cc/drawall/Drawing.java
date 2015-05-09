@@ -13,9 +13,7 @@
 
 package cc.drawall;
 
-import java.awt.Color;
 import java.awt.Shape;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
@@ -23,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+
+import javafx.scene.paint.Color;
 
 /** An in-memory representation of a vector image.
   * A Drawing is an ordered list of colored areas. Those areas are rendered
@@ -36,14 +36,12 @@ public class Drawing implements Output {
 	/* The splashes composing this Drawing. */
 	private List<Splash> splashes = new ArrayList<>();
 
-	private Color color = Color.BLACK;
-
 	private final Output delegate;
 	private Path2D path;
 	private final boolean merge;
 	private final boolean optimize;
 
-	public Drawing(Output delegate, boolean merge, boolean optimize) {
+	public Drawing(final Output delegate, final boolean merge, final boolean optimize) {
 		this.delegate = delegate;
 		this.merge = merge;
 		this.optimize = optimize;
@@ -52,7 +50,7 @@ public class Drawing implements Output {
 	/* Changes the list of areas so that they can be rendered correctly in any order.
 	 * This implies removing from the lower splashes parts that would be hidden by higher splashes. */
 	private void mergeLayers() {
-		log.info("Merging layers : " + splashes.size());
+		log.info("Merging " + splashes.size() + " layers");
 		final List<Splash> newSplashes = new ArrayList<>();
 		for (final Splash top: splashes) {
 			for (final Iterator<Splash> itr = newSplashes.iterator(); itr.hasNext();) {
@@ -61,27 +59,27 @@ public class Drawing implements Output {
 					continue;
 				}
 				final Area aTop = top.shape instanceof Area ? (Area) top.shape : new Area(top.shape);
-				final Area aBottom = bottom.shape instanceof Area ? (Area) bottom.shape : new Area(bottom.shape);
-				bottom.shape = aBottom;
+				final Area aBot = bottom.shape instanceof Area ? (Area) bottom.shape : new Area(bottom.shape);
+				bottom.shape = aBot;
 				if (top.color.equals(bottom.color)) {
-					aTop.add(aBottom);
+					aTop.add(aBot);
+					top.shape = aTop;
 					itr.remove();
 				} else {
-					aBottom.subtract(aTop);
-					if (aBottom.isEmpty()) {
+					aBot.subtract(aTop);
+					if (aBot.isEmpty()) {
 						itr.remove();
 					}
 				}
 			}
 			newSplashes.add(top);
 		}
-		splashes.clear();
-		newSplashes.forEach(splashes::add);
-		log.info("Done merging layers : " + splashes.size());
+		splashes = newSplashes;
 	}
 
 	/* Changes the order of shapes so as to reduce the total distance moved. */
 	void optimize() {
+		log.info("Optimizing " + splashes.size() + " layers");
 		final int numSplashes = splashes.size();
 		for (int i = 1; i < numSplashes; i++) {
 			double min = Double.POSITIVE_INFINITY;
@@ -100,23 +98,20 @@ public class Drawing implements Output {
 	}
 
 	@Override
-	public void setSize(double width, double height) {
+	public void setSize(final double width, final double height) {
 		delegate.setSize(width, height);
 	}
 
 	@Override
-	public void writeColor(double red, double green, double blue) {
-		color = new Color((float) red, (float) green, (float) blue);
+	public void writeColor(final double red, final double green, final double blue) {
+		path = new Path2D.Float();
+		splashes.add(new Splash(Color.color(red, green, blue), path));
 	}
 
 	@Override
-	public void writeSegment(int type, double... coords) {
+	public void writeSegment(final int type, final double... coords) {
 		switch (type) {
 		case 0:
-			if (path != null) {
-				splashes.add(new Splash(color, path));
-			}
-			path = new Path2D.Float();
 			path.moveTo(coords[0], coords[1]);
 			break;
 		case 1:
@@ -145,27 +140,17 @@ public class Drawing implements Output {
 			optimize();
 		}
 		for (final Splash splash: splashes) {
-			final Color color = splash.color;
-			delegate.writeColor(color.getRed(), color.getGreen(), color.getBlue());
-			for (final PathIterator itr = splash.iterator(null, -1);
-					!itr.isDone(); itr.next()) {
-				delegate.writeSegment(itr.currentSegment(coords), coords);
-			}
+			delegate.paint(splash.color, splash.shape);
 		}
 		delegate.writeFooter();
 	}
 
 	private static class Splash {
-		public final Color color;
-		public Shape shape;
+		final Color color;
+		Shape shape;
 		Splash(final Color color, final Shape shape) {
 			this.color = color;
 			this.shape = shape;
-		}
-
-		PathIterator iterator(final AffineTransform transform, final int flatness) {
-			return flatness < 0 ? shape.getPathIterator(transform)
-				: shape.getPathIterator(transform, flatness);
 		}
 	}
 

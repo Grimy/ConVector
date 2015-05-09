@@ -241,7 +241,7 @@ public class PSImporter implements Importer {
 
 		// File operators
 		builtin("==", () -> System.out.println(stack.pop().toString()));
-		builtin("stack", () -> System.out.println("---\n" + Arrays.deepToString(stack.toArray()) + "\n---"));
+		builtin("stack", () -> System.out.println(Arrays.deepToString(stack.toArray())));
 
 		// Miscellaneous
 		vars.put("ps_level", 1f);
@@ -366,7 +366,8 @@ public class PSImporter implements Importer {
 		g = new Canvas(output);
 		final Scanner scanner = new Scanner(input, "ascii");
 		g.setSize(612, 792);
-		System.setProperty("reverse", "1");
+		g.getTransform().scale(1, -1);
+		g.getTransform().translate(0, -792);
 		g.setColor(Canvas.Mode.FILL, Canvas.CURRENT_COLOR);
 		g.setColor(Canvas.Mode.STROKE, Canvas.CURRENT_COLOR);
 

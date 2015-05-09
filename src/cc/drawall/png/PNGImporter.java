@@ -1,6 +1,7 @@
 package cc.drawall.png;
 
 import java.awt.image.BufferedImage;
+import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
@@ -8,47 +9,45 @@ import java.nio.channels.ReadableByteChannel;
 
 import javax.imageio.ImageIO;
 
-import cc.drawall.Canvas;
 import cc.drawall.Importer;
 import cc.drawall.Output;
 
 public class PNGImporter implements Importer {
 
-	private Canvas g;
+	private static final int HEIGHT = Integer.getInteger("shaky.height", 200);
 
 	@Override
 	public void process(final ReadableByteChannel input, final Output output) {
-		g = new Canvas(output);
 		BufferedImage img = null;
 		try (InputStream stream = Channels.newInputStream(input)) {
 			img = ImageIO.read(stream);
-		} catch (IOException e) {
-			throw new IllegalArgumentException(e);
+		} catch (final IOException e) {
+			throw new IOError(e);
 		}
-		g.setSize(img.getWidth(), img.getHeight());
-		g.setRelative(false).moveTo(0, 0);
-		g.setRelative(true);
-		int dx = 1;
+		output.setSize(img.getWidth(), img.getHeight());
+		int scale = 1 + (int) Math.sqrt(img.getWidth() * img.getHeight() / 77777.7);
+		int dx = scale;
 		int x = 0;
-		for (int y = 0; y < img.getHeight(); ++y) {
-			for (x += dx; x % img.getWidth() != 0; x += dx) {
-				drawPixel(img.getRGB(x, y), dx);
+		for (int y = 0; y < img.getHeight(); y += scale) {
+			output.writeSegment(y == 0 ? 0 : 1, x, y);
+			for (x += dx; x >= 0 && x < img.getWidth(); x += dx) {
+				final float height = scale * (float) darkness(img.getRGB(x, y));
+				output.writeSegment(1, x - dx / 2d, y + height);
+				output.writeSegment(1, x, y);
 			}
-			g.lineTo(0, 1);
 			dx *= -1;
 		}
-		g.stroke();
 	}
 
-	private void drawPixel(int rgb, int dx) {
-		double alpha = ((rgb >> 24) & 255) / 256d;
-		double red =   ((rgb >> 16) & 255) / 256d;
-		double green = ((rgb >> 8)  & 255) / 256d;
-		double blue =  ((rgb)       & 255) / 256d;
-		// HSP perceived brightness; see http://alienryderflex.com/hsp.html
-		final double brightness = Math.sqrt(.299 * red * red + .587 * green * green + .114 * blue * blue);
-		final float height = (float) ((1 - brightness) * alpha * .8);
-		g.lineTo(dx * .5f, height);
-		g.lineTo(dx * .5f, -height);
+	/* HSP perceived brightness; see http://alienryderflex.com/hsp.html */
+	private static double darkness(final int pixel) {
+		// TODO: better color blending?
+		// TODO: parameter instead of hardcoded .8?
+		final int a = (pixel >> 24) & 0xFF;
+		final int r = (pixel >> 16) & 0xFF;
+		final int g = (pixel >>  8) & 0xFF;
+		final int b = (pixel      ) & 0xFF;
+		final double brightness = Math.sqrt(.299 * r * r + .587 * g * g + .114 * b * b);
+		return (1 - brightness / 255.0) * (a / 255.0) * (HEIGHT / 255.0);
 	}
 }

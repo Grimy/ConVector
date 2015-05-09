@@ -23,7 +23,6 @@ import java.awt.geom.Arc2D;
 import java.awt.geom.Area;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
@@ -41,14 +40,13 @@ import javafx.scene.paint.Color;
   * and text.
   * Path drawing is either stroking, filling or both. */
 public class Canvas {
+	// TODO: split into RelativeOutput and Canvas
+
 	public static final Color CURRENT_COLOR = new Color(0, 0, 0, 1);
 	public static final Color NONE = new Color(0, 0, 0, 1);
 	public static enum Mode { BASE, FILL, STROKE; }
 	public static enum LineCap { BUTT, ROUND, SQUARE; }
 	public static enum LineJoin { MITER, ROUND, BEVEL; }
-
-	// Buffer to hold PathIterator coordinates
-	private final double[] coords = new double[6];
 
 	private static final float MIN_ALPHA = .25f;
 
@@ -73,9 +71,9 @@ public class Canvas {
 	/* First control point of a following smooth curve */
 	private Point2D.Float smooth;
 
-	private Output sink;
+	private final Output sink;
 
-	public Canvas(Output sink) {
+	public Canvas(final Output sink) {
 		this.sink = sink;
 	}
 
@@ -106,16 +104,19 @@ public class Canvas {
 	  * aka a straight line.
 	  * @param relative whether to interpret coordinates as relative to the current point
 	  * @param points the array containing the control point coordinates of the desired curve */
-	public void lineTo(final float... points) {
-		transform(points);
-		if (points.length == 2) {
-			path.lineTo(points[0], points[1]);
-		} else if (points.length == 4) {
-			path.quadTo(points[0], points[1], points[2], points[3]);
-		} else if (points.length == 6) {
-			path.curveTo(points[0], points[1], points[2], points[3], points[4], points[5]);
-		} else {
-			throw new IllegalArgumentException("Invalid length for point array: " + points.length);
+	public void lineTo(final float... p) {
+		transform(p);
+		switch (p.length) {
+		case 2:
+			path.lineTo(p[0], p[1]); break;
+		case 4:
+			path.quadTo(p[0], p[1], p[2], p[3]);
+			break;
+		case 6:
+			path.curveTo(p[0], p[1], p[2], p[3], p[4], p[5]);
+			break;
+		default:
+			throw new IllegalArgumentException("Invalid point array size: " + p.length);
 		}
 	}
 
@@ -267,7 +268,7 @@ public class Canvas {
 	// Drawing operations //
 	////////////////////////
 
-	public void setSize(float width, float height) {
+	public void setSize(final float width, final float height) {
 		sink.setSize(width, height);
 	}
 
@@ -286,20 +287,12 @@ public class Canvas {
 	private Canvas draw(final Mode mode) {
 		final Color color = getColor(mode);
 		if (color == NONE || color.getOpacity() < MIN_ALPHA
-			|| mode == Mode.BASE || path.getCurrentPoint() == null) {
+			|| path.getCurrentPoint() == null) {
 			return this;
 		}
 		final Area area = new Area(mode == Mode.STROKE ? stroked(path) : path);
 		area.intersect(clippath);
-		sink.writeColor(color.getRed(), color.getBlue(), color.getGreen());
-		for (final PathIterator itr = area.getPathIterator(null);
-				!itr.isDone(); itr.next()) {
-			sink.writeSegment(itr.currentSegment(coords), coords);
-		}
-		/* TODO: normalize
-		final AffineTransform normalize = new AffineTransform(ratio, 0, 0, ratio * reverse,
-			0, (flags & REVERSE) * bounds.getHeight() * ratio);
-		*/
+		sink.paint(color, area);
 		return this;
 	}
 

@@ -22,6 +22,6 @@ doc:
 
 sonar: convector.jar
 	sonar-runner
-	DISPLAY=:1 xdg-open .sonar/issues-report/issues-report-light.html
+	DISPLAY=:0 xdg-open .sonar/issues-report/issues-report-light.html
 
 .PHONY: serve test examples doc sonar

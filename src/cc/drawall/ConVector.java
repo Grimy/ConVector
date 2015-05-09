@@ -13,30 +13,31 @@
 
 package cc.drawall;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
-
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
 /** User interface. */
-class ConVector {
+final class ConVector {
 	static {
 		// Ensure the decimal separator is "." everywhere.
 		Locale.setDefault(Locale.Category.FORMAT, Locale.US);
 		System.setProperty("java.util.logging.config.file", "bin/log.properties");
 	}
 	private static final Logger log = Logger.getLogger(ConVector.class.getName());
+
+	private ConVector() { /* Utility class */ }
 
 	/** If command lines arguments are given, process them. Otherwise, start the GUI.
 	  * @param args first argument is the input file, second is the output file */
@@ -45,25 +46,20 @@ class ConVector {
 			WebService.loop(3434);
 			return;
 		}
-		int i;
-		boolean merge = false;
-		boolean optimize = false;
-		for (i = 0; args[i].startsWith("-"); ++i) {
-			merge |= args[i].equals("--merge");
-			optimize |= args[i].equals("--optimize");
-		}
-		final Path inFile = FileSystems.getDefault().getPath(args[i]);
-		for (++i; i < args.length; ++i) {
-			final Path outFile = FileSystems.getDefault().getPath(args[i]);
-			try (final FileChannel in = FileChannel.open(inFile, READ);
-				final FileChannel out = FileChannel.open(outFile,
-						WRITE, CREATE, TRUNCATE_EXISTING)) {
-					convert(in, out, getExtension(inFile), getExtension(outFile), merge, optimize);
-
+		final List<String> argv = new ArrayList<>(Arrays.asList(args));
+		final boolean merge = argv.remove("--merge");
+		final boolean optimize = argv.remove("--optimize");
+		argv.stream().map(FileSystems.getDefault()::getPath).reduce((inFile, outFile) -> {
+			try (final FileChannel in = FileChannel.open(inFile, StandardOpenOption.READ);
+				final FileChannel out = FileChannel.open(outFile, StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+					convert(in, out, getExtension(inFile), getExtension(outFile),
+						merge, optimize);
 			} catch (final IOException e) {
 				log.severe("Problem converting " + inFile + " to " + outFile + ": " + e);
 			}
-		}
+			return inFile;
+		});
 	}
 	
 	public static void convert(final ReadableByteChannel in, final WritableByteChannel out,

@@ -13,6 +13,10 @@
 
 package cc.drawall;
 
+import javafx.scene.paint.Color;
+import java.awt.Shape;
+import java.awt.geom.PathIterator;
+
 
 /** The base class for all Exporter plugins.
   * Provides a common template for all output filetypes. Abstract methods should be overriden
@@ -27,6 +31,16 @@ public interface Output {
 	void setSize(final double width, final double height);
 
 	void writeColor(final double red, final double green, final double blue);
+
 	void writeSegment(final int type, final double... coords);
+
 	void writeFooter();
+
+	default void paint(final Color color, final Shape shape) {
+		final double[] coords = new double[6];
+		writeColor(color.getRed(), color.getGreen(), color.getBlue());
+		for (final PathIterator i = shape.getPathIterator(null); !i.isDone(); i.next()) {
+			writeSegment(i.currentSegment(coords), coords);
+		}
+	}
 }

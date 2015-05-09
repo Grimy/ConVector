@@ -13,6 +13,7 @@
 
 package cc.drawall;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
@@ -25,23 +26,23 @@ class SimpleOutput implements Output {
 	final WritableByteChannel out;
 	final Exporter exporter;
 
-	SimpleOutput(WritableByteChannel out, Exporter exporter) {
+	SimpleOutput(final WritableByteChannel out, final Exporter exporter) {
 		this.out = out;
 		this.exporter = exporter;
 	}
 
-	private void write(ByteBuffer buf) {
+	private void write(final ByteBuffer buf) {
 		try {
 			out.write(buf);
-		} catch (IOException e) {
-			// TODO
-			throw new RuntimeException(e);
+		} catch (final IOException e) {
+			throw new IOError(e);
 		}
 	}
 
 	@Override
 	public void setSize(final double width, final double height) {
-		write(exporter.header(width, height, 1)); // TODO : 65535 / Math.max(width, height));
+		exporter.ratio = Math.max(width, height) / 65535;
+		write(exporter.header(width, height, exporter.ratio));
 	}
 
 	@Override

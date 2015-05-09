@@ -1,12 +1,3 @@
-* ShakyLines:
-	foreach line:
-		moveto 0 line
-		foreach pixel:
-			if dark:
-				rlineto .5 .5
-				rlineto .5 -.5
-			else:
-				rlineto 1 0
 * Consider using nailgun
 * PS: { /name } bind def incorrectly binds name
 * Update DOV to use a MIFF-like syntax?

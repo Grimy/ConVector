@@ -20,9 +20,7 @@ import cc.drawall.Exporter;
 /** Outputs a vector to PostScript code. */
 public class PSExporter extends Exporter {
 
-	/** Constructor. */
 	public PSExporter() {
-		/* REVERSE */
 		super("% % m", "% % l", "% % % % q", "% % % % % % c", "h");
 	}
 

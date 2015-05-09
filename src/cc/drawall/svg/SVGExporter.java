@@ -30,15 +30,13 @@ public class SVGExporter extends Exporter {
 			+ "<!-- Superbly %s -->\n"
 			+ "<svg xmlns='http://www.w3.org/2000/svg' width='%f' height='%f'>\n"
 			+ "<g transform='scale(%f)' stroke-width='%f' fill='none' "
-			+ "stroke-linecap='round' stroke-linejoin='round'><path d='",
+			+ "stroke='black' stroke-linecap='round' stroke-linejoin='round'><path d='",
 			COMMENT, width, height, ratio, .5 / ratio);
 	}
 
 	@Override
 	protected ByteBuffer color(final double red, final double green, final double blue) {
-		// boolean line = System.getProperty("line") != null;
-		// write("'/><path %s='#%02x%02x%02x' d='", line ? "stroke" : "fill",
-		return format("'/><path %s='#%02x%02x%02x' d='", "fill",
+		return format("'/><path stroke='none' fill='#%02x%02x%02x' d='",
 			(int) (red * 255), (int) (green * 255), (int) (blue * 255));
 	}
 

@@ -17,22 +17,13 @@ import java.nio.ByteBuffer;
 
 import cc.drawall.Exporter;
 
-/** Outputs a vector to PostScript code. */
+/** Outputs a vector to Polargraph code. */
 public class PGExporter extends Exporter {
-
 	private static final int WIDTH = Integer.getInteger("polargraph.width", 7500);
-	private static final double RATIO = WIDTH / 65535.0;
-
-	// super(FLATTEN | MERGE | SHORTEN);
-
-	@Override
-	protected ByteBuffer header(final double width, final double height, final double ratio) {
-		return EMPTY;
-	}
 
 	@Override
 	protected ByteBuffer segment(final int type, final double[] coords) {
-		final double x = coords[0] * RATIO, y = coords[1] * RATIO;
+		final double x = coords[0], y = coords[1];
 		return format(
 			type == 0 ? "C14,END\nC17,%d,%d,END\nC13,END\n" :  "C17,%d,%d,END\n",
 			(int) Math.sqrt(x * x + y * y),

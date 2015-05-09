@@ -26,8 +26,8 @@ public class PGImporter implements Importer {
 
 	private static final int WIDTH = Integer.getInteger("polargraph.width", 7500);
 
-	private static final Point2D polarToCartesian(int a, int b) {
-		final double x = (a * a - b * b + WIDTH * WIDTH) / (2 * WIDTH);
+	private static final Point2D polarToCartesian(final int a, final int b) {
+		final double x = (a * a - b * b + WIDTH * WIDTH) / (2.0 * WIDTH);
 		final double y = Math.sqrt(a * a - x * x);
 		return new Point2D.Double(x, y);
 	}

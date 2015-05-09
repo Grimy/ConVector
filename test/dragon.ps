@@ -1,12 +1,11 @@
 %!PS
 
 /bd {bind def} bind def
-/rng {rand 65536 mod exch mul 65536 div add} bd
 /rec {[ exch {exch 1 sub dup 0 ne 3 -1 roll {dist 0 rlineto} ifelse 1 add}
 	/exec load ] cvx def} def
 /+ {angle rotate} bd
 /- {angle neg rotate} bd
-/s {currentpoint stroke moveto style gsave} bd
+/s {style gsave} bd
 /r {stroke grestore} bd
 
 /dist 4 def
