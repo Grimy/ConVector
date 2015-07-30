@@ -13,7 +13,10 @@
 
 package cc.drawall;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -22,9 +25,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.InputMismatchException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 
@@ -47,14 +53,22 @@ final class ConVector {
 			return;
 		}
 		final List<String> argv = new ArrayList<>(Arrays.asList(args));
-		final boolean merge = argv.remove("--merge");
-		final boolean optimize = argv.remove("--optimize");
+		final Map<String, String> options = new HashMap<>();
+		for (Iterator<String> itr = argv.iterator(); itr.hasNext();) {
+			String arg = itr.next();
+			if (arg.startsWith("--")) {
+				int i = arg.indexOf('=');
+				i = i == -1 ? arg.length() : i;
+				options.put(arg.substring(2, i), arg.substring(i + 1));
+				itr.remove();
+			}
+		}
 		argv.stream().map(FileSystems.getDefault()::getPath).reduce((inFile, outFile) -> {
-			try (final FileChannel in = FileChannel.open(inFile, StandardOpenOption.READ);
+			try (final ReadableByteChannel in = open(inFile, options);
 				final FileChannel out = FileChannel.open(outFile, StandardOpenOption.WRITE,
 						StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-					convert(in, out, getExtension(inFile), getExtension(outFile),
-						merge, optimize);
+				options.put("output-type", getExtension(outFile.toString()));
+				convert(in, out, options);
 			} catch (final IOException e) {
 				log.severe("Problem converting " + inFile + " to " + outFile + ": " + e);
 			}
@@ -62,19 +76,32 @@ final class ConVector {
 		});
 	}
 	
-	public static void convert(final ReadableByteChannel in, final WritableByteChannel out,
-			final String inType, final String outType,
-			final boolean merge, final boolean optimize) {
-		Output output = new SimpleOutput(out, exporter(outType));
-		if (merge | optimize) {
-			output = new Drawing(output, merge, optimize);
+	private static ReadableByteChannel open(final Path file, final Map<String, String> options) throws IOException {
+		if (!options.containsKey("canny")) {
+			options.put("input-type", getExtension(file.toString()));
+			return FileChannel.open(file, StandardOpenOption.READ);
 		}
-		importer(inType).process(in, output);
+		options.put("input-type", "svg");
+		final String tmp = File.createTempFile("drawall", ".pbm").getAbsolutePath();
+		try {
+			new ProcessBuilder("convert", "-colorspace", "gray", "-canny", options.get("canny"),
+				file.toString(), tmp).redirectError(Redirect.INHERIT).start().waitFor();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return Channels.newChannel(new ProcessBuilder("potrace", "-so-", tmp).redirectError(Redirect.INHERIT).start().getInputStream());
+	}
+
+	public static void convert(final ReadableByteChannel in, final WritableByteChannel out, final Map<String, String> options) {
+		Output output = new SimpleOutput(out, exporter(options.get("output-type")));
+		if (options.containsKey("merge") || options.containsKey("optimize")) {
+			output = new Drawing(output, options.containsKey("merge"), options.containsKey("optimize"));
+		}
+		importer(options.get("input-type")).process(in, output);
 		output.writeFooter();
 	}
 
-	private static String getExtension(final Path path) {
-		final String filename = path.toString();
+	private static String getExtension(final String filename) {
 		return filename.substring(filename.lastIndexOf('.') + 1);
 	}
 

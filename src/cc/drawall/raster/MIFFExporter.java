@@ -11,7 +11,7 @@
  * © 2014-2015 Victor Adam
  */
 
-package cc.drawall.miff;
+package cc.drawall.raster;
 
 import java.awt.Color;
 import java.awt.Graphics2D;

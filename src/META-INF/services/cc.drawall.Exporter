@@ -1,7 +1,7 @@
 cc.drawall.gcode.GCodeExporter
 cc.drawall.mvg.MVGExporter
+cc.drawall.polargraph.PGExporter
 cc.drawall.ps.PDFExporter
 cc.drawall.ps.PSExporter
-cc.drawall.polargraph.PGExporter
+cc.drawall.raster.MIFFExporter
 cc.drawall.svg.SVGExporter
-cc.drawall.miff.MIFFExporter

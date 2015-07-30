@@ -1,5 +1,5 @@
 cc.drawall.gcode.GCodeImporter
 cc.drawall.polargraph.PGImporter
-cc.drawall.png.PNGImporter
 cc.drawall.ps.PSImporter
+cc.drawall.raster.PNGImporter
 cc.drawall.svg.SVGImporter

@@ -57,17 +57,11 @@ public class PSImporter implements Importer {
 	/** A Runnable that does nothing, used for ignored instructions. */
 	private static final Runnable NOOP = () -> {/*NOOP*/};
 
-	/* ==PATTERNS== */
+	/** Pre-compiled regexes */
 	private static final Pattern NUMBER = Pattern.compile("[-+]?\\d*\\.?\\d+([eE][-+]?\\d+)?");
 	private static final Pattern STRING = Pattern.compile("(?:\\\\.|[^()])*");
 	private static final String WHITESPACE = "[\0\t\r\n\f ]";
 	private static final Pattern HEX_STRING = Pattern.compile("(?:[0-9a-fA-F]|" + WHITESPACE + ")*");
-
-	/* ==STACKS==
-	 * The PostScript interpreter manages several stacks. See PLRM 3.4: Stacks.
-	 * Here, some of those stacks are implemented by intrusive linked lists:
-	 * each item links to the item underneath it on the stack.
-	 * `null` represents an empty stack. */
 
 	/** Operand stack. */
 	private final Stack<Object> stack = new Stack<>();

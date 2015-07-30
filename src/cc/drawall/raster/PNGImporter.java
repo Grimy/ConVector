@@ -1,4 +1,4 @@
-package cc.drawall.png;
+package cc.drawall.raster;
 
 import java.awt.image.BufferedImage;
 import java.io.IOError;
@@ -18,6 +18,7 @@ public class PNGImporter implements Importer {
 
 	@Override
 	public void process(final ReadableByteChannel input, final Output output) {
+		System.out.println("Using PNGImporter!");
 		BufferedImage img = null;
 		try (InputStream stream = Channels.newInputStream(input)) {
 			img = ImageIO.read(stream);

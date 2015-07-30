@@ -19,16 +19,16 @@ import java.util.InputMismatchException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
+import cc.drawall.Canvas;
 import cc.drawall.Importer;
 import cc.drawall.Output;
 
 /** Importer used to parse GCode. */
 public class GCodeImporter implements Importer {
 	/* Conversion ratio. */
-	// private static final double INCHES_TO_MM = 25.4;
+	private static final double INCHES_TO_MM = 25.4;
 
 	private static final Pattern TOKEN = Pattern.compile("[GMFTSO#]"
 		+ "[-+]?\\d*\\.?\\d+(E[-+]?\\d+)?", Pattern.CASE_INSENSITIVE);
@@ -39,17 +39,19 @@ public class GCodeImporter implements Importer {
 	/* Scanner on the input data */
 	private Scanner scanner;
 
-	private static final Map<Integer, Consumer<Output>> gcodes = new HashMap<>(); {
-		gcodes.put(0, o -> o.writeSegment(0, readPos('X'), readPos('Y')));
-		gcodes.put(10, o -> o.writeSegment(1, readPos('X'), readPos('Y')));
-		gcodes.put(50, o -> o.writeSegment(2, readArg('I'), readArg('J'),
-			readArg('X'), readArg('Y')));
-		gcodes.put(50, o -> o.writeSegment(3, readArg('I'), readArg('J'),
+	private Canvas g;
+
+	private static final Map<Integer, Runnable> gcodes = new HashMap<>(); {
+		gcodes.put(0,  () -> {g.stroke().resetPath(); g.moveTo(readPos('X'), readPos('Y'));});
+		gcodes.put(10, () -> g.lineTo(readPos('X'), readPos('Y')));
+		gcodes.put(50, () -> g.lineTo(readArg('I'), readArg('J'),
 			readArg('P'), readArg('Q'), readArg('X'), readArg('Y')));
-		// gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
-		// gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
-		// gcodes.put(90, () -> g.setRelative(false));
-		// gcodes.put(91, () -> g.setRelative(true));
+		gcodes.put(51, () -> g.lineTo(readArg('I'), readArg('J'),
+			readArg('X'), readArg('Y')));
+		gcodes.put(20, () -> g.getTransform().setToScale(INCHES_TO_MM, INCHES_TO_MM));
+		gcodes.put(21, () -> g.getTransform().setToScale(1, 1));
+		gcodes.put(90, () -> g.setRelative(false));
+		gcodes.put(91, () -> g.setRelative(true));
 		// 2:  Helical motion, CW
 		// 3:  Helical motion, CCW
 		// 7:  Diameter mode
@@ -63,15 +65,18 @@ public class GCodeImporter implements Importer {
 
 	@Override
 	public void process(final ReadableByteChannel input, final Output output) {
+		g = new Canvas(output);
 		scanner = new Scanner(input, "ascii");
 
 		// Ignore whitespace and comments
 		scanner.useDelimiter("(\\s|\\([^()]*\\)|;.*\n)*+(?=[a-zA-Z=]|#[\\d\\s]+=|$)");
-		scanner.skip("; (\\d+)x(\\d+)\n");
+		scanner.skip("(?:; (\\d+)x(\\d+)\n)?");
 
-		final int width = Integer.parseInt(scanner.match().group(1));
-		final int height = Integer.parseInt(scanner.match().group(2));
-		output.setSize(width, height);
+		g.setSize(65535, 65535);
+		g.getTransform().scale(.01f, -.01f);
+		g.getTransform().translate(0, -65535);
+		g.setStrokeWidth(100f);
+		g.moveTo(0, 0);
 
 		// Main loop: iterate over tokens
 		while (scanner.hasNext()) {
@@ -80,7 +85,7 @@ public class GCodeImporter implements Importer {
 
 			switch (token.charAt(0)) {
 			case 'G':
-				gcodes.getOrDefault((int) (arg * 10), o -> {/*NOOP*/}).accept(output);
+				gcodes.getOrDefault((int) (arg * 10), () -> {/*NOOP*/}).run();
 				scanner.nextLine();
 				break;
 			case '#':
@@ -96,6 +101,7 @@ public class GCodeImporter implements Importer {
 				throw new InputMismatchException("Invalid GCode: " + token);
 			}
 		}
+		g.stroke();
 	}
 
 	private float readPos(final char axis) {

@@ -22,6 +22,8 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 class WebService implements Runnable {
@@ -56,7 +58,10 @@ class WebService implements Runnable {
 				client.write(html);
 				return;
 			}
-			ConVector.convert(query, client, filetypes[1], filetypes[2], false, false);
+			final Map<String, String> options = new HashMap<>();
+			options.put("input-type", filetypes[1]);
+			options.put("output-type", filetypes[1]);
+			ConVector.convert(query, client, options);
 			client.shutdownOutput();
 		} catch (final IOException e) {
 			throw new IOError(e);
