@@ -109,7 +109,9 @@ public class PSImporter implements Importer {
 		builtin("sub", () -> stack.push(p(2) - p()));
 		builtin("abs", () -> stack.push(Math.abs(p(1))));
 		builtin("neg", () -> stack.push(-p(1)));
-		// ceiling, floor, round, truncate, sqrt, atan, cos, sin, exp, ln, log
+		builtin("sin", () -> stack.push((float) Math.sin(Math.toRadians(p(1)))));
+		builtin("cos", () -> stack.push((float) Math.cos(Math.toRadians(p(1)))));
+		// ceiling, floor, round, truncate, sqrt, atan, exp, ln, log
 		// rand, srand, rrand
 
 		// Array
